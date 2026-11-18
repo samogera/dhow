@@ -55,5 +55,5 @@ jobs:
           echo "commit=$GITHUB_SHA" > /tmp/pub/summary.txt
           cp /tmp/out/server.txt /tmp/pub/server.txt 2>/dev/null || true
           git config user.name ci && git config user.email ci@users.noreply.github.com
-          git checkout --orphan screenshots && git rm -rqf . && cp -r /tmp/pub/* . && git add -A
+          git checkout -q --orphan screenshots && git rm -rqf . && git clean -fdxq && cp -r /tmp/pub/* . && git add -A
           git commit -qm "Screenshots for $GITHUB_SHA" && git push -f origin screenshots

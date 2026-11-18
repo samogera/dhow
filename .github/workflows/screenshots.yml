@@ -49,11 +49,19 @@ jobs:
           node scripts/screenshots/shoot.mjs 2>&1 | tee /tmp/out/shoot.txt
       - name: Publish to the screenshots branch
         if: always()
+        env:
+          TOKEN: ${{ github.token }}
         run: |
-          mkdir -p /tmp/pub && cp -r shots /tmp/pub/ 2>/dev/null || true
+          trap 'echo "::error::publish failed at line $LINENO: $BASH_COMMAND"' ERR
+          set -e
+          mkdir -p /tmp/pub
+          if [ -d shots ]; then cp -r shots /tmp/pub/; else echo "::error::no shots folder"; fi
           cp /tmp/out/*.txt /tmp/pub/ 2>/dev/null || true
           echo "commit=$GITHUB_SHA" > /tmp/pub/summary.txt
-          cp /tmp/out/server.txt /tmp/pub/server.txt 2>/dev/null || true
+          ls -la /tmp/pub /tmp/pub/shots | head -60
+          cd /tmp/pub
+          git init -q -b screenshots
           git config user.name ci && git config user.email ci@users.noreply.github.com
-          git checkout -q --orphan screenshots && git rm -rqf . && git clean -fdxq && cp -r /tmp/pub/* . && git add -A
-          git commit -qm "Screenshots for $GITHUB_SHA" && git push -f origin screenshots
+          git add -A
+          git commit -qm "Screenshots for $GITHUB_SHA"
+          git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" screenshots

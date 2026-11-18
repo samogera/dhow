@@ -1,5 +1,6 @@
 import "server-only";
-import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { WORDMARK_NAVY_PNG, WORDMARK_RATIO } from "@/lib/brand-logo";
 
 export interface InvoiceForPdf {
   number: string;
@@ -19,20 +20,20 @@ const money = (n: number) => `KSh ${new Intl.NumberFormat("en-KE", { minimumFrac
 const d = (s: string) => new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
 const s = StyleSheet.create({
-  page: { padding: 48, fontSize: 10, color: "#121a16", fontFamily: "Helvetica" },
+  page: { padding: 48, fontSize: 10, color: "#0d1c29", fontFamily: "Helvetica" },
   row: { flexDirection: "row", justifyContent: "space-between" },
-  brand: { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#1f6345", letterSpacing: 1.5 },
+  brand: { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#00395f", letterSpacing: 1.5 },
   title: { fontSize: 26, fontFamily: "Helvetica-Bold", marginTop: 28 },
-  muted: { color: "#6b6f6a" },
-  label: { color: "#6b6f6a", fontSize: 8, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.8 },
+  muted: { color: "#5d6b78" },
+  label: { color: "#5d6b78", fontSize: 8, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.8 },
   block: { marginTop: 24 },
-  th: { flexDirection: "row", borderBottom: "1 solid #e7e5df", paddingBottom: 6, marginTop: 28, color: "#6b6f6a", fontSize: 8, textTransform: "uppercase" },
+  th: { flexDirection: "row", borderBottom: "1 solid #e2e7ec", paddingBottom: 6, marginTop: 28, color: "#5d6b78", fontSize: 8, textTransform: "uppercase" },
   tr: { flexDirection: "row", borderBottom: "1 solid #f0eee9", paddingVertical: 8 },
   c1: { flex: 5 }, c2: { flex: 1, textAlign: "right" }, c3: { flex: 2, textAlign: "right" }, c4: { flex: 2, textAlign: "right" },
   totals: { marginTop: 16, marginLeft: "auto", width: 220 },
   tline: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3 },
-  grand: { flexDirection: "row", justifyContent: "space-between", paddingTop: 8, marginTop: 6, borderTop: "1 solid #121a16", fontFamily: "Helvetica-Bold", fontSize: 12 },
-  pay: { marginTop: 36, padding: 14, backgroundColor: "#f3f2ee", borderRadius: 8 },
+  grand: { flexDirection: "row", justifyContent: "space-between", paddingTop: 8, marginTop: 6, borderTop: "1 solid #0d1c29", fontFamily: "Helvetica-Bold", fontSize: 12 },
+  pay: { marginTop: 36, padding: 14, backgroundColor: "#f3f5f7", borderRadius: 8 },
   foot: { position: "absolute", bottom: 32, left: 48, right: 48, color: "#a3a6a1", fontSize: 8, textAlign: "center" },
 });
 
@@ -42,7 +43,7 @@ function InvoiceDoc({ inv }: { inv: InvoiceForPdf }) {
     <Document title={`Invoice ${inv.number}`} author="Dhow Partners">
       <Page size="A4" style={s.page}>
         <View style={s.row}>
-          <Text style={s.brand}>DHOW PARTNERS</Text>
+          <Image src={WORDMARK_NAVY_PNG} style={{ height: 18, width: 18 * WORDMARK_RATIO }} />
           <Text style={s.muted}>dhowpartners.com</Text>
         </View>
         <Text style={s.title}>Invoice {inv.number}</Text>

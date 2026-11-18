@@ -1,0 +1,66 @@
+name: Screenshots
+# Spins up a throwaway local Supabase, loads the real migration + seed + demo data,
+# builds the app, signs in as an admin and a member, and screenshots every screen.
+on:
+  push:
+    branches: [shots]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DEMO_PASSWORD: Demo-Only-Password-2026
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - name: Start local Supabase with the real migration and seed
+        run: |
+          yes n | supabase init --force || true
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor 2>&1 | tail -25
+          supabase status -o env > sb.env
+          set -a; . ./sb.env; set +a
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY:-$PUBLISHABLE_KEY}" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY:-$SECRET_KEY}" >> $GITHUB_ENV
+          echo "DB_URL=$DB_URL" >> $GITHUB_ENV
+      - name: Create demo users and data
+        run: |
+          for u in "admin@dhow.test:Samuel Ogera" "member@dhow.test:Wanjiru Kamau"; do
+            curl -sS -X POST "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/admin/users" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "Content-Type: application/json" \
+              -d "{\"email\":\"${u%%:*}\",\"password\":\"$DEMO_PASSWORD\",\"email_confirm\":true,\"user_metadata\":{\"full_name\":\"${u#*:}\"}}" | head -c 300; echo
+          done
+          which psql || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f screenshots/demo.sql
+      - name: Build and start the app
+        env:
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          DATA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          KYB_PROVIDER: manual
+        run: |
+          npm install --no-audit --no-fund > /dev/null 2>&1
+          npx next build > build.txt 2>&1 || (tail -50 build.txt; exit 1)
+          nohup npx next start -p 3000 > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -s -o /dev/null http://localhost:3000/login && break; sleep 1; done
+      - name: Take screenshots
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.49.1 > /dev/null 2>&1
+          npx playwright install --with-deps chromium > /dev/null 2>&1
+          node screenshots/shoot.mjs || true
+          cp server.log shots/server.log || true
+      - name: Publish to the shots-results branch
+        if: always()
+        run: |
+          mkdir -p shots && echo "$GITHUB_SHA" > shots/commit.txt
+          cp server.log shots/ 2>/dev/null || true
+          cp -r shots /tmp/out
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git checkout --orphan shots-results && git rm -rqf . && cp -r /tmp/out/* . && git add -A
+          git commit -qm "Screenshots for $GITHUB_SHA" && git push -f origin shots-results

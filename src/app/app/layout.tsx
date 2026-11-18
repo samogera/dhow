@@ -10,7 +10,7 @@ export default async function MemberLayout({ children }: { children: React.React
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-full bg-white py-2 pr-2 pl-5">
         <div className="flex items-center gap-4">
-          <Logo href="/app" />
+          <Logo href="/app" size="sm" />
           {m.orgs.length > 1 ? (
             <form action={switchOrganization}>
               <select name="org_id" defaultValue={m.org.id} aria-label="Switch company"

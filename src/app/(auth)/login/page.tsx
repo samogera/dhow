@@ -8,7 +8,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   const { next, error } = await searchParams;
   return (
     <>
-      <h1 className="text-2xl leading-tight font-semibold">Welcome<br />back</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
       <p className="mt-2 mb-6 text-sm text-muted">Sign in to your Dhow account.</p>
       {error === "link" ? <p className="mb-4 rounded-2xl bg-bad/10 px-4 py-3 text-sm text-bad">That link has expired. Sign in or request a new one.</p> : null}
       <LoginForm next={next} />

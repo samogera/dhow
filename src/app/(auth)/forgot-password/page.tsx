@@ -8,7 +8,7 @@ export default function ForgotPassword() {
   const [state, action] = useActionState(requestReset, undefined);
   return (
     <>
-      <h1 className="text-2xl font-semibold">Reset your password</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Reset your password</h1>
       <p className="mt-2 mb-6 text-sm text-muted">We&apos;ll email you a link to choose a new one.</p>
       <form action={action} className="space-y-3">
         <input name="email" type="email" required autoComplete="email" placeholder="Your email" className="field" />

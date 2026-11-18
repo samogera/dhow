@@ -60,7 +60,7 @@ export function AdminNav({ role }: { role: "reviewer" | "finance" | "admin" }) {
               return (
                 <li key={href}>
                   <Link href={href} aria-current={on ? "page" : undefined}
-                    className={cn("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition", on ? "bg-forest-900 text-white" : "text-ink/80 hover:bg-sunken")}>
+                    className={cn("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition", on ? "bg-navy-900 text-white" : "text-ink/80 hover:bg-sunken")}>
                     <Icon className="size-4 shrink-0" />
                     {label}
                   </Link>

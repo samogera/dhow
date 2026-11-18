@@ -72,7 +72,7 @@ export function InvoiceBuilder({ clients, projects, defaultClient }: { clients: 
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => setLines((ls) => [...ls, { description: "", quantity: "1", unit_price_kes: "" }])} className="mt-3 rounded-full border border-dashed border-line px-4 py-2 text-sm text-forest-700 hover:bg-sunken">+ Add item</button>
+          <button type="button" onClick={() => setLines((ls) => [...ls, { description: "", quantity: "1", unit_price_kes: "" }])} className="mt-3 rounded-full border border-dashed border-line px-4 py-2 text-sm text-navy-700 hover:bg-sunken">+ Add item</button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
@@ -88,9 +88,9 @@ export function InvoiceBuilder({ clients, projects, defaultClient }: { clients: 
       </form>
 
       {/* Live preview */}
-      <div className="rounded-[2rem] bg-forest-900 p-3 xl:sticky xl:top-6 xl:self-start">
+      <div className="rounded-[2rem] bg-navy-900 p-3 xl:sticky xl:top-6 xl:self-start">
         <div className="flex items-center justify-between px-4 pb-3 pt-1 text-sm text-white/70">
-          <span>Preview</span><span className="rounded-full bg-lime px-2.5 py-0.5 text-xs font-medium text-forest-900">Draft</span>
+          <span>Preview</span><span className="rounded-full bg-mint px-2.5 py-0.5 text-xs font-medium text-navy-900">Draft</span>
         </div>
         <article className="rounded-[1.5rem] bg-white p-8 text-sm">
           <div className="flex items-start justify-between">

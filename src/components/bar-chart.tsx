@@ -12,8 +12,8 @@ export function BarChart({ data, highlight, money = true }: { data: { label: str
     <svg viewBox={`0 0 ${width} ${h + 28}`} className="h-auto w-full" role="img" aria-label="Bar chart">
       <defs>
         <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="6" height="6" fill="#8fbfa5" />
-          <line x1="0" y1="0" x2="0" y2="6" stroke="#2f7a57" strokeWidth="1.5" opacity="0.35" />
+          <rect width="6" height="6" fill="#c9e7e0" />
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#00846d" strokeWidth="1.5" opacity="0.35" />
         </pattern>
       </defs>
       {data.map((d, i) => {
@@ -24,16 +24,16 @@ export function BarChart({ data, highlight, money = true }: { data: { label: str
         return (
           <g key={d.label}>
             <title>{`${d.label}: ${money ? kes(d.value) : d.value}`}</title>
-            <rect x={x} y={y} width={w} height={bh} rx={w / 2} fill={on ? "#1f6345" : "url(#hatch)"} />
+            <rect x={x} y={y} width={w} height={bh} rx={w / 2} fill={on ? "#00395f" : "url(#hatch)"} />
             {on && d.value > 0 ? (
               <g>
-                <rect x={x - 6} y={Math.max(0, y - 30)} width={w + 12} height={22} rx={11} fill="#0c2e21" />
+                <rect x={x - 6} y={Math.max(0, y - 30)} width={w + 12} height={22} rx={11} fill="#02223a" />
                 <text x={x + w / 2} y={Math.max(0, y - 30) + 15} textAnchor="middle" fontSize="11" fill="#fff" fontWeight="600">
                   {money ? `${Math.round(d.value / 1000)}k` : d.value}
                 </text>
               </g>
             ) : null}
-            <text x={x + w / 2} y={h + 20} textAnchor="middle" fontSize="12" fill="#6b6f6a">{d.label}</text>
+            <text x={x + w / 2} y={h + 20} textAnchor="middle" fontSize="12" fill="#5d6b78">{d.label}</text>
           </g>
         );
       })}

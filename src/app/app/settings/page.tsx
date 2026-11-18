@@ -49,7 +49,7 @@ export default async function Settings() {
                 <p className="text-2xl font-semibold">{PLAN_LABEL[m.org.plan]}</p>
                 <p className="text-sm text-muted">{PLAN_PRICE_KES[m.org.plan] ? `${kes(PLAN_PRICE_KES[m.org.plan])} per month` : "No monthly fee"}</p>
               </div>
-              <a href="mailto:hello@dhowpartners.com?subject=Membership%20plan" className="text-sm font-medium text-forest-600">Change plan</a>
+              <a href="mailto:hello@dhowpartners.com?subject=Membership%20plan" className="text-sm font-medium text-navy-600">Change plan</a>
             </div>
           </Card>
         </div>

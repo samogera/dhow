@@ -22,8 +22,8 @@ function OppFields({ o }: { o?: Opp }) {
       <div className="sm:col-span-2"><Field label="Link to the original"><Input name="url" type="url" defaultValue={o?.url ?? ""} /></Field></div>
       <div className="sm:col-span-2"><Field label="Summary" hint="One or two lines shown in the list"><Textarea name="summary" rows={2} maxLength={500} defaultValue={o?.summary} /></Field></div>
       <div className="sm:col-span-2"><Field label="Full details" hint="Markdown"><Textarea name="body" rows={6} defaultValue={o?.body} /></Field></div>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_verified" defaultChecked={o?.requires_verified ?? true} className="accent-forest-900" /> Verified companies only</label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="published" defaultChecked={o?.published ?? false} className="accent-forest-900" /> Published</label>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_verified" defaultChecked={o?.requires_verified ?? true} className="accent-navy-900" /> Verified companies only</label>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="published" defaultChecked={o?.published ?? false} className="accent-navy-900" /> Published</label>
     </>
   );
 }
@@ -54,7 +54,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
                       <p className="text-xs text-muted">{label(o.kind)} · {o.deadline ? `closes ${day(o.deadline)}` : "no deadline"} · {countOf(o.id)} applications</p>
                     </div>
                     <div className="flex gap-1">
-                      {o.requires_verified ? <Badge tone="lime">Verified</Badge> : null}
+                      {o.requires_verified ? <Badge tone="mint">Verified</Badge> : null}
                       <Badge tone={o.published ? "good" : "neutral"}>{o.published ? "Live" : "Draft"}</Badge>
                     </div>
                   </Link>
@@ -87,7 +87,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
                           <input type="hidden" name="id" value={a.id} />
                           <input name="staff_note" defaultValue={a.staff_note ?? ""} placeholder="Note to the company (optional)" className="field py-2 text-xs" />
                           <select name="status" defaultValue={a.status} className="rounded-full bg-white px-3 py-2 text-xs" aria-label="Status">{["submitted", "shortlisted", "won", "lost"].map((x) => <option key={x} value={x}>{label(x)}</option>)}</select>
-                          <button className="rounded-full bg-forest-900 px-4 py-2 text-xs text-white">Update</button>
+                          <button className="rounded-full bg-navy-900 px-4 py-2 text-xs text-white">Update</button>
                         </form>
                       </li>
                     );

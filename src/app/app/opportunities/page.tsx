@@ -41,7 +41,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                 {o.source ? <span>{o.source}</span> : null}
                 {o.location ? <span className="flex items-center gap-1"><MapPin className="size-3" />{o.location}</span> : null}
-                {o.requires_verified ? <Badge tone="lime">Verified only</Badge> : null}
+                {o.requires_verified ? <Badge tone="mint">Verified only</Badge> : null}
               </div>
               {o.deadline ? (
                 <div className="flex items-center justify-between border-t border-line pt-3 text-sm">

@@ -34,7 +34,7 @@ export default async function Team() {
               <tr key={p.id}>
                 <td className="font-medium">{p.full_name || "—"}{p.id === s.user.id ? <span className="ml-2 text-xs text-muted">(you)</span> : null}</td>
                 <td className="text-muted">{email(p.id)}</td>
-                <td><Badge tone={p.staff_role === "admin" ? "lime" : "neutral"}>{p.staff_role}</Badge></td>
+                <td><Badge tone={p.staff_role === "admin" ? "mint" : "neutral"}>{p.staff_role}</Badge></td>
               </tr>
             ))}
           </Table>

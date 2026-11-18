@@ -67,7 +67,7 @@ export default async function Clients({ searchParams }: { searchParams: Promise<
               <ActionForm key={selected.id} action={saveClient} className="grid gap-3 sm:grid-cols-2"><ClientFields c={selected} /></ActionForm>
             </Card>
             <Card>
-              <CardHeader title="Work and money" action={<Link href={`/admin/finance/invoices/new?client=${selected.id}`} className="text-sm text-forest-600 underline">New invoice</Link>} />
+              <CardHeader title="Work and money" action={<Link href={`/admin/finance/invoices/new?client=${selected.id}`} className="text-sm text-navy-600 underline">New invoice</Link>} />
               <ul className="space-y-2 text-sm">
                 {projects?.map((p) => <li key={p.id} className="flex justify-between"><span>{p.name}</span><StatusBadge status={p.status} /></li>)}
                 {invoices?.map((i) => <li key={i.id} className="flex justify-between"><Link href={`/admin/finance/invoices/${i.id}`} className="hover:underline">Invoice #{i.number}</Link><StatusBadge status={i.status} /></li>)}

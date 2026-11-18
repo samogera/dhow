@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Set up, get verified and grow in Kenya. Company registration, trusted partner firms, and curated opportunities for businesses and investors.",
 };
 
-export const viewport: Viewport = { themeColor: "#0c2e21" };
+export const viewport: Viewport = { themeColor: "#00395f" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

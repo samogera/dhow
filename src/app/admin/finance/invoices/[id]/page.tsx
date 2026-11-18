@@ -56,7 +56,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             <div className="flex justify-between text-muted"><dt>VAT {inv.vat_rate}%</dt><dd className="num">{kes(inv.vat_kes)}</dd></div>
             <div className="flex justify-between border-t border-line pt-2 font-semibold"><dt>Total</dt><dd className="num">{kes(inv.total_kes)}</dd></div>
             <div className="flex justify-between text-muted"><dt>Paid</dt><dd className="num">{kes(inv.paid_kes)}</dd></div>
-            <div className="flex justify-between rounded-full bg-lime px-3 py-1.5 font-semibold"><dt>Balance</dt><dd className="num">{kes(balance)}</dd></div>
+            <div className="flex justify-between rounded-full bg-mint px-3 py-1.5 font-semibold"><dt>Balance</dt><dd className="num">{kes(balance)}</dd></div>
           </dl>
           {inv.notes ? <p className="mt-6 whitespace-pre-line text-sm text-muted">{inv.notes}</p> : null}
         </Card>

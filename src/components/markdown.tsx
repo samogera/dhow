@@ -44,7 +44,7 @@ export function Markdown({ source }: { source: string }) {
     if (line.startsWith(">")) {
       const body: string[] = [];
       while (i < lines.length && lines[i].startsWith(">")) body.push(lines[i++].replace(/^>\s?/, ""));
-      out.push(<blockquote key={key++} className="mb-4 rounded-2xl border-l-4 border-lime bg-sunken px-4 py-3 text-ink/80">{inline(body.join(" "))}</blockquote>);
+      out.push(<blockquote key={key++} className="mb-4 rounded-2xl border-l-4 border-mint bg-sunken px-4 py-3 text-ink/80">{inline(body.join(" "))}</blockquote>);
       continue;
     }
     if (/^---+$/.test(line.trim())) { out.push(<hr key={key++} className="my-6 border-line" />); i++; continue; }
@@ -59,7 +59,7 @@ export function Markdown({ source }: { source: string }) {
 function taskItem(t: string): ReactNode {
   const m = /^\[( |x)\]\s+(.*)$/i.exec(t);
   if (!m) return inline(t);
-  return <span className="inline-flex items-center gap-2"><input type="checkbox" disabled defaultChecked={m[1].toLowerCase() === "x"} className="accent-forest-900" />{inline(m[2])}</span>;
+  return <span className="inline-flex items-center gap-2"><input type="checkbox" disabled defaultChecked={m[1].toLowerCase() === "x"} className="accent-navy-900" />{inline(m[2])}</span>;
 }
 
 function inline(text: string): ReactNode[] {

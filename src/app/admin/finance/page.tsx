@@ -61,7 +61,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                           <form action={payBill} className="flex gap-1">
                             <input type="hidden" name="id" value={b.id} />
                             <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-28 rounded-full bg-sunken px-3 py-1.5 text-xs" />
-                            <button className="rounded-full bg-forest-900 px-3 py-1.5 text-xs text-white">Pay</button>
+                            <button className="rounded-full bg-navy-900 px-3 py-1.5 text-xs text-white">Pay</button>
                           </form>
                         ) : null}
                       </td>

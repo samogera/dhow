@@ -5,8 +5,8 @@ import { cn } from "@/lib/format";
 
 type Variant = "primary" | "accent" | "outline" | "ghost" | "danger";
 const variants: Record<Variant, string> = {
-  primary: "bg-forest-900 text-white hover:bg-forest-700",
-  accent: "bg-lime text-ink hover:bg-lime-600",
+  primary: "bg-navy-900 text-white hover:bg-navy-700",
+  accent: "bg-mint text-ink hover:bg-mint-600",
   outline: "border border-line bg-white text-ink hover:border-ink/30",
   ghost: "text-ink hover:bg-sunken",
   danger: "bg-bad/10 text-bad hover:bg-bad/15",
@@ -57,14 +57,14 @@ export function PageHeader({ title, accent, sub, children }: { title: string; ac
   );
 }
 
-type Tone = "good" | "warn" | "bad" | "neutral" | "info" | "lime";
+type Tone = "good" | "warn" | "bad" | "neutral" | "info" | "mint";
 const tones: Record<Tone, string> = {
   good: "bg-good/10 text-good",
   warn: "bg-warn/10 text-warn",
   bad: "bg-bad/10 text-bad",
   neutral: "bg-sunken text-muted",
-  info: "bg-forest-50 text-forest-600",
-  lime: "bg-lime text-ink",
+  info: "bg-navy-50 text-navy-600",
+  mint: "bg-mint text-ink",
 };
 export function Badge({ tone = "neutral", children, dot }: { tone?: Tone; children: ReactNode; dot?: boolean }) {
   return (
@@ -86,7 +86,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function Stat({ label, value, note, highlight }: { label: string; value: ReactNode; note?: ReactNode; highlight?: boolean }) {
   return (
-    <div className={cn("card flex flex-col justify-between gap-6", highlight && "bg-forest-900 text-white")}>
+    <div className={cn("card flex flex-col justify-between gap-6", highlight && "bg-navy-900 text-white")}>
       <p className={cn("label", highlight && "text-white/70")}>{label}</p>
       <div>
         <p className="num text-3xl font-semibold tracking-tight">{value}</p>
@@ -148,7 +148,7 @@ export function Meter({ value, max, label }: { value: number; max: number; label
   return (
     <div>
       <div className="h-2.5 overflow-hidden rounded-full bg-sunken" role="meter" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-        <div className={cn("h-full rounded-full", pct > 90 ? "bg-bad" : "bg-forest-500")} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full rounded-full", pct > 90 ? "bg-bad" : "bg-navy-500")} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -158,7 +158,7 @@ export function Tabs({ items, current }: { items: { href: string; label: string 
   return (
     <nav className="mb-6 inline-flex flex-wrap gap-1 rounded-full bg-white p-1">
       {items.map((t) => (
-        <Link key={t.href} href={t.href} className={cn("rounded-full px-4 py-2 text-sm transition", t.href === current ? "bg-forest-900 text-white" : "text-muted hover:text-ink")}>
+        <Link key={t.href} href={t.href} className={cn("rounded-full px-4 py-2 text-sm transition", t.href === current ? "bg-navy-900 text-white" : "text-muted hover:text-ink")}>
           {t.label}
         </Link>
       ))}

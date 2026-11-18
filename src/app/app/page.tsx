@@ -26,13 +26,13 @@ export default async function Dashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Verification status, the green card */}
-        <div className={verified ? "card bg-forest-900 text-white" : "card"}>
+        <div className={verified ? "card bg-navy-900 text-white" : "card"}>
           <div className="flex items-start justify-between">
             <div>
               <p className={verified ? "text-sm text-white/70" : "label"}>Verification</p>
               <p className="mt-1 text-sm">{verified ? "Your badge is live" : "Build trust with partners and buyers"}</p>
             </div>
-            {verified ? <BadgeCheck className="size-6 text-lime" /> : <ShieldAlert className="size-6 text-warn" />}
+            {verified ? <BadgeCheck className="size-6 text-mint" /> : <ShieldAlert className="size-6 text-warn" />}
           </div>
           <p className="mt-10 text-3xl font-semibold tracking-tight">{verified ? "Dhow Verified" : label(org.verification_status)}</p>
           <p className={verified ? "mt-1 text-sm text-white/70" : "mt-1 text-sm text-muted"}>
@@ -70,7 +70,7 @@ export default async function Dashboard() {
               {opps.map((o) => (
                 <li key={o.id}>
                   <Link href={`/app/opportunities/${o.id}`} className="flex items-center gap-4 py-3.5 transition hover:opacity-80">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-forest-50 text-forest-600"><CalendarClock className="size-4" /></span>
+                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-navy-50 text-navy-600"><CalendarClock className="size-4" /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{o.title}</span>
                       <span className="block text-xs text-muted">{label(o.kind)}{o.source ? ` · ${o.source}` : ""}{o.requires_verified ? " · Verified only" : ""}</span>

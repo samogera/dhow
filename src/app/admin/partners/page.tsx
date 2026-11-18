@@ -38,7 +38,7 @@ export default async function Partners({ searchParams }: { searchParams: Promise
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <div className="grid content-start gap-3 sm:grid-cols-2">
           {partners?.length ? partners.map((p) => (
-            <Link key={p.id} href={`/admin/partners?id=${p.id}`} className={`card block transition hover:-translate-y-0.5 ${p.id === id ? "ring-2 ring-forest-900" : ""}`}>
+            <Link key={p.id} href={`/admin/partners?id=${p.id}`} className={`card block transition hover:-translate-y-0.5 ${p.id === id ? "ring-2 ring-navy-900" : ""}`}>
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium">{p.name}</p><StatusBadge status={p.status} />
               </div>

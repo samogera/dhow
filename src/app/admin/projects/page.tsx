@@ -51,7 +51,7 @@ export default async function Projects() {
                                 <form action={toggleTask} className="flex items-center gap-2">
                                   <input type="hidden" name="id" value={t.id} />
                                   <input type="hidden" name="done" value={t.status === "done" ? "0" : "1"} />
-                                  <button aria-label={t.status === "done" ? "Mark not done" : "Mark done"} className={`grid size-4 shrink-0 place-items-center rounded-full border ${t.status === "done" ? "border-forest-900 bg-forest-900 text-[9px] text-lime" : "border-line"}`}>{t.status === "done" ? "✓" : ""}</button>
+                                  <button aria-label={t.status === "done" ? "Mark not done" : "Mark done"} className={`grid size-4 shrink-0 place-items-center rounded-full border ${t.status === "done" ? "border-navy-900 bg-navy-900 text-[9px] text-mint" : "border-line"}`}>{t.status === "done" ? "✓" : ""}</button>
                                   <span className={`text-xs ${t.status === "done" ? "text-muted line-through" : ""}`}>{t.title}</span>
                                 </form>
                               </li>
@@ -62,7 +62,7 @@ export default async function Projects() {
                       <form action={setProjectStatus} className="mt-3 flex gap-1">
                         <input type="hidden" name="id" value={p.id} />
                         <select name="status" defaultValue={p.status} aria-label="Status" className="rounded-full bg-sunken px-2 py-1 text-xs">{COLS.map((c) => <option key={c} value={c}>{label(c)}</option>)}</select>
-                        <button className="text-xs text-forest-600 underline">Move</button>
+                        <button className="text-xs text-navy-600 underline">Move</button>
                       </form>
                     </article>
                   );

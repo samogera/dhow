@@ -1,31 +1,36 @@
 @import "tailwindcss";
 
-/* Dhow OS design tokens: warm off-white canvas, deep forest green, lime accent. */
+/* Dhow OS design tokens, from the Dhow Partners brand: navy, green and mint on a cool off-white. */
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --color-canvas: #f3f2ee;
+  --color-canvas: #f3f5f7;
   --color-surface: #ffffff;
-  --color-sunken: #f7f6f2;
-  --color-line: #e7e5df;
-  --color-ink: #121a16;
-  --color-muted: #6b6f6a;
-  --color-faint: #a3a6a1;
+  --color-sunken: #f6f8fa;
+  --color-line: #e2e7ec;
+  --color-ink: #0d1c29;
+  --color-muted: #5d6b78;
+  --color-faint: #98a3ad;
 
-  --color-forest-50: #eef5f1;
-  --color-forest-100: #d6e8de;
-  --color-forest-300: #8fbfa5;
-  --color-forest-500: #2f7a57;
-  --color-forest-600: #1f6345;
-  --color-forest-700: #154b34;
-  --color-forest-900: #0c2e21;
+  /* Brand navy #00395F is navy-900; #02223A (app icon) is navy-950. */
+  --color-navy-50: #edf3f8;
+  --color-navy-100: #d3e2ee;
+  --color-navy-300: #87a9c4;
+  --color-navy-500: #2a6593;
+  --color-navy-600: #0f5482;
+  --color-navy-700: #0b4a73;
+  --color-navy-900: #00395f;
+  --color-navy-950: #02223a;
 
-  --color-lime: #c6f24e;
-  --color-lime-600: #a9d62c;
+  /* Brand green #00846D (the dot) and mint #63B8A8 (the arrow). */
+  --color-green: #00846d;
+  --color-mint: #63b8a8;
+  --color-mint-600: #4fa594;
+  --color-mint-100: #e3f3ef;
 
-  --color-good: #1f9d55;
-  --color-warn: #c98a0b;
-  --color-bad: #d14343;
+  --color-good: #00846d;
+  --color-warn: #c47f0a;
+  --color-bad: #cc3d3d;
 
   --radius-card: 1.5rem;
 }
@@ -37,11 +42,11 @@
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
-    background: var(--color-lime);
+    background: var(--color-mint);
     color: var(--color-ink);
   }
   :focus-visible {
-    outline: 2px solid var(--color-forest-500);
+    outline: 2px solid var(--color-navy-500);
     outline-offset: 2px;
   }
 }
@@ -54,7 +59,7 @@
     @apply text-xs font-medium tracking-wide text-muted;
   }
   .field {
-    @apply w-full rounded-2xl border border-line bg-sunken px-4 py-3 text-sm text-ink placeholder:text-faint outline-none transition focus:border-forest-500 focus:bg-white;
+    @apply w-full rounded-2xl border border-line bg-sunken px-4 py-3 text-sm text-ink placeholder:text-faint outline-none transition focus:border-navy-500 focus:bg-white;
   }
   .num {
     font-variant-numeric: tabular-nums;
@@ -71,6 +76,6 @@
   .prose-dhow p { @apply mb-4 leading-relaxed text-ink/85; }
   .prose-dhow ul { @apply mb-4 list-disc space-y-1 pl-5; }
   .prose-dhow ol { @apply mb-4 list-decimal space-y-1 pl-5; }
-  .prose-dhow a { @apply text-forest-600 underline underline-offset-2; }
+  .prose-dhow a { @apply text-navy-600 underline underline-offset-2; }
   .prose-dhow code { @apply rounded bg-sunken px-1.5 py-0.5 text-sm; }
 }

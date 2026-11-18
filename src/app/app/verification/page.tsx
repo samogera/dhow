@@ -25,8 +25,8 @@ export default async function Verification() {
       <PageHeader title="Get Dhow Verified" sub="A badge that tells partners and buyers your company's records check out." />
 
       {verified ? (
-        <div className="card mb-4 flex flex-wrap items-center gap-5 bg-forest-900 text-white">
-          <span className="grid size-14 place-items-center rounded-2xl bg-lime text-ink"><BadgeCheck className="size-7" /></span>
+        <div className="card mb-4 flex flex-wrap items-center gap-5 bg-navy-900 text-white">
+          <span className="grid size-14 place-items-center rounded-2xl bg-mint text-ink"><BadgeCheck className="size-7" /></span>
           <div className="flex-1">
             <p className="text-xl font-semibold">{org.name} is Dhow Verified</p>
             <p className="text-sm text-white/70">Checked {day(org.verified_at)} · valid until {day(org.verified_until)}</p>
@@ -52,7 +52,7 @@ export default async function Verification() {
             </ul>
             {canAct ? <ManualRequest /> : <p className="text-sm text-muted">{busy ? "Your request is in review." : "Only company owners and admins can apply."}</p>}
           </Card>
-          <div className="card bg-lime">
+          <div className="card bg-mint">
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-2xl bg-white/60"><Zap className="size-5" /></span>
               <div><p className="font-semibold">Instant by M-Pesa</p><p className="text-sm text-ink/70">Automatic check of your BRS records</p></div>

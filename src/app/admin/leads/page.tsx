@@ -41,11 +41,11 @@ export default async function Leads() {
                         <select name="status" defaultValue={l.status} className="rounded-full bg-sunken px-2 py-1 text-xs" aria-label="Stage">
                           {STAGES.map((st) => <option key={st} value={st}>{label(st)}</option>)}
                         </select>
-                        <button className="text-xs text-forest-600 underline">Move</button>
+                        <button className="text-xs text-navy-600 underline">Move</button>
                       </form>
                       <form action={convertLead}>
                         <input type="hidden" name="id" value={l.id} />
-                        <button className="rounded-full bg-lime px-2.5 py-1 text-xs font-medium">Won → client</button>
+                        <button className="rounded-full bg-mint px-2.5 py-1 text-xs font-medium">Won → client</button>
                       </form>
                     </div>
                   </article>

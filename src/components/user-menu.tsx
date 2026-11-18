@@ -7,7 +7,7 @@ export function UserMenu({ name, email, staff }: { name: string; email: string; 
   return (
     <details className="group relative">
       <summary className="flex cursor-pointer list-none items-center gap-3 rounded-full bg-white py-1 pr-4 pl-1 [&::-webkit-details-marker]:hidden">
-        <span className="grid size-9 place-items-center rounded-full bg-forest-900 text-sm font-semibold text-lime">{initials}</span>
+        <span className="grid size-9 place-items-center rounded-full bg-navy-900 text-sm font-semibold text-mint">{initials}</span>
         <span className="hidden text-left leading-tight sm:block">
           <span className="block text-sm font-medium">{name || "Your account"}</span>
           <span className="block max-w-40 truncate text-xs text-muted">{email}</span>

@@ -54,7 +54,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
                       <p className="truncate font-medium">{e.title}</p>
                       <p className="truncate text-xs text-muted">{[e.location, e.attendees > 1 ? `${e.attendees} people` : null].filter(Boolean).join(" · ")}</p>
                     </div>
-                    {e.link ? <a href={e.link} target="_blank" rel="noopener noreferrer" className="rounded-full bg-lime px-3 py-1.5 text-xs font-medium">Join</a> : null}
+                    {e.link ? <a href={e.link} target="_blank" rel="noopener noreferrer" className="rounded-full bg-mint px-3 py-1.5 text-xs font-medium">Join</a> : null}
                   </li>
                 ))}
               </ul>

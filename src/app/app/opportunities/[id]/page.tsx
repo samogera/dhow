@@ -23,12 +23,12 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
         <Card className="p-8">
           <div className="flex flex-wrap gap-2">
             <Badge tone="info">{o.kind === "rfp" ? "RFP" : label(o.kind)}</Badge>
-            {o.requires_verified ? <Badge tone="lime">Dhow Verified only</Badge> : null}
+            {o.requires_verified ? <Badge tone="mint">Dhow Verified only</Badge> : null}
           </div>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">{o.title}</h1>
           <p className="mt-3 text-muted">{o.summary}</p>
           {o.body ? <div className="mt-6 border-t border-line pt-6"><Markdown source={o.body} /></div> : null}
-          {o.url ? <a href={o.url} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-forest-600">Official page <ExternalLink className="size-4" /></a> : null}
+          {o.url ? <a href={o.url} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-navy-600">Official page <ExternalLink className="size-4" /></a> : null}
         </Card>
         <div className="space-y-4">
           <Card>

@@ -36,7 +36,7 @@ export default async function Members({ searchParams }: { searchParams: Promise<
                     <select name="plan" defaultValue={o.plan} className="rounded-full bg-sunken px-3 py-1.5 text-xs">
                       {(Object.keys(PLAN_LABEL) as PlanTier[]).map((p) => <option key={p} value={p}>{PLAN_LABEL[p]}</option>)}
                     </select>
-                    <button className="text-xs text-forest-600 underline">Set</button>
+                    <button className="text-xs text-navy-600 underline">Set</button>
                   </form>
                 ) : PLAN_LABEL[o.plan as PlanTier]}
               </td>

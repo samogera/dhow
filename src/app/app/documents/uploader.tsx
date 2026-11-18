@@ -67,9 +67,9 @@ export function Uploader() {
       <label
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files[0]); }}
-        className="flex cursor-pointer flex-col items-center gap-2 rounded-3xl border-2 border-dashed border-line bg-sunken px-4 py-8 text-center transition hover:border-forest-300"
+        className="flex cursor-pointer flex-col items-center gap-2 rounded-3xl border-2 border-dashed border-line bg-sunken px-4 py-8 text-center transition hover:border-navy-300"
       >
-        <UploadCloud className="size-6 text-forest-500" />
+        <UploadCloud className="size-6 text-navy-500" />
         <span className="text-sm font-medium">{file ? file.name : "Drop a file or click to choose"}</span>
         <span className="text-xs text-muted">{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : "PDF, PNG, JPG"}</span>
         <input ref={input} type="file" accept=".pdf,.png,.jpg,.jpeg" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />

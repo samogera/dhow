@@ -27,7 +27,7 @@ export default async function ReviewDetail({ params }: { params: Promise<{ id: s
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">{org.name}</h1>
         <StatusBadge status={v.status} />
-        <Badge tone={v.tier === "instant" ? "lime" : "neutral"}>{v.tier === "instant" ? "Paid, instant" : "Free review"}</Badge>
+        <Badge tone={v.tier === "instant" ? "mint" : "neutral"}>{v.tier === "instant" ? "Paid, instant" : "Free review"}</Badge>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
@@ -40,7 +40,7 @@ export default async function ReviewDetail({ params }: { params: Promise<{ id: s
               <div><dt className="label">Country</dt><dd className="mt-1">{org.country}</dd></div>
               <div><dt className="label">Sector</dt><dd className="mt-1">{org.sector ?? "—"}</dd></div>
               <div><dt className="label">Joined</dt><dd className="mt-1">{day(org.created_at)}</dd></div>
-              <div><dt className="label">Website</dt><dd className="mt-1 truncate">{org.website ? <a href={org.website} target="_blank" rel="noopener noreferrer" className="text-forest-600 underline">{org.website.replace(/^https?:\/\//, "")}</a> : "—"}</dd></div>
+              <div><dt className="label">Website</dt><dd className="mt-1 truncate">{org.website ? <a href={org.website} target="_blank" rel="noopener noreferrer" className="text-navy-600 underline">{org.website.replace(/^https?:\/\//, "")}</a> : "—"}</dd></div>
             </dl>
           </Card>
           {result?.reason ? (

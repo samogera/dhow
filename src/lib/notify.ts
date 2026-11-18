@@ -56,16 +56,16 @@ export async function sendSms(opts: Log & { to: string; message: string }) {
 
 /** Branded, minimal HTML email. All dynamic text is escaped. */
 export function emailLayout(title: string, paragraphs: string[], cta?: { label: string; href: string }) {
-  const p = paragraphs.map((t) => `<p style="margin:0 0 14px;color:#3a403c;font-size:15px;line-height:1.55">${escapeHtml(t)}</p>`).join("");
+  const p = paragraphs.map((t) => `<p style="margin:0 0 14px;color:#3b4855;font-size:15px;line-height:1.55">${escapeHtml(t)}</p>`).join("");
   const button = cta
-    ? `<a href="${escapeHtml(cta.href)}" style="display:inline-block;margin-top:8px;background:#0c2e21;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600">${escapeHtml(cta.label)}</a>`
+    ? `<a href="${escapeHtml(cta.href)}" style="display:inline-block;margin-top:8px;background:#00395f;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600">${escapeHtml(cta.label)}</a>`
     : "";
-  return `<!doctype html><html><body style="margin:0;background:#f3f2ee;font-family:Inter,Arial,sans-serif">
+  return `<!doctype html><html><body style="margin:0;background:#f3f5f7;font-family:Inter,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center">
   <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:24px;padding:36px">
-  <tr><td style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#1f6345;padding-bottom:20px">DHOW PARTNERS</td></tr>
-  <tr><td><h1 style="margin:0 0 16px;font-size:22px;color:#121a16">${escapeHtml(title)}</h1>${p}${button}</td></tr>
-  <tr><td style="padding-top:28px;font-size:12px;color:#a3a6a1">Dhow Partners · Nairobi, Kenya · dhowpartners.com</td></tr>
+  <tr><td style="padding-bottom:24px"><img src="${escapeHtml(process.env.NEXT_PUBLIC_APP_URL ?? "")}/brand/wordmark-navy.png" alt="Dhow Partners" height="22" style="height:22px;width:auto;display:block;border:0"></td></tr>
+  <tr><td><h1 style="margin:0 0 16px;font-size:22px;color:#0d1c29">${escapeHtml(title)}</h1>${p}${button}</td></tr>
+  <tr><td style="padding-top:28px;font-size:12px;color:#98a3ad">Dhow Partners · Nairobi, Kenya · dhowpartners.com</td></tr>
   </table></td></tr></table></body></html>`;
 }
 

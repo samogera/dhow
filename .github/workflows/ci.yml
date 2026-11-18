@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: ci, cancel-in-progress: true }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_APP_URL: https://example.com
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+      DATA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund > install.txt 2>&1 || true
+      - id: tsc
+        run: npx tsc --noEmit --pretty false > typecheck.txt 2>&1; echo "code=$?" >> $GITHUB_OUTPUT
+      - id: lint
+        run: npx eslint src > lint.txt 2>&1; echo "code=$?" >> $GITHUB_OUTPUT
+      - id: build
+        run: npx next build > build.txt 2>&1; echo "code=$?" >> $GITHUB_OUTPUT
+      - name: Publish results to the ci-results branch
+        run: |
+          mkdir -p /tmp/r && cp install.txt typecheck.txt lint.txt build.txt /tmp/r/
+          printf "commit=%s\ntypecheck=%s\nlint=%s\nbuild=%s\n" "$GITHUB_SHA" "${{ steps.tsc.outputs.code }}" "${{ steps.lint.outputs.code }}" "${{ steps.build.outputs.code }}" > /tmp/r/summary.txt
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-results && git rm -rqf . && cp /tmp/r/* . && git add *.txt
+          git commit -qm "CI results for $GITHUB_SHA" && git push -f origin ci-results
+      - name: Fail if anything failed
+        run: test "${{ steps.tsc.outputs.code }}${{ steps.lint.outputs.code }}${{ steps.build.outputs.code }}" = "000"

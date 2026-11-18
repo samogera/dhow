@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Dhow OS design tokens: warm off-white canvas, deep forest green, lime accent. */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #f3f2ee;
+  --color-surface: #ffffff;
+  --color-sunken: #f7f6f2;
+  --color-line: #e7e5df;
+  --color-ink: #121a16;
+  --color-muted: #6b6f6a;
+  --color-faint: #a3a6a1;
+
+  --color-forest-50: #eef5f1;
+  --color-forest-100: #d6e8de;
+  --color-forest-300: #8fbfa5;
+  --color-forest-500: #2f7a57;
+  --color-forest-600: #1f6345;
+  --color-forest-700: #154b34;
+  --color-forest-900: #0c2e21;
+
+  --color-lime: #c6f24e;
+  --color-lime-600: #a9d62c;
+
+  --color-good: #1f9d55;
+  --color-warn: #c98a0b;
+  --color-bad: #d14343;
+
+  --radius-card: 1.5rem;
+}
+
+@layer base {
+  html {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-forest-500);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-[var(--radius-card)] bg-surface p-6;
+  }
+  .label {
+    @apply text-xs font-medium tracking-wide text-muted;
+  }
+  .field {
+    @apply w-full rounded-2xl border border-line bg-sunken px-4 py-3 text-sm text-ink placeholder:text-faint outline-none transition focus:border-forest-500 focus:bg-white;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .prose-dhow h1 { @apply mb-4 text-2xl font-semibold; }
+  .prose-dhow h2 { @apply mt-8 mb-3 text-lg font-semibold; }
+  .prose-dhow h3 { @apply mt-6 mb-2 font-semibold; }
+  .prose-dhow p { @apply mb-4 leading-relaxed text-ink/85; }
+  .prose-dhow ul { @apply mb-4 list-disc space-y-1 pl-5; }
+  .prose-dhow ol { @apply mb-4 list-decimal space-y-1 pl-5; }
+  .prose-dhow a { @apply text-forest-600 underline underline-offset-2; }
+  .prose-dhow code { @apply rounded bg-sunken px-1.5 py-0.5 text-sm; }
+}

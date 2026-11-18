@@ -22,11 +22,11 @@ jobs:
         with: { node-version: 22 }
       - run: npm install --no-audit --no-fund > install.txt 2>&1 || true
       - id: tsc
-        run: npx tsc --noEmit --pretty false > typecheck.txt 2>&1; echo "code=$?" >> $GITHUB_OUTPUT
+        run: c=0; npx tsc --noEmit --pretty false > typecheck.txt 2>&1 || c=$?; echo "code=$c" >> $GITHUB_OUTPUT
       - id: lint
-        run: npx eslint src > lint.txt 2>&1; echo "code=$?" >> $GITHUB_OUTPUT
+        run: c=0; npx eslint src > lint.txt 2>&1 || c=$?; echo "code=$c" >> $GITHUB_OUTPUT
       - id: build
-        run: npx next build > build.txt 2>&1; echo "code=$?" >> $GITHUB_OUTPUT
+        run: c=0; npx next build > build.txt 2>&1 || c=$?; echo "code=$c" >> $GITHUB_OUTPUT
       - name: Publish results to the ci-results branch
         run: |
           mkdir -p /tmp/r && cp install.txt typecheck.txt lint.txt build.txt /tmp/r/

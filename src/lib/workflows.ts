@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyBusiness } from "@/lib/kyb";
+import { verifyBusiness, type KybOutcome } from "@/lib/kyb";
 import { notifyOrg, notifyStaff } from "@/lib/notify";
 import { deleteObject } from "@/lib/r2";
 import { stkQuery } from "@/lib/mpesa";
@@ -24,9 +24,9 @@ export async function processPaidVerification(paymentId: string) {
 
   await db.from("verifications").update({ status: "pending" }).eq("id", v.id);
 
-  const outcome = org.brs_number
+  const outcome: KybOutcome = org.brs_number
     ? await verifyBusiness({ orgId: org.id, companyName: org.name, registrationNumber: org.brs_number, country: org.country })
-    : ({ status: "needs_review", provider: "manual", reason: "No registration number on the profile" } as const);
+    : { status: "needs_review", provider: "manual", reason: "No registration number on the profile" };
 
   if (outcome.status === "verified") {
     await decideVerification(v.id, "verified", null, `Matched by ${outcome.provider}`, outcome.provider, outcome.ref, outcome.details);

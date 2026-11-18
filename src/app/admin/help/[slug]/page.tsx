@@ -8,7 +8,8 @@ export const metadata: Metadata = { title: "Staff guide" };
 
 export default async function StaffHelpArticle({ params }: { params: Promise<{ slug: string }> }) {
   await requireStaff();
-  const a = staffArticles.find((x) => x.slug === (await params).slug);
+  const { slug } = await params;
+  const a = staffArticles.find((x) => x.slug === slug);
   if (!a) notFound();
   return <HelpArticleView article={a} articles={staffArticles} base="/admin/help" />;
 }

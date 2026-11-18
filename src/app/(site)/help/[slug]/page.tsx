@@ -8,12 +8,14 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const a = memberArticles.find((x) => x.slug === (await params).slug);
+  const { slug } = await params;
+  const a = memberArticles.find((x) => x.slug === slug);
   return a ? { title: `${a.title} · Help`, description: a.summary } : {};
 }
 
 export default async function HelpArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-  const a = memberArticles.find((x) => x.slug === (await params).slug);
+  const { slug } = await params;
+  const a = memberArticles.find((x) => x.slug === slug);
   if (!a) notFound();
   return (
     <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">

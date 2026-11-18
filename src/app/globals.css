@@ -28,6 +28,11 @@
   --color-mint-600: #4fa594;
   --color-mint-100: #e3f3ef;
 
+  /* Third colour: warm sand / amber, for highlights and key numbers. */
+  --color-amber: #e8a33d;
+  --color-amber-100: #fcf1de;
+  --color-amber-700: #9a5f0c;
+
   --color-good: #00846d;
   --color-warn: #c47f0a;
   --color-bad: #cc3d3d;

@@ -88,9 +88,9 @@ export function InvoiceBuilder({ clients, projects, defaultClient }: { clients: 
       </form>
 
       {/* Live preview */}
-      <div className="rounded-[2rem] bg-navy-900 p-3 xl:sticky xl:top-6 xl:self-start">
-        <div className="flex items-center justify-between px-4 pb-3 pt-1 text-sm text-white/70">
-          <span>Preview</span><span className="rounded-full bg-mint px-2.5 py-0.5 text-xs font-medium text-navy-900">Draft</span>
+      <div className="rounded-[2rem] bg-sunken p-3 ring-1 ring-line xl:sticky xl:top-6 xl:self-start">
+        <div className="flex items-center justify-between px-4 pb-3 pt-1 text-sm text-muted">
+          <span>Preview</span><span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">Draft</span>
         </div>
         <article className="rounded-[1.5rem] bg-white p-8 text-sm">
           <div className="flex items-start justify-between">

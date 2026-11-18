@@ -25,11 +25,11 @@ export default async function Verification() {
       <PageHeader title="Get Dhow Verified" sub="A badge that tells partners and buyers your company's records check out." />
 
       {verified ? (
-        <div className="card mb-4 flex flex-wrap items-center gap-5 bg-navy-900 text-white">
-          <span className="grid size-14 place-items-center rounded-2xl bg-mint text-ink"><BadgeCheck className="size-7" /></span>
+        <div className="card mb-4 flex flex-wrap items-center gap-5 bg-mint-100">
+          <span className="grid size-14 place-items-center rounded-2xl bg-green text-white"><BadgeCheck className="size-7" /></span>
           <div className="flex-1">
             <p className="text-xl font-semibold">{org.name} is Dhow Verified</p>
-            <p className="text-sm text-white/70">Checked {day(org.verified_at)} · valid until {day(org.verified_until)}</p>
+            <p className="text-sm text-muted">Checked {day(org.verified_at)} · valid until {day(org.verified_until)}</p>
           </div>
         </div>
       ) : null}

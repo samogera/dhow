@@ -1,13 +1,11 @@
-import { SiteHeader } from "@/components/site/header";
-import { SiteFooter } from "@/components/site/parts";
+import { PublicFooter, PublicHeader } from "@/components/site/public-shell";
 
-/** Public website: dhowpartners.com pages. Every page opens with a navy hero, so the header starts transparent. */
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <SiteHeader dark />
-      <main>{children}</main>
-      <SiteFooter />
-    </>
+    <div className="flex min-h-dvh flex-col bg-white">
+      <PublicHeader />
+      <main className="flex-1">{children}</main>
+      <PublicFooter />
+    </div>
   );
 }

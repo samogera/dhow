@@ -86,11 +86,11 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function Stat({ label, value, note, highlight }: { label: string; value: ReactNode; note?: ReactNode; highlight?: boolean }) {
   return (
-    <div className={cn("card flex flex-col justify-between gap-6", highlight && "bg-navy-900 text-white")}>
-      <p className={cn("label", highlight && "text-white/70")}>{label}</p>
+    <div className={cn("card flex flex-col justify-between gap-6", highlight && "bg-amber-100")}>
+      <p className={cn("label", highlight && "text-amber-700")}>{label}</p>
       <div>
         <p className="num text-3xl font-semibold tracking-tight">{value}</p>
-        {note ? <p className={cn("mt-1 text-sm", highlight ? "text-white/70" : "text-muted")}>{note}</p> : null}
+        {note ? <p className={cn("mt-1 text-sm", highlight ? "text-ink/70" : "text-muted")}>{note}</p> : null}
       </div>
     </div>
   );

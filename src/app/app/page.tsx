@@ -26,16 +26,16 @@ export default async function Dashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Verification status, the green card */}
-        <div className={verified ? "card bg-navy-900 text-white" : "card"}>
+        <div className={verified ? "card bg-mint-100" : "card"}>
           <div className="flex items-start justify-between">
             <div>
-              <p className={verified ? "text-sm text-white/70" : "label"}>Verification</p>
+              <p className={verified ? "label text-green" : "label"}>Verification</p>
               <p className="mt-1 text-sm">{verified ? "Your badge is live" : "Build trust with partners and buyers"}</p>
             </div>
-            {verified ? <BadgeCheck className="size-6 text-mint" /> : <ShieldAlert className="size-6 text-warn" />}
+            {verified ? <BadgeCheck className="size-6 text-green" /> : <ShieldAlert className="size-6 text-warn" />}
           </div>
           <p className="mt-10 text-3xl font-semibold tracking-tight">{verified ? "Dhow Verified" : label(org.verification_status)}</p>
-          <p className={verified ? "mt-1 text-sm text-white/70" : "mt-1 text-sm text-muted"}>
+          <p className="mt-1 text-sm text-muted">
             {verified && org.verified_until ? `Valid until ${day(org.verified_until)}` : org.verification_status === "pending" ? "A reviewer is checking your records." : "Free review, or instant by M-Pesa."}
           </p>
         </div>

@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="absolute z-30 mt-2 w-72 rounded-3xl bg-white p-4 shadow-xl ring-1 ring-line"><AdminNav role={s.staffRole} /></div>
           </details>
           <div className="hidden lg:block" />
-          <UserMenu name={s.profile?.full_name ?? ""} email={s.user.email ?? ""} staff={false} />
+          <UserMenu name={s.profile?.full_name ?? ""} email={s.user.email ?? ""} staff={false} helpHref="/admin/help" />
         </header>
         <main className="pb-16">{children}</main>
       </div>

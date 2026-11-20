@@ -95,19 +95,26 @@ To remove someone, use **Remove** next to their name in **Settings → Team**.
   {
     slug: "get-verified", audience: "member", section: "Verification",
     title: "Get Dhow Verified",
-    summary: "The two ways to get the badge, and what you need for each.",
+    summary: "Step 1: upload your documents. Step 2: the KYB check, free or instant.",
     body: `
 The **Dhow Verified** badge shows that your company's registration has been checked. It lasts **12 months** and unlocks opportunities that are open only to verified companies.
 
 Only **owners and admins** can request verification. First, add your **BRS registration number** in **Settings**.
 
-## Option 1: Free review
+## Step 1: Upload your documents
 
-1. Upload your **CR12** or **Certificate of incorporation**, and your **KRA PIN certificate**, in **Documents**.
-2. Go to **Verification** and click **Request free review**.
-3. A Dhow reviewer checks your documents. You'll get an email when it's done.
+Upload your **CR12** or **Certificate of incorporation**, and your **KRA PIN certificate**, in **Documents**.
 
-## Option 2: Instant, by M-Pesa or card
+## Step 2: KYB check
+
+KYB (know your business) means we confirm your company with the official business registry through our verification partner. Choose one of two ways:
+
+### Free review
+
+1. Go to **Verification** and click **Request free review**.
+2. The Dhow team checks your documents and registry record. You'll get an email when it's done.
+
+### Instant, by M-Pesa or card
 
 1. Add your **registered P.O. Box and postal code** in **Settings**, as they appear on your CR12. The registry check uses them.
 2. Go to **Verification** and click **Pay KSh 500**.

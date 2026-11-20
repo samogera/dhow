@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, Check, Clock3, Zap } from "lucide-react";
+import { BadgeCheck, Check, Clock3, FileUp, ShieldCheck, Zap } from "lucide-react";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { Card, CardHeader, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { day, kes, label } from "@/lib/format";
@@ -21,6 +21,9 @@ export default async function Verification({ searchParams }: { searchParams: Pro
     .select("id, tier, status, review_note, created_at, decided_at")
     .eq("org_id", org.id)
     .order("created_at", { ascending: false });
+  const { count: docCount } = await supabase.from("documents").select("id", { count: "exact", head: true })
+    .eq("org_id", org.id).in("status", ["uploaded", "approved"]);
+  const uploaded = (docCount ?? 0) > 0;
   const fee = Number(process.env.VERIFICATION_FEE_KES ?? 500);
   const verified = org.verification_status === "verified";
   const busy = org.verification_status === "pending";
@@ -46,6 +49,29 @@ export default async function Verification({ searchParams }: { searchParams: Pro
         </div>
       ) : null}
 
+      {!verified ? (
+        <ol className="mb-6 grid gap-3 md:grid-cols-2">
+          <li className={`card flex gap-4 ${uploaded ? "bg-mint-100/60" : ""}`}>
+            <span className={`grid size-11 shrink-0 place-items-center rounded-2xl ${uploaded ? "bg-green text-white" : "bg-navy-900 text-white"}`}>{uploaded ? <Check className="size-5" /> : <FileUp className="size-5" />}</span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold tracking-wide text-muted uppercase">Step 1</p>
+              <p className="mt-0.5 font-semibold">Upload your documents</p>
+              <p className="mt-1 text-sm text-muted">CR12, certificate of incorporation and KRA PIN certificate.</p>
+              {uploaded ? <p className="mt-2 text-sm font-medium text-green">Documents uploaded</p> : <Link href="/app/documents" className="mt-2 inline-block text-sm font-medium text-navy-600">Go to Documents →</Link>}
+            </div>
+          </li>
+          <li className={`card flex gap-4 ${busy ? "bg-amber-100/60" : ""}`}>
+            <span className={`grid size-11 shrink-0 place-items-center rounded-2xl ${uploaded ? "bg-navy-900 text-white" : "bg-sunken text-muted"}`}><ShieldCheck className="size-5" /></span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold tracking-wide text-muted uppercase">Step 2</p>
+              <p className="mt-0.5 font-semibold">KYB check</p>
+              <p className="mt-1 text-sm text-muted">We check your company against the official business registry through our verification partner. A clear match is verified straight away; anything else goes to the Dhow team to review.</p>
+              {busy ? <p className="mt-2 text-sm font-medium text-amber-700">In progress</p> : null}
+            </div>
+          </li>
+        </ol>
+      ) : null}
+
       {!org.brs_number && !verified ? (
         <p className="mb-4 rounded-2xl bg-warn/10 px-5 py-4 text-sm text-warn">
           Add your BRS registration number in <Link href="/app/settings" className="font-medium underline">Settings</Link> before you apply.
@@ -57,17 +83,17 @@ export default async function Verification({ searchParams }: { searchParams: Pro
           <Card>
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-2xl bg-sunken"><Clock3 className="size-5" /></span>
-              <div><p className="font-semibold">Free review</p><p className="text-sm text-muted">A Dhow reviewer checks your documents</p></div>
+              <div><p className="font-semibold">Free KYB review</p><p className="text-sm text-muted">The Dhow team checks your documents and registry record</p></div>
             </div>
             <ul className="my-6 space-y-2 text-sm">
-              {["Upload your CR12 and KRA PIN certificate", "We email you the result", "No cost"].map((t) => <li key={t} className="flex gap-2"><Check className="size-4 text-good" />{t}</li>)}
+              {["Uses the documents from step 1", "We email you the result", "No cost"].map((t) => <li key={t} className="flex gap-2"><Check className="size-4 text-good" />{t}</li>)}
             </ul>
             {canAct ? <ManualRequest /> : <p className="text-sm text-muted">{busy ? "Your request is in review." : "Only company owners and admins can apply."}</p>}
           </Card>
           <div className="card bg-mint">
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-2xl bg-white/60"><Zap className="size-5" /></span>
-              <div><p className="font-semibold">{provider === "paystack" ? "Instant: M-Pesa or card" : "Instant by M-Pesa"}</p><p className="text-sm text-ink/70">Automatic check of your BRS records</p></div>
+              <div><p className="font-semibold">{provider === "paystack" ? "Instant: M-Pesa or card" : "Instant by M-Pesa"}</p><p className="text-sm text-ink/70">Instant KYB check against the business registry</p></div>
             </div>
             <p className="mt-6 text-4xl font-semibold tracking-tight">{kes(fee)}</p>
             <p className="mb-6 text-sm text-ink/70">One-off, valid for 12 months, plus 500 MB storage</p>

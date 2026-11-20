@@ -27,6 +27,15 @@ export interface Organization {
   storage_used_bytes: number;
   storage_reserved_bytes: number;
   created_at: string;
+  logo_url?: string | null;
+  tagline?: string | null;
+  about?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  founded_year?: number | null;
+  team_size?: string | null;
+  socials?: Record<string, string> | null;
 }
 
 export const DOC_KINDS = {

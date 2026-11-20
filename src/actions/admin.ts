@@ -432,7 +432,8 @@ export async function deleteOpportunity(fd: FormData) {
 export async function importOpportunitiesNow(): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const { enrichImported, importAllSources } = await import("@/lib/opportunity-import");
+  const { enrichImported, importAllSources, retireExpired } = await import("@/lib/opportunity-import");
+  await retireExpired().catch(() => 0);
   const results = await importAllSources();
   await enrichImported(15).catch(() => 0);
   revalidatePath("/admin/opportunities");

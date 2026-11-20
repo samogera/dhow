@@ -1,8 +1,10 @@
 "use client";
 import { useActionState } from "react";
 import { inviteMember, updateOrganization, updateProfile } from "@/actions/member";
+import { saveCompanyProfile } from "@/actions/profiles";
+import { ImageInput, SocialFields } from "@/components/profile-bits";
 import { FormMessage, Submit } from "@/components/forms";
-import { Field, Input, Select } from "@/components/ui";
+import { Field, Input, Select, Textarea } from "@/components/ui";
 import { COUNTRIES, SECTORS, type Organization } from "@/lib/types";
 
 export function CompanyForm({ org, disabled }: { org: Organization; disabled: boolean }) {
@@ -53,6 +55,34 @@ export function InviteForm() {
       <div className="w-40"><Field label="Role"><Select name="role" defaultValue="member"><option value="member">Member</option><option value="admin">Admin</option></Select></Field></div>
       <Submit pending="Sending…">Send invite</Submit>
       <div className="w-full"><FormMessage state={state} /></div>
+    </form>
+  );
+}
+
+export function CompanyProfileForm({ org, disabled }: { org: Organization; disabled: boolean }) {
+  const [state, action] = useActionState(saveCompanyProfile, undefined);
+  return (
+    <form action={action} className="space-y-6">
+      <fieldset disabled={disabled} className="contents">
+        <ImageInput current={org.logo_url} name={org.name} label="Logo" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Field label="Tagline" hint="One line on what you do"><Input name="tagline" maxLength={160} defaultValue={org.tagline ?? ""} placeholder="Solar installation for homes and farms in Western Kenya" /></Field></div>
+          <div className="sm:col-span-2"><Field label="About the company"><Textarea name="about" rows={5} maxLength={3000} defaultValue={org.about ?? ""} placeholder="What you offer, who you serve, and what makes you different." /></Field></div>
+          <Field label="Business email"><Input name="email" type="email" defaultValue={org.email ?? ""} /></Field>
+          <Field label="Business phone"><Input name="phone" inputMode="tel" defaultValue={org.phone ?? ""} /></Field>
+          <div className="sm:col-span-2"><Field label="Office address"><Input name="address" defaultValue={org.address ?? ""} placeholder="Building, street, town" /></Field></div>
+          <Field label="Year founded"><Input name="founded_year" type="number" min={1900} max={2100} defaultValue={org.founded_year ?? ""} /></Field>
+          <Field label="Team size"><Select name="team_size" defaultValue={org.team_size ?? ""}><option value="">—</option>{["1–5", "6–20", "21–50", "51–200", "200+"].map((x) => <option key={x}>{x}</option>)}</Select></Field>
+        </div>
+        <div>
+          <p className="mb-3 text-sm font-semibold">Social links</p>
+          <SocialFields value={org.socials} />
+        </div>
+        <div className="space-y-3">
+          <FormMessage state={state} />
+          {!disabled ? <Submit>Save profile</Submit> : <p className="text-sm text-muted">Only owners and admins can edit.</p>}
+        </div>
+      </fieldset>
     </form>
   );
 }

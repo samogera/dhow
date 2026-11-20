@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
-    serverActions: { bodySizeLimit: "1mb" },
+    serverActions: { bodySizeLimit: "11mb" },
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

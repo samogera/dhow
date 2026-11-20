@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
+import { Drawer } from "@/components/drawer";
 import { Card, CardHeader, Field, Input, PageHeader, Select } from "@/components/ui";
 import { day, kes, label } from "@/lib/format";
 import { convertLead, saveLead, setLeadStatus } from "@/actions/admin";
@@ -16,7 +17,21 @@ export default async function Leads() {
 
   return (
     <>
-      <PageHeader title="Leads" sub="From first contact to a signed plan." />
+      <PageHeader title="Leads" sub="From first contact to a signed plan.">
+        <Drawer label="New lead" title="New lead" sub="Only what they need is required. Fill in the rest later.">
+          <ActionForm action={saveLead} submit="Add lead" className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2"><Field label="What they need"><Input name="name" required placeholder="Company setup for a solar distributor" /></Field></div>
+            <Field label="Company"><Input name="company" /></Field>
+            <Field label="Source"><Select name="source" defaultValue="Website">{["Website", "Referral", "LinkedIn", "Event", "WhatsApp", "Partner firm", "Directory", "Other"].map((x) => <option key={x}>{x}</option>)}</Select></Field>
+            <Field label="Email"><Input name="email" type="email" /></Field>
+            <Field label="Phone"><Input name="phone" /></Field>
+            <Field label="Estimated value (KES)"><Input name="est_value_kes" type="number" min="0" step="1000" /></Field>
+            <Field label="Stage"><Select name="status" defaultValue="new">{STAGES.map((st) => <option key={st} value={st}>{label(st)}</option>)}</Select></Field>
+            <Field label="Next step"><Input name="next_step" /></Field>
+            <Field label="Next step date"><Input name="next_step_date" type="date" /></Field>
+          </ActionForm>
+        </Drawer>
+      </PageHeader>
       <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-1">
         {open.map((stage) => {
           const items = (leads ?? []).filter((l) => l.status === stage);
@@ -56,21 +71,7 @@ export default async function Leads() {
         })}
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Card>
-          <CardHeader title="Add a lead" />
-          <ActionForm action={saveLead} submit="Add lead" className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2"><Field label="What they need"><Input name="name" required placeholder="Company setup for a solar distributor" /></Field></div>
-            <Field label="Company"><Input name="company" /></Field>
-            <Field label="Source"><Select name="source" defaultValue="Website">{["Website", "Referral", "LinkedIn", "Event", "WhatsApp", "Partner firm", "Directory", "Other"].map((x) => <option key={x}>{x}</option>)}</Select></Field>
-            <Field label="Email"><Input name="email" type="email" /></Field>
-            <Field label="Phone"><Input name="phone" /></Field>
-            <Field label="Estimated value (KES)"><Input name="est_value_kes" type="number" min="0" step="1000" /></Field>
-            <Field label="Stage"><Select name="status" defaultValue="new">{STAGES.map((st) => <option key={st} value={st}>{label(st)}</option>)}</Select></Field>
-            <Field label="Next step"><Input name="next_step" /></Field>
-            <Field label="Next step date"><Input name="next_step_date" type="date" /></Field>
-          </ActionForm>
-        </Card>
+      <div className="mt-4">
         <Card>
           <CardHeader title="Closed" sub="Won and lost" />
           <ul className="divide-y divide-line text-sm">

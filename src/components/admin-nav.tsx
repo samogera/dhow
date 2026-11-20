@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BadgeCheck, BookOpen, Building2, CalendarDays, FolderKanban, Handshake, LayoutGrid, LifeBuoy, Link2, Megaphone, Receipt, ShieldCheck, Target, Users,
+  BadgeCheck, BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FolderKanban, Handshake, LayoutGrid, LifeBuoy, Link2, Megaphone, Receipt, ShieldCheck, Target, Users,
 } from "lucide-react";
 import { cn } from "@/lib/format";
 
@@ -11,6 +11,7 @@ const groups = [
     title: "Overview",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutGrid },
+      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
     ],
   },
@@ -38,9 +39,10 @@ const groups = [
   {
     title: "Company",
     items: [
+      { href: "/admin/company", label: "Dhow profile", icon: Briefcase },
       { href: "/admin/wiki", label: "Wiki and SOPs", icon: BookOpen },
       { href: "/admin/links", label: "Links", icon: Link2 },
-      { href: "/admin/team", label: "Staff and roles", icon: ShieldCheck },
+      { href: "/admin/team", label: "Team and access", icon: ShieldCheck },
       { href: "/admin/help", label: "Help and guides", icon: LifeBuoy },
     ],
   },

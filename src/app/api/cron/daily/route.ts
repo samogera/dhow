@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { enrichImported, importAllSources } from "@/lib/opportunity-import";
+import { enrichImported, importAllSources, retireExpired } from "@/lib/opportunity-import";
 import { dailyMaintenance, deadlineReminders } from "@/lib/workflows";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
@@ -14,9 +14,10 @@ export async function GET(req: Request) {
   if (secret ? !safeEqual(auth, `Bearer ${secret}`) : !(await rateLimit("cron-daily", 1, 3600))) {
     return NextResponse.json({ error: "Not allowed" }, { status: 401 });
   }
+  const retired = await retireExpired().catch(() => 0);
   const opportunities = await importAllSources().catch((e) => [{ error: String(e) }]);
   const enriched = await enrichImported(15).catch(() => 0);
   await dailyMaintenance().catch(() => undefined);
   await deadlineReminders().catch(() => undefined);
-  return NextResponse.json({ ok: true, opportunities, enriched });
+  return NextResponse.json({ ok: true, retired, opportunities, enriched });
 }

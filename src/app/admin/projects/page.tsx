@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
-import { Badge, Card, CardHeader, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
+import { Drawer } from "@/components/drawer";
+import { Badge, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 import { day, kes, label } from "@/lib/format";
 import { addTask, saveProject, setProjectStatus, toggleTask } from "@/actions/admin";
 
@@ -20,7 +21,30 @@ export default async function Projects() {
 
   return (
     <>
-      <PageHeader title="Projects" sub="Client work, from kickoff to done." />
+      <PageHeader title="Projects" sub="Client work, from kickoff to done.">
+        <div className="flex flex-wrap gap-2">
+          <Drawer label="Task" title="Add a task" variant="outline">
+            <ActionForm action={addTask} submit="Add task" className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2"><Field label="Task"><Input name="title" required /></Field></div>
+            <Field label="Project"><Select name="project_id" defaultValue=""><option value="">No project</option>{projects?.filter((p) => p.status !== "done").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
+            <Field label="Due"><Input name="due_date" type="date" /></Field>
+            <Field label="Priority"><Select name="priority" defaultValue="medium"><option>low</option><option>medium</option><option>high</option></Select></Field>
+          </ActionForm>
+          </Drawer>
+          <Drawer label="New project" title="New project" sub="Only the name is required. Add the rest any time.">
+            <ActionForm action={saveProject} submit="Create project" className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2"><Field label="Name"><Input name="name" required /></Field></div>
+            <Field label="Client"><Select name="client_id" defaultValue=""><option value="">Internal</option>{clients?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
+            <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" /></Field>
+            <Field label="Start"><Input name="start_date" type="date" /></Field>
+            <Field label="Due"><Input name="due_date" type="date" /></Field>
+            <Field label="Status"><Select name="status" defaultValue="todo">{COLS.map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select></Field>
+            <Field label="Priority"><Select name="priority" defaultValue="medium"><option>low</option><option>medium</option><option>high</option></Select></Field>
+            <div className="sm:col-span-2"><Field label="Description"><Textarea name="description" rows={2} /></Field></div>
+          </ActionForm>
+          </Drawer>
+        </div>
+      </PageHeader>
       <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-1">
         {COLS.map((col) => {
           const items = (projects ?? []).filter((p) => p.status === col);
@@ -73,30 +97,6 @@ export default async function Projects() {
         })}
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader title="New project" />
-          <ActionForm action={saveProject} submit="Create project" className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2"><Field label="Name"><Input name="name" required /></Field></div>
-            <Field label="Client"><Select name="client_id" defaultValue=""><option value="">Internal</option>{clients?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
-            <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" /></Field>
-            <Field label="Start"><Input name="start_date" type="date" /></Field>
-            <Field label="Due"><Input name="due_date" type="date" /></Field>
-            <Field label="Status"><Select name="status" defaultValue="todo">{COLS.map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select></Field>
-            <Field label="Priority"><Select name="priority" defaultValue="medium"><option>low</option><option>medium</option><option>high</option></Select></Field>
-            <div className="sm:col-span-2"><Field label="Description"><Textarea name="description" rows={2} /></Field></div>
-          </ActionForm>
-        </Card>
-        <Card>
-          <CardHeader title="Add a task" />
-          <ActionForm action={addTask} submit="Add task" className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2"><Field label="Task"><Input name="title" required /></Field></div>
-            <Field label="Project"><Select name="project_id" defaultValue=""><option value="">No project</option>{projects?.filter((p) => p.status !== "done").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
-            <Field label="Due"><Input name="due_date" type="date" /></Field>
-            <Field label="Priority"><Select name="priority" defaultValue="medium"><option>low</option><option>medium</option><option>high</option></Select></Field>
-          </ActionForm>
-        </Card>
-      </div>
     </>
   );
 }

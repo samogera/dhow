@@ -6,7 +6,7 @@ import { ConfirmSubmit } from "@/components/forms";
 import { kes, label } from "@/lib/format";
 import { PLAN_LABEL, PLAN_PRICE_KES } from "@/lib/types";
 import { removeMember } from "@/actions/member";
-import { CompanyForm, InviteForm, ProfileForm } from "./forms";
+import { CompanyForm, CompanyProfileForm, InviteForm, ProfileForm } from "./forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -54,6 +54,11 @@ export default async function Settings() {
           </Card>
         </div>
       </div>
+
+      <Card className="mt-4">
+        <CardHeader title="Company profile" sub="Your logo, what you do, and where to find you. The Dhow team sees this on your company page." />
+        <CompanyProfileForm org={m.org} disabled={!admin} />
+      </Card>
 
       <Card className="mt-4">
         <CardHeader title="Team" sub="People who can see this company's workspace" />

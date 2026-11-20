@@ -188,6 +188,17 @@ export async function enrichImported(limit = 10) {
   return done;
 }
 
+/** Takes down opportunities whose deadline has passed, and events that have ended. Their history (applications) stays. */
+export async function retireExpired() {
+  const db = createAdminClient();
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(new Date());
+  const now = new Date().toISOString();
+  const a = await db.from("opportunities").update({ published: false, dismissed_at: now }).is("dismissed_at", null).lt("deadline", today).select("id");
+  const b = await db.from("opportunities").update({ published: false, dismissed_at: now }).is("dismissed_at", null).eq("kind", "event").is("deadline", null)
+    .or(`ends_on.lt.${today},and(ends_on.is.null,starts_on.lt.${today})`).select("id");
+  return (a.data?.length ?? 0) + (b.data?.length ?? 0);
+}
+
 /** Runs every active source; records how each one went. */
 export async function importAllSources() {
   const db = createAdminClient();

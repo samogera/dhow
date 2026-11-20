@@ -1,0 +1,8 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "ci-results": false,
+      "screenshots": false
+    }
+  }
+}

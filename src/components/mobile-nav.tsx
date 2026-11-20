@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, Briefcase, FileText, LayoutGrid, Megaphone, Menu, Receipt, Send, Settings, Target, X,
+  BadgeCheck, Briefcase, CalendarDays, FileText, LayoutGrid, Megaphone, Menu, Receipt, Send, Settings, Target, X,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { AdminNav } from "@/components/admin-nav";
@@ -88,6 +88,7 @@ export function MemberTabBar() {
       { href: "/app/documents", label: "Files", icon: FileText },
       { href: "/app/verification", label: "Verify", icon: BadgeCheck },
       { href: "/app/opportunities", label: "Explore", icon: Megaphone },
+      { href: "/app/events", label: "Events", icon: CalendarDays },
       { href: "/app/applications", label: "Applied", icon: Send },
       { href: "/app/settings", label: "Settings", icon: Settings },
     ]} />

@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  BENEFITS, ELIGIBILITY, decodeEntities, extractDeadline, isNotAnOpportunity, kindFrom, locationFrom, ogImage, sameOpportunity,
+  BENEFITS, ELIGIBILITY, aboutFrom, applyLinkFrom, decodeEntities, extractDeadline, isNotAnOpportunity, kindFrom, locationFrom, ogImage, sameOpportunity,
   sectionPoints, sectorsFrom, stripTags, summaryFrom,
 } from "@/lib/opportunity-parse";
 
@@ -54,7 +54,7 @@ function tag(xml: string, name: string) {
   return m ? m[1].replace(/^<!\[CDATA\[([\s\S]*?)\]\]>$/, "$1").trim() : "";
 }
 
-async function fromRss(feedUrl: string, enrichPages: boolean): Promise<Item[]> {
+async function fromRss(feedUrl: string): Promise<Item[]> {
   const r = await get(feedUrl);
   if (!r.ok) throw new Error(`Feed returned ${r.status}`);
   const xml = await r.text();
@@ -68,18 +68,6 @@ async function fromRss(feedUrl: string, enrichPages: boolean): Promise<Item[]> {
     const categories = [...it.matchAll(/<category[^>]*>([\s\S]*?)<\/category>/gi)].map((c) => decodeEntities(c[1].replace(/^<!\[CDATA\[([\s\S]*?)\]\]>$/, "$1")));
     const enclosure = /<(?:media:content|enclosure)[^>]+url=["'](https:[^"']+)["']/i.exec(it)?.[1] ?? null;
     out.push({ externalId: normLink(link), title: stripTags(decodeEntities(tag(it, "title"))), link, html: content, text: stripTags(`${desc}\n${content}`), categories, image: enclosure });
-  }
-  if (enrichPages) {
-    // Feeds carry only excerpts: read each post page once for its share image and the key-facts sections.
-    for (const it of out) {
-      if (it.html && it.image) continue;
-      const page = await get(it.link).then((x) => (x.ok ? x.text() : "")).catch(() => "");
-      if (!page) continue;
-      it.image ??= ogImage(page);
-      const article = /<article[\s\S]*?<\/article>/i.exec(page)?.[0] ?? page;
-      if (!it.html) it.html = article;
-      it.text = `${it.text}\n${stripTags(article).slice(0, 6000)}`;
-    }
   }
   return out;
 }
@@ -107,14 +95,28 @@ async function fromGrantsGov(sourceUrl: string): Promise<Item[]> {
 export async function importSource(src: Source): Promise<{ found: number; added: number }> {
   let items: Item[];
   if (src.kind === "grants_gov") items = await fromGrantsGov(src.url);
-  else if (src.kind === "wordpress") items = (await fromWordPress(src.url)) ?? (await fromRss(`${src.url.replace(/\/+$/, "")}/feed/`, true));
-  else items = await fromRss(src.url, true);
+  else if (src.kind === "wordpress") items = (await fromWordPress(src.url)) ?? (await fromRss(`${src.url.replace(/\/+$/, "")}/feed/`));
+  else items = await fromRss(src.url);
 
   const db = createAdminClient();
   const ids = items.map((i) => i.externalId);
   const { data: existing } = ids.length ? await db.from("opportunities").select("external_id").in("external_id", ids) : { data: [] };
   const seen = new Set((existing ?? []).map((e) => e.external_id));
   const today = new Date().toISOString().slice(0, 10);
+
+  // New posts only: read each page once for its share image and, when the feed carried only an excerpt, the article.
+  const fresh = items.filter((i) => i.title && !seen.has(i.externalId) && !isNotAnOpportunity(i.title) && i.link.startsWith("https://"));
+  await Promise.all(fresh.map(async (it) => {
+    if (it.image && it.html.length > 1500) return;
+    const page = await get(it.link).then((x) => (x.ok ? x.text() : "")).catch(() => "");
+    if (!page) return;
+    it.image ??= ogImage(page);
+    if (it.html.length <= 1500) {
+      const article = /<article[\s\S]*?<\/article>/i.exec(page)?.[0] ?? page;
+      it.html = article;
+      it.text = `${it.text}\n${stripTags(article).slice(0, 8000)}`;
+    }
+  }));
 
   // Recent titles, to skip the same call already imported from another site.
   const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
@@ -141,6 +143,8 @@ export async function importSource(src: Source): Promise<{ found: number; added:
       requires_verified: src.requires_verified,
       published: src.auto_publish,
       image_url: i.image,
+      about: aboutFrom(i.text),
+      apply_url: i.html ? applyLinkFrom(i.html, i.link) : src.kind === "grants_gov" ? i.link : null,
       eligibility: i.html ? sectionPoints(i.html, ELIGIBILITY) : [],
       benefits: i.html ? sectionPoints(i.html, BENEFITS) : [],
       sectors: sectorsFrom(head),
@@ -156,6 +160,32 @@ export async function importSource(src: Source): Promise<{ found: number; added:
     if (error) throw new Error(error.message);
   }
   return { found: items.length, added: rows.length };
+}
+
+/** Fills in the page details (application link, description, image, key facts) for imported posts that lack them. */
+export async function enrichImported(limit = 10) {
+  const db = createAdminClient();
+  const { data } = await db.from("opportunities")
+    .select("id, url, image_url, eligibility, benefits, about, apply_url")
+    .not("imported_at", "is", null).is("dismissed_at", null).eq("about", "").not("url", "is", null)
+    .order("created_at", { ascending: false }).limit(limit);
+  let done = 0;
+  await Promise.all((data ?? []).map(async (o) => {
+    const page = await get(o.url!).then((x) => (x.ok ? x.text() : "")).catch(() => "");
+    if (!page) { await db.from("opportunities").update({ about: " " }).eq("id", o.id); return; }
+    const article = /<div[^>]+class=["'][^"']*\b(entry-content|post-content|td-post-content)\b[\s\S]*?(?=<(footer|aside)\b|<div[^>]+class=["'][^"']*\b(related|comments|sharedaddy|jp-relatedposts)\b)/i.exec(page)?.[0]
+      ?? /<article[\s\S]*?<\/article>/i.exec(page)?.[0] ?? page;
+    const text = stripTags(article).slice(0, 8000);
+    await db.from("opportunities").update({
+      about: aboutFrom(text) || " ",
+      apply_url: o.apply_url ?? applyLinkFrom(article, o.url!),
+      image_url: o.image_url ?? ogImage(page),
+      eligibility: o.eligibility?.length ? o.eligibility : sectionPoints(article, ELIGIBILITY),
+      benefits: o.benefits?.length ? o.benefits : sectionPoints(article, BENEFITS),
+    }).eq("id", o.id);
+    done++;
+  }));
+  return done;
 }
 
 /** Runs every active source; records how each one went. */

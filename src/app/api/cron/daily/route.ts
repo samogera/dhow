@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { importAllSources } from "@/lib/opportunity-import";
+import { enrichImported, importAllSources } from "@/lib/opportunity-import";
 import { dailyMaintenance, deadlineReminders } from "@/lib/workflows";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
@@ -15,7 +15,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Not allowed" }, { status: 401 });
   }
   const opportunities = await importAllSources().catch((e) => [{ error: String(e) }]);
+  const enriched = await enrichImported(15).catch(() => 0);
   await dailyMaintenance().catch(() => undefined);
   await deadlineReminders().catch(() => undefined);
-  return NextResponse.json({ ok: true, opportunities });
+  return NextResponse.json({ ok: true, opportunities, enriched });
 }

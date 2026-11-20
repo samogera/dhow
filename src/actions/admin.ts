@@ -367,8 +367,13 @@ const OppIn = z.object({
   eligibility: z.string().optional().transform(lines),
   benefits: z.string().optional().transform(lines),
   sectors: z.string().optional().transform((v) => (v ?? "").split(",").map((x) => x.trim()).filter(Boolean).slice(0, 6)),
+  apply_url: z.string().trim().url().optional().or(z.literal("")).transform((v) => v || null),
+  about: z.string().trim().max(3000).default(""),
+  dhow_note: z.string().trim().max(600).default(""),
+  starts_on: date, ends_on: date, venue: text(160),
   requires_verified: z.enum(["on"]).optional().transform((v) => v === "on"),
   published: z.enum(["on"]).optional().transform((v) => v === "on"),
+  featured: z.enum(["on"]).optional().transform((v) => v === "on"),
 });
 function lines(v?: string) {
   return (v ?? "").split("\n").map((x) => x.replace(/^[\s•\-*]+/, "").trim()).filter(Boolean).slice(0, 6).map((x) => x.slice(0, 200));
@@ -383,7 +388,20 @@ export async function saveOpportunity(_: ActionState, fd: FormData): Promise<Act
   if (error) return { error: error.message };
   revalidatePath("/admin/opportunities");
   revalidatePath("/app/opportunities");
+  revalidatePath("/app/events");
+  if (!id) redirect("/admin/opportunities?tab=live");
   return { ok: row.published ? "Saved and published." : "Saved as a draft." };
+}
+
+export async function toggleFeatured(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  await s.supabase.from("opportunities").update({ featured: fd.get("value") === "1" }).eq("id", id.data);
+  revalidatePath("/admin/opportunities");
+  revalidatePath("/app/opportunities");
+  revalidatePath("/app/events");
 }
 
 // ----------------------------------------------------------------- imported opportunities
@@ -414,8 +432,9 @@ export async function deleteOpportunity(fd: FormData) {
 export async function importOpportunitiesNow(): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const { importAllSources } = await import("@/lib/opportunity-import");
+  const { enrichImported, importAllSources } = await import("@/lib/opportunity-import");
   const results = await importAllSources();
+  await enrichImported(15).catch(() => 0);
   revalidatePath("/admin/opportunities");
   const added = results.reduce((n, r) => n + r.added, 0);
   const failed = results.filter((r) => r.error);

@@ -12,7 +12,7 @@ export function decodeEntities(s: string) {
 }
 
 export function stripTags(html: string) {
-  return decodeEntities(html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " "))
+  return decodeEntities(html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<br\s*\/?>|<\/(p|div|h[1-6]|li|tr|section|article|blockquote)>/gi, "\n").replace(/<[^>]+>/g, " "))
     .replace(/[ \t ]+/g, " ").replace(/\s*\n\s*/g, "\n").trim();
 }
 
@@ -60,7 +60,10 @@ export const BENEFITS = /benefit|what you (get|will get|gain)|prize|award|reward
 
 /** The post's own share image (og:image), used the way link previews use it. */
 export function ogImage(html: string): string | null {
-  const m = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i.exec(html) ?? /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(html);
+  const m =
+    /<meta[^>]+(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["'][^>]+content=["']([^"']+)["']/i.exec(html) ??
+    /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["']/i.exec(html) ??
+    /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i.exec(html);
   const url = m ? decodeEntities(m[1]) : null;
   return url && /^https:\/\//i.test(url) ? url : null;
 }
@@ -123,4 +126,61 @@ export function sameOpportunity(a: string, b: string): boolean {
   let both = 0;
   for (const w of x) if (y.has(w)) both++;
   return both / Math.min(x.size, y.size) >= 0.7;
+}
+
+const NOT_APPLY_HOSTS = /(^|\.)(facebook|fb|twitter|x|linkedin|instagram|whatsapp|wa|t|telegram|youtube|youtu|pinterest|reddit|tiktok|google|googleadservices|doubleclick|wp|gravatar|wordpress|feedburner|amazon|bit)\.(com|me|be|ly|net|org)$/i;
+const AGGREGATOR_HOSTS = /(opportunitiesforafricans|opportunitydesk|fundsforngos|opportunitiesforyouth|opportunitytracker|afterschoolafrica|youthopportunities|scholarshipregion|opportunitiescorners)\./i;
+
+/** The organiser's own page for applying, found among the post's links ("Apply here", "Official website"…). */
+export function applyLinkFrom(html: string, postUrl: string): string | null {
+  let own = "";
+  try { own = new URL(postUrl).hostname.replace(/^www\./, ""); } catch { /* ignore */ }
+  let best: { url: string; score: number } | null = null;
+  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const href = decodeEntities(m[1]).trim();
+    let u: URL;
+    try { u = new URL(href); } catch { continue; }
+    if (!/^https?:$/.test(u.protocol)) continue;
+    const host = u.hostname.replace(/^www\./, "");
+    if (!host || host === own || host.endsWith(`.${own}`) || NOT_APPLY_HOSTS.test(host) || AGGREGATOR_HOSTS.test(host)) continue;
+    if (/\.(jpe?g|png|gif|webp|svg)$/i.test(u.pathname)) continue;
+    const t = clean(m[2]).toLowerCase();
+    const score = /\bapply|application (form|portal|page)|register|registration|submit|nominat|enter (now|here)/.test(t) ? 4
+      : /official/.test(t) ? 3
+      : /website|learn more|more (info|information|details)|click here|^here$|visit|details|portal/.test(t) ? 1 : 0;
+    if (score && (!best || score > best.score)) best = { url: u.toString(), score };
+  }
+  return best?.url ?? null;
+}
+
+/** A short description for the opportunity page: the post's opening paragraphs, without deadlines and boilerplate. */
+export function aboutFrom(text: string, max = 700): string {
+  const paras = text.replace(/the post .* appeared first on .*/gi, "").split(/\n+/).map((p) => p.replace(/\s+/g, " ").trim())
+    .filter((p) => p.length >= 60 && !/^(application )?deadline\b/i.test(p) && !/(subscribe|newsletter|follow us|share this|related posts?|click here to|join our)/i.test(p));
+  const out: string[] = [];
+  let len = 0;
+  for (const p of paras) {
+    if (out.some((o) => o === p)) continue;
+    if (len + p.length > max) { if (!out.length) out.push(clip(p, max)); break; }
+    out.push(p); len += p.length;
+    if (out.length >= 3) break;
+  }
+  return out.join("\n\n");
+}
+
+/** Splits a long post title into a clear headline, a "for whom" line and a highlight (e.g. "US$250,000 prize"). */
+export function splitTitle(title: string): { headline: string; sub: string | null; tag: string | null } {
+  let t = title.replace(/\s+/g, " ").trim().replace(/[.\s]+$/, "");
+  let tag: string | null = null;
+  const paren = /\s*\(([^()]{3,60})\)$/.exec(t);
+  if (paren) { tag = paren[1].trim(); t = t.slice(0, paren.index).trim(); }
+  t = t.replace(/^the\s+(?=[A-Z0-9])/i, "").replace(/^(call for applications|applications (are )?open( for)?)\s*[:–-]?\s*/i, "");
+  let sub: string | null = null;
+  const f = /\s+for\s+(?=\S)/i.exec(t);
+  if (f && t.slice(0, f.index).split(" ").length >= 3) { sub = `For ${t.slice(f.index + f[0].length)}`; t = t.slice(0, f.index); }
+  else {
+    const d = /\s+[–—-]\s+/.exec(t);
+    if (d && t.slice(0, d.index).split(" ").length >= 3) { sub = t.slice(d.index + d[0].length); t = t.slice(0, d.index); }
+  }
+  return { headline: t.charAt(0).toUpperCase() + t.slice(1), sub, tag };
 }

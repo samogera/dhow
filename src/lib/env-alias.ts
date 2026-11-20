@@ -25,8 +25,8 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function microsoft() {
   const id = envAny("MICROSOFT_CLIENT_ID", "MICROSFT_CLIENT_ID");
   const secret = envAny("MICROSOFT_CLIENT_SECRET", "MICROSOFT_SECRET_ID", "MICROSFT_SECRET_ID", "MICROSOFT_SECRET");
-  const values = [id, secret].filter((v): v is string => Boolean(v));
-  const clientId = values.find((v) => GUID.test(v)) ?? (values.length ? DHOWOS_MICROSOFT_APP_ID : undefined);
+  // Only trust a GUID from the ID slot: Azure's "Secret ID" is also a GUID and must never be used as the app ID.
+  const clientId = id && GUID.test(id) ? id : id || secret ? DHOWOS_MICROSOFT_APP_ID : undefined;
   // Prefer the dedicated secret slot; if that holds the GUID, the secret was saved in the ID slot.
   const secretValue = secret && !GUID.test(secret) ? secret : id && !GUID.test(id) ? id : undefined;
   return { clientId, secret: secretValue };

@@ -1,4 +1,5 @@
 import "server-only";
+import { appUrl } from "@/lib/app-url";
 
 // Safaricom Daraja: Lipa na M-Pesa Online (STK push).
 // Docs: https://developer.safaricom.co.ke
@@ -53,7 +54,7 @@ function password(ts: string) {
 
 export async function stkPush(opts: { phone: string; amount: number; reference: string; description: string }) {
   const ts = stamp();
-  const callback = `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/callback?key=${encodeURIComponent(process.env.MPESA_CALLBACK_SECRET!)}`;
+  const callback = `${appUrl()}/api/payments/callback?key=${encodeURIComponent(process.env.MPESA_CALLBACK_SECRET!)}`;
   const r = await fetch(`${base()}/mpesa/stkpush/v1/processrequest`, {
     method: "POST",
     headers: { Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" },

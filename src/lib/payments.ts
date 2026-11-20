@@ -6,6 +6,7 @@ import { queueVerificationPaid } from "@/lib/inngest";
 import { notifyStaff } from "@/lib/notify";
 import { kes } from "@/lib/format";
 import { safeEqual } from "@/lib/crypto";
+import { appUrl } from "@/lib/app-url";
 
 // Paystack references: "DV-<payment id>" for verification fees, "INV-<invoice id>-<time>" for client invoices.
 
@@ -70,7 +71,7 @@ async function confirmInvoicePayment(reference: string, tx: Awaited<ReturnType<t
   if (!error) {
     if (inv.status === "draft") await db.from("invoices").update({ status: "sent" }).eq("id", inv.id).eq("status", "draft");
     await notifyStaff(["finance", "admin"], `Invoice ${inv.number} paid online`, [`${kes(amount)} received by ${channelLabel(tx.channel)} through Paystack.`, `Reference: ${receipt}`],
-      { label: "Open invoice", href: `${process.env.NEXT_PUBLIC_APP_URL}/admin/finance/invoices/${inv.id}` }).catch(() => undefined);
+      { label: "Open invoice", href: `${appUrl()}/admin/finance/invoices/${inv.id}` }).catch(() => undefined);
   }
   return { state: "paid", message: "Payment received. Thank you.", receipt };
 }
@@ -86,5 +87,5 @@ export function validInvoicePayToken(invoiceId: string, token: string) {
   return Boolean(linkKey()) && safeEqual(invoicePayToken(invoiceId), token);
 }
 export function invoicePayUrl(invoiceId: string) {
-  return `${process.env.NEXT_PUBLIC_APP_URL}/pay/${invoiceId}?t=${invoicePayToken(invoiceId)}`;
+  return `${appUrl()}/pay/${invoiceId}?t=${invoicePayToken(invoiceId)}`;
 }

@@ -4,8 +4,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import type { ActionState } from "@/components/forms";
+import { appUrl } from "@/lib/app-url";
 
-const app = () => process.env.NEXT_PUBLIC_APP_URL!;
+const app = () => appUrl()!;
 const safePath = (p: unknown) => (typeof p === "string" && p.startsWith("/") && !p.startsWith("//") ? p : null);
 
 const SignUp = z.object({

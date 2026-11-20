@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { keys } from "@/lib/env-alias";
+import { appUrl } from "@/lib/app-url";
 
 // Read-only calendars. Each staff member can connect a Google calendar and an
 // Outlook / Microsoft 365 calendar; events from both are shown together.
@@ -9,7 +10,7 @@ import { keys } from "@/lib/env-alias";
 export type CalendarProvider = "google" | "microsoft";
 export const PROVIDER_LABEL: Record<CalendarProvider, string> = { google: "Google Calendar", microsoft: "Outlook / Microsoft 365" };
 
-const APP = () => process.env.NEXT_PUBLIC_APP_URL ?? "";
+const APP = () => appUrl();
 const REDIRECT: Record<CalendarProvider, () => string> = {
   google: () => `${APP()}/api/calendar/callback`,
   microsoft: () => `${APP()}/api/calendar/callback/microsoft`,

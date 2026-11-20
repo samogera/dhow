@@ -82,14 +82,40 @@ async function shotInner(page, path, name, { full = true } = {}) {
 }
 
 // Phone size
-{
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true });
+async function phone(email) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/login`);
-  await page.fill('input[name="email"]', "owner@acacia.test");
-  await page.fill('input[name="password"]', "Demo-password-2026!");
-  await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/login")), page.press('input[name="password"]', "Enter")]);
-  await shot(page, "/app", "40-phone-dashboard", { full: false });
+  if (email) {
+    await page.goto(`${BASE}/login`);
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', "Demo-password-2026!");
+    await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20000 }), page.press('input[name="password"]', "Enter")]);
+  }
+  return { ctx, page };
+}
+{
+  const { ctx, page } = await phone();
+  await shot(page, "/login", "50-phone-sign-in", { full: false });
+  await shot(page, "/help", "51-phone-help", { full: false });
+  await ctx.close();
+}
+{
+  const { ctx, page } = await phone("owner@acacia.test");
+  await shot(page, "/app", "52-phone-member-dashboard", { full: false });
+  await shot(page, "/app/verification", "53-phone-member-verification", { full: false });
+  await shot(page, "/app/opportunities", "54-phone-member-opportunities", { full: false });
+  await ctx.close();
+}
+{
+  const { ctx, page } = await phone("admin@dhow.test");
+  await shot(page, "/admin", "55-phone-staff-dashboard", { full: false });
+  await shot(page, "/admin/leads", "56-phone-staff-leads", { full: false });
+  await shot(page, "/admin/finance", "57-phone-staff-finance", { full: false });
+  await page.goto(`${BASE}/admin/finance`);
+  await page.getByRole("button", { name: "More" }).click().catch(() => {});
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${OUT}/58-phone-staff-menu.png` });
+  await shot(page, "/admin/finance/invoices/d0000000-0000-4000-8000-000000000001", "59-phone-staff-invoice", { full: false });
   await ctx.close();
 }
 

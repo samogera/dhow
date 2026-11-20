@@ -4,12 +4,13 @@ import { cookies } from "next/headers";
 import { staffOrNull } from "@/lib/auth";
 import { exchangeCode, type CalendarProvider } from "@/lib/calendar";
 import { safeEqual } from "@/lib/crypto";
+import { appUrl } from "@/lib/app-url";
 
 /** Shared OAuth callback: checks the state cookie, stores the calendar connection, returns to /admin/calendar. */
 export async function handleCalendarCallback(req: Request, provider: CalendarProvider) {
   const s = await staffOrNull();
   const url = new URL(req.url);
-  const done = (q: string) => NextResponse.redirect(new URL(`/admin/calendar?${q}`, process.env.NEXT_PUBLIC_APP_URL));
+  const done = (q: string) => NextResponse.redirect(new URL(`/admin/calendar?${q}`, appUrl()));
   if (!s) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
 
   const jar = await cookies();

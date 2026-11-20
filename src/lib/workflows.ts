@@ -5,11 +5,12 @@ import { notifyOrg, notifyStaff } from "@/lib/notify";
 import { deleteObject } from "@/lib/r2";
 import { stkQuery } from "@/lib/mpesa";
 import { confirmPaystack } from "@/lib/payments";
+import { appUrl } from "@/lib/app-url";
 
 // Business processes shared by API routes and background jobs.
 // Each step is idempotent: running it twice gives the same result.
 
-const app = () => process.env.NEXT_PUBLIC_APP_URL ?? "";
+const app = () => appUrl();
 
 /** After a verification fee is paid: run the KYB lookup, then verify or queue for a reviewer. */
 export async function processPaidVerification(paymentId: string) {

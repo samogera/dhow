@@ -64,7 +64,8 @@
     @apply text-xs font-medium tracking-wide text-muted;
   }
   .field {
-    @apply w-full rounded-2xl border border-line bg-sunken px-4 py-3 text-sm text-ink placeholder:text-faint outline-none transition focus:border-navy-500 focus:bg-white;
+    /* 16px on phones so iOS does not zoom into fields; 14px from tablets up. */
+    @apply w-full rounded-2xl border border-line bg-sunken px-4 py-3 text-base text-ink placeholder:text-faint outline-none transition focus:border-navy-500 focus:bg-white sm:text-sm;
   }
   .num {
     font-variant-numeric: tabular-nums;

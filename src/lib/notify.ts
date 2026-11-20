@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { escapeHtml } from "@/lib/format";
+import { appUrl } from "@/lib/app-url";
 
 // Email through Resend, SMS through Africa's Talking. Every send is logged.
 // Missing keys never break the flow: the message is logged as "skipped".
@@ -63,7 +64,7 @@ export function emailLayout(title: string, paragraphs: string[], cta?: { label: 
   return `<!doctype html><html><body style="margin:0;background:#f3f5f7;font-family:Inter,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center">
   <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:24px;padding:36px">
-  <tr><td style="padding-bottom:24px"><img src="${escapeHtml(process.env.NEXT_PUBLIC_APP_URL ?? "")}/brand/wordmark-navy.png" alt="Dhow Partners" height="22" style="height:22px;width:auto;display:block;border:0"></td></tr>
+  <tr><td style="padding-bottom:24px"><img src="${escapeHtml(appUrl())}/brand/wordmark-navy.png" alt="Dhow Partners" height="22" style="height:22px;width:auto;display:block;border:0"></td></tr>
   <tr><td><h1 style="margin:0 0 16px;font-size:22px;color:#0d1c29">${escapeHtml(title)}</h1>${p}${button}</td></tr>
   <tr><td style="padding-top:28px;font-size:12px;color:#98a3ad">Dhow Partners · Nairobi, Kenya · dhowpartners.com</td></tr>
   </table></td></tr></table></body></html>`;

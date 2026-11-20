@@ -10,8 +10,9 @@ import { normalizeKenyanPhone } from "@/lib/mpesa";
 import { deleteObject } from "@/lib/r2";
 import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import type { ActionState } from "@/components/forms";
+import { appUrl } from "@/lib/app-url";
 
-const app = () => process.env.NEXT_PUBLIC_APP_URL!;
+const app = () => appUrl()!;
 const optional = z.string().trim().max(200).optional().transform((v) => v || null);
 const KRA_PIN = /^[AP]\d{9}[A-Z]$/;
 

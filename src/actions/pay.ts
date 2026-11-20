@@ -6,6 +6,7 @@ import { initializeTransaction, paystackConfigured } from "@/lib/paystack";
 import { validInvoicePayToken } from "@/lib/payments";
 import { rateLimit } from "@/lib/rate-limit";
 import type { ActionState } from "@/components/forms";
+import { appUrl } from "@/lib/app-url";
 
 const In = z.object({ id: z.string().uuid(), t: z.string().min(10).max(64), email: z.string().trim().toLowerCase().email("Enter a valid email for your receipt.") });
 
@@ -28,7 +29,7 @@ export async function payInvoice(_: ActionState, fd: FormData): Promise<ActionSt
       email: p.data.email,
       amountKes: balance,
       reference: `INV-${inv.id}-${Date.now().toString(36)}`,
-      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${inv.id}?t=${p.data.t}`,
+      callbackUrl: `${appUrl()}/pay/${inv.id}?t=${p.data.t}`,
       metadata: { purpose: "invoice", invoice_id: inv.id, invoice_number: inv.number },
     });
     url = t.authorization_url;

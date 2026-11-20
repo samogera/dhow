@@ -21,11 +21,11 @@ export default async function Projects() {
   return (
     <>
       <PageHeader title="Projects" sub="Client work, from kickoff to done." />
-      <div className="no-scrollbar -mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-1">
         {COLS.map((col) => {
           const items = (projects ?? []).filter((p) => p.status === col);
           return (
-            <section key={col} className="w-80 shrink-0 rounded-[1.75rem] bg-white/60 p-3">
+            <section key={col} className="w-[85vw] max-w-80 shrink-0 snap-start rounded-[1.75rem] sm:w-80 bg-white/60 p-3">
               <p className="mb-3 px-2 text-sm font-semibold">{label(col)} <span className="text-muted">{items.length}</span></p>
               <div className="space-y-2">
                 {items.map((p) => {

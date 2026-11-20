@@ -17,12 +17,12 @@ export default async function Leads() {
   return (
     <>
       <PageHeader title="Leads" sub="From first contact to a signed plan." />
-      <div className="no-scrollbar -mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+      <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-1">
         {open.map((stage) => {
           const items = (leads ?? []).filter((l) => l.status === stage);
           const total = items.reduce((sum, l) => sum + Number(l.est_value_kes ?? 0), 0);
           return (
-            <section key={stage} className="w-72 shrink-0 rounded-[1.75rem] bg-white/60 p-3">
+            <section key={stage} className="w-[85vw] max-w-80 shrink-0 snap-start rounded-[1.75rem] sm:w-72 bg-white/60 p-3">
               <div className="mb-3 flex items-center justify-between px-2">
                 <p className="text-sm font-semibold">{label(stage)} <span className="text-muted">{items.length}</span></p>
                 <p className="num text-xs text-muted">{kes(total)}</p>

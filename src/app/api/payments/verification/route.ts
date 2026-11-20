@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mpesaConfigured, normalizeKenyanPhone, stkPush } from "@/lib/mpesa";
 import { rateLimit } from "@/lib/rate-limit";
 import { initializeTransaction, paymentProvider, paystackConfigured } from "@/lib/paystack";
+import { appUrl } from "@/lib/app-url";
 
 const Body = z.object({ phone: z.string().min(9).max(16) });
 
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
         email: m.user.email!,
         amountKes: fee,
         reference,
-        callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/app/verification`,
+        callbackUrl: `${appUrl()}/app/verification`,
         metadata: { purpose: "verification", org_id: org.id, payment_id: pay.id, company: org.name },
       });
       return NextResponse.json({ url: t.authorization_url });

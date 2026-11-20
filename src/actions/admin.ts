@@ -12,6 +12,7 @@ import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { emailLayout, notifyOrg, sendEmail } from "@/lib/notify";
 import { kes } from "@/lib/format";
 import type { ActionState } from "@/components/forms";
+import { appUrl } from "@/lib/app-url";
 
 // Every action checks the caller's staff role first. Most writes then go through
 // the caller's own client, so row-level security checks them a second time.
@@ -361,7 +362,7 @@ export async function setApplicationStatus(fd: FormData) {
   if (app && ["shortlisted", "won", "lost"].includes(p.data.status)) {
     const words = { shortlisted: "has been shortlisted", won: "was successful", lost: "wasn't successful this time" }[p.data.status as "shortlisted" | "won" | "lost"];
     await notifyOrg(app.org_id, `application_${p.data.status}`, `Update on ${title}`, [`Your application for "${title}" ${words}.`, p.data.staff_note ?? ""].filter(Boolean),
-      `Dhow Partners: your application for "${title}" ${words}.`, { label: "View applications", href: `${process.env.NEXT_PUBLIC_APP_URL}/app/applications` });
+      `Dhow Partners: your application for "${title}" ${words}.`, { label: "View applications", href: `${appUrl()}/app/applications` });
   }
   revalidatePath("/admin/opportunities");
 }

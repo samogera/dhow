@@ -13,6 +13,11 @@ export const keys = {
   microsoftClientId: () => microsoft().clientId,
   microsoftClientSecret: () => microsoft().secret,
   microsoftTenant: () => envAny("MICROSOFT_TENANT_ID", "MICROSFT_TENANT_ID") ?? "common",
+  dojahAppId: () => envAny("DOJAH_APP_ID", "DOJAH_APPID", "DOJAH_APP"),
+  dojahSecret: () => envAny("DOJAH_SECRET_KEY", "DOJAH_SECRET", "DOJAH_API_KEY", "DOJAH_KEY"),
+  dojahBaseUrl: () => envAny("DOJAH_BASE_URL", "DOJAH_URL"),
+  smilePartnerId: () => envAny("SMILE_ID_PARTNER_ID", "SMILEID_PARTNER_ID", "SMILE_PARTNER_ID"),
+  smileApiKey: () => envAny("SMILE_ID_API_KEY", "SMILEID_API_KEY", "SMILE_API_KEY"),
   paystackSecret: () => envAny("PAYSTACK_SECRET_KEY", "PAYSTACK_SECRET_KEY_TEST", "PAYSTACK_SECRET_KEY_LIVE", "PAYSTACK_SECRET"),
 };
 

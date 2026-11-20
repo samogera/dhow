@@ -7,6 +7,7 @@ import { bytes, day, label } from "@/lib/format";
 import { DOC_KINDS } from "@/lib/types";
 import { reviewDocument } from "@/actions/admin";
 import { DecisionForm, RerunCheck } from "./decision";
+import { kybProvider } from "@/lib/kyb";
 
 export default async function ReviewDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,7 +49,12 @@ export default async function ReviewDetail({ params }: { params: Promise<{ id: s
               <CardHeader title="Automatic check" sub={v.provider ? label(v.provider) : undefined} />
               {result?.reason ? <p className="text-sm">{result.reason}</p> : <p className="text-sm text-muted">Not run yet.</p>}
               {result?.details ? <pre className="mt-3 max-h-48 overflow-auto rounded-2xl bg-sunken p-3 text-xs">{JSON.stringify(result.details, null, 2)}</pre> : null}
-              {open ? <div className="mt-4"><RerunCheck id={v.id} /></div> : null}
+              {open ? (
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs text-muted">Service in use: <span className="font-medium text-ink">{{ dojah: "Dojah", smile_id: "Smile ID", manual: "none (manual review only)" }[kybProvider()]}</span></p>
+                  <RerunCheck id={v.id} />
+                </div>
+              ) : null}
             </Card>
           ) : null}
           {pays?.length ? (

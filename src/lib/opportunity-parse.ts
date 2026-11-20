@@ -90,13 +90,37 @@ export function sectorsFrom(text: string): string[] {
   return SECTOR_WORDS.filter(([, re]) => re.test(text)).map(([s]) => s).slice(0, 4);
 }
 
-export function locationFrom(text: string): string | null {
+export function locationFrom(text: string, categories: string[] = []): string | null {
+  const continents = categories.filter((c) => /^(africa|america|asia|europe|australia|oceania|middle east)/i.test(c.trim())).length;
+  if (continents >= 3) return "Global";
   const m = /\b(Kenya|Nigeria|Ghana|South Africa|Rwanda|Uganda|Tanzania|Ethiopia|Egypt|East Africa|West Africa|Africa|Global|Worldwide)\b/.exec(text);
   return m ? (m[1] === "Worldwide" ? "Global" : m[1]) : null;
 }
 
 export function summaryFrom(text: string): string {
-  const body = text.replace(/(application )?deadline:?\s*[^\n]*?\b20\d{2}\b[^A-Za-z\n]*/i, "").replace(/(application )?deadline:?\s*(unspecified|on rolling basis|rolling)\.?\s*/i, "").replace(/the post .* appeared first on .*/i, "").replace(/\s+/g, " ").trim();
+  let body = text.replace(/the post .* appeared first on .*/i, "").replace(/\s+/g, " ").trim();
+  // Start at the announcement itself, skipping deadline fragments like "at 5PM ET." that precede it.
+  const start = body.search(/\b(applications?|nominations|submissions|entries|registration) (are|is) (now )?(open|invited|being accepted)/i);
+  if (start > 0 && start < 300) body = body.slice(start);
+  else body = body.replace(/(application )?deadline:?\s*[^\n]*?\b20\d{2}\b[^A-Za-z\n]*/i, "").replace(/(application )?deadline:?\s*(unspecified|on rolling basis|rolling)\.?\s*/i, "");
   const first = body.split(/(?<=[.!?])\s/).slice(0, 2).join(" ");
   return clip(first, 280);
+}
+
+/** Advice articles and round-ups ("How to…", "21 jobs currently open") are not opportunities. */
+export function isNotAnOpportunity(title: string): boolean {
+  return /^(how to|why |what |\d+\s+(tips|ways|things|reasons))|\btips\b|currently open|hot jobs|round-?up|weekly digest|^\d+\s+(scholarships|jobs|opportunities|grants|fellowships)/i.test(title);
+}
+
+/** Words that identify an opportunity, for spotting the same call posted by two sites. */
+export function titleKey(title: string): Set<string> {
+  const stop = new Set(["the", "for", "and", "of", "in", "to", "a", "an", "on", "at", "by", "with", "from", "is", "are", "applications", "open", "now", "program", "programme", "2025", "2026", "2027", "2028", "funded", "fully"]);
+  return new Set(title.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.has(w)));
+}
+export function sameOpportunity(a: string, b: string): boolean {
+  const x = titleKey(a), y = titleKey(b);
+  if (!x.size || !y.size) return false;
+  let both = 0;
+  for (const w of x) if (y.has(w)) both++;
+  return both / Math.min(x.size, y.size) >= 0.7;
 }

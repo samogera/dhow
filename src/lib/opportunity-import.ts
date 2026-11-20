@@ -1,7 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  BENEFITS, ELIGIBILITY, decodeEntities, extractDeadline, kindFrom, locationFrom, ogImage, sectionPoints, sectorsFrom, stripTags, summaryFrom,
+  BENEFITS, ELIGIBILITY, decodeEntities, extractDeadline, isNotAnOpportunity, kindFrom, locationFrom, ogImage, sameOpportunity,
+  sectionPoints, sectorsFrom, stripTags, summaryFrom,
 } from "@/lib/opportunity-parse";
 
 // Pulls opportunities from public sources into the staff review queue.
@@ -115,28 +116,40 @@ export async function importSource(src: Source): Promise<{ found: number; added:
   const seen = new Set((existing ?? []).map((e) => e.external_id));
   const today = new Date().toISOString().slice(0, 10);
 
-  const rows = items.filter((i) => i.title && !seen.has(i.externalId)).map((i) => {
+  // Recent titles, to skip the same call already imported from another site.
+  const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
+  const { data: recent } = await db.from("opportunities").select("title, deadline").gte("created_at", since).limit(1000);
+  const known = (recent ?? []) as { title: string; deadline: string | null }[];
+
+  const rows: Record<string, unknown>[] = [];
+  for (const i of items) {
+    if (!i.title || seen.has(i.externalId) || isNotAnOpportunity(i.title)) continue;
     const deadline = extractDeadline(i.text);
-    return {
+    if (deadline && deadline < today) continue;
+    if (known.some((k) => (k.deadline ?? null) === deadline && sameOpportunity(k.title, i.title))) continue;
+    const summary = summaryFrom(i.text);
+    const head = `${i.title} ${i.categories.join(" ")} ${summary}`;
+    rows.push({
       kind: kindFrom(i.title, i.categories),
       title: i.title.slice(0, 200),
-      summary: summaryFrom(i.text),
+      summary,
       body: "",
       source: src.name,
       url: i.link,
-      location: locationFrom(`${i.title} ${i.categories.join(" ")} ${i.text.slice(0, 1500)}`),
+      location: locationFrom(`${i.title} ${summary}`, i.categories),
       deadline,
       requires_verified: src.requires_verified,
       published: src.auto_publish,
       image_url: i.image,
       eligibility: i.html ? sectionPoints(i.html, ELIGIBILITY) : [],
       benefits: i.html ? sectionPoints(i.html, BENEFITS) : [],
-      sectors: sectorsFrom(`${i.title} ${i.categories.join(" ")} ${i.text.slice(0, 3000)}`),
+      sectors: sectorsFrom(head),
       source_id: src.id,
       external_id: i.externalId,
       imported_at: new Date().toISOString(),
-    };
-  }).filter((r) => !r.deadline || r.deadline >= today);
+    });
+    known.push({ title: i.title, deadline });
+  }
 
   if (rows.length) {
     const { error } = await db.from("opportunities").upsert(rows, { onConflict: "external_id", ignoreDuplicates: true });

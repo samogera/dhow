@@ -2,7 +2,7 @@
 
 /* Dhow OS design tokens, from the Dhow Partners brand: navy, green and mint on a cool off-white. */
 @theme {
-  --font-sans: var(--font-sans-brand), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
   --color-canvas: #f3f5f7;
   --color-surface: #ffffff;

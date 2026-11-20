@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt, encrypt } from "@/lib/crypto";
+import { keys } from "@/lib/env-alias";
 
 // Read-only calendars. Each staff member can connect a Google calendar and an
 // Outlook / Microsoft 365 calendar; events from both are shown together.
@@ -13,14 +14,14 @@ const REDIRECT: Record<CalendarProvider, () => string> = {
   google: () => `${APP()}/api/calendar/callback`,
   microsoft: () => `${APP()}/api/calendar/callback/microsoft`,
 };
-const MS_TENANT = () => process.env.MICROSOFT_TENANT_ID || "common";
+const MS_TENANT = () => keys.microsoftTenant();
 const MS_SCOPE = "openid email offline_access User.Read Calendars.Read";
 const GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar.readonly openid email";
 
 export function providerConfigured(p: CalendarProvider) {
   return p === "google"
-    ? Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
-    : Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
+    ? Boolean(keys.googleClientId() && keys.googleClientSecret())
+    : Boolean(keys.microsoftClientId() && keys.microsoftClientSecret());
 }
 export function calendarConfigured() {
   return providerConfigured("google") || providerConfigured("microsoft");
@@ -29,12 +30,12 @@ export function calendarConfigured() {
 export function authUrl(p: CalendarProvider, state: string) {
   if (p === "google") {
     return `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: REDIRECT.google(), response_type: "code",
+      client_id: keys.googleClientId()!, redirect_uri: REDIRECT.google(), response_type: "code",
       scope: GOOGLE_SCOPE, access_type: "offline", prompt: "consent", state,
     })}`;
   }
   return `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/authorize?${new URLSearchParams({
-    client_id: process.env.MICROSOFT_CLIENT_ID!, redirect_uri: REDIRECT.microsoft(), response_type: "code",
+    client_id: keys.microsoftClientId()!, redirect_uri: REDIRECT.microsoft(), response_type: "code",
     response_mode: "query", scope: MS_SCOPE, prompt: "select_account", state,
   })}`;
 }
@@ -44,8 +45,8 @@ type TokenResponse = { access_token?: string; refresh_token?: string; id_token?:
 async function tokenRequest(p: CalendarProvider, body: Record<string, string>): Promise<TokenResponse & { ok: boolean }> {
   const url = p === "google" ? "https://oauth2.googleapis.com/token" : `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/token`;
   const creds: Record<string, string> = p === "google"
-    ? { client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET! }
-    : { client_id: process.env.MICROSOFT_CLIENT_ID!, client_secret: process.env.MICROSOFT_CLIENT_SECRET!, scope: MS_SCOPE };
+    ? { client_id: keys.googleClientId()!, client_secret: keys.googleClientSecret()! }
+    : { client_id: keys.microsoftClientId()!, client_secret: keys.microsoftClientSecret()!, scope: MS_SCOPE };
   const r = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

@@ -1,16 +1,17 @@
 import "server-only";
 import { createHmac } from "node:crypto";
 import { safeEqual } from "@/lib/crypto";
+import { keys } from "@/lib/env-alias";
 
 // Paystack: hosted checkout with M-Pesa and card, in KES.
 // Amounts go to Paystack in cents (KES x 100). Every payment is confirmed by
 // calling Paystack's verify endpoint; we never trust the browser or the webhook body alone.
 
 const API = "https://api.paystack.co";
-const secret = () => process.env.PAYSTACK_SECRET_KEY ?? "";
+const secret = () => keys.paystackSecret() ?? "";
 
 export function paystackConfigured() {
-  return Boolean(process.env.PAYSTACK_SECRET_KEY);
+  return Boolean(keys.paystackSecret());
 }
 
 /** Which provider takes member payments: Paystack when its key is set, unless PAYMENT_PROVIDER says otherwise. */

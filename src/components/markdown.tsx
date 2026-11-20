@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /**
  * A small, safe Markdown renderer. It builds React elements only (no raw HTML),
  * so nothing a writer types can inject scripts. Supports headings, lists,
- * paragraphs, blockquotes, code blocks, bold, italics, inline code and links.
+ * paragraphs, blockquotes, code blocks, bold, emphasis (shown as medium weight, never italic), inline code and links.
  */
 export function Markdown({ source }: { source: string }) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
@@ -73,7 +73,7 @@ function inline(text: string): ReactNode[] {
     const t = m[0];
     if (m[1]) parts.push(<code key={k++}>{t.slice(1, -1)}</code>);
     else if (m[2]) parts.push(<strong key={k++}>{t.slice(2, -2)}</strong>);
-    else if (m[3]) parts.push(<em key={k++}>{t.slice(1, -1)}</em>);
+    else if (m[3]) parts.push(<span key={k++} className="font-medium text-ink">{t.slice(1, -1)}</span>);
     else {
       const lm = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(t)!;
       const href = lm[2];

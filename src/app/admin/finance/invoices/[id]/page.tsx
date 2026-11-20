@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
 import { loadInvoice } from "@/lib/invoices";
 import { ActionForm, ConfirmSubmit } from "@/components/forms";
-import { ButtonLink, Card, CardHeader, Field, Input, Select, StatusBadge, Table } from "@/components/ui";
+import { ButtonAnchor, Card, CardHeader, Field, Input, Select, StatusBadge, Table } from "@/components/ui";
 import { day, kes } from "@/lib/format";
 import { cancelInvoice, recordPayment, sendInvoice } from "@/actions/admin";
 
@@ -29,7 +29,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           <p className="mt-1 text-muted">{inv.client.name} · due {day(inv.due_date)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ButtonLink variant="outline" href={`/api/invoices/${inv.id}/pdf`} target="_blank">Download PDF</ButtonLink>
+          <ButtonAnchor variant="outline" href={`/api/invoices/${inv.id}/pdf`} target="_blank" rel="noopener">Download PDF</ButtonAnchor>
           {live ? (
             <ActionForm action={sendInvoice} submit={inv.status === "draft" ? "Send to client" : "Send again"} className="flex items-center gap-2">
               <input type="hidden" name="id" value={inv.id} />

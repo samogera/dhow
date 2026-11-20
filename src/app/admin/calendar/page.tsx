@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { calendarConfigured, upcomingEvents, type CalEvent } from "@/lib/calendar";
-import { ButtonLink, Card, Empty, PageHeader } from "@/components/ui";
+import { ButtonAnchor, ButtonLink, Card, Empty, PageHeader } from "@/components/ui";
 import { ConfirmSubmit } from "@/components/forms";
 import { time } from "@/lib/format";
 import { disconnectCalendar } from "@/actions/admin";
@@ -37,7 +37,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <Empty title="Google Calendar isn't set up yet" sub="Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to the server environment." />
       ) : events === null ? (
         <Empty title="Connect your calendar" sub="See your meetings next to your tasks and deadlines. Dhow only reads your events.">
-          <ButtonLink href="/api/calendar/connect">Connect Google Calendar</ButtonLink>
+          <ButtonAnchor href="/api/calendar/connect">Connect Google Calendar</ButtonAnchor>
         </Empty>
       ) : events.length === 0 ? (
         <Empty title="Nothing in the next two weeks" />

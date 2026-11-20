@@ -413,7 +413,18 @@ export async function setStaffRole(_: ActionState, fd: FormData): Promise<Action
   const db = createAdminClient();
   const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
   const user = list.users.find((u) => u.email?.toLowerCase() === p.data.email);
-  if (!user) return { error: "No account with that email. Ask them to sign up first." };
+  if (!user) {
+    // No account yet: save an invite. They get the role automatically when they sign up with this email.
+    if (p.data.role === "none") {
+      await db.from("staff_invites").delete().eq("email", p.data.email);
+      revalidatePath("/admin/team");
+      return { ok: `Invite for ${p.data.email} removed.` };
+    }
+    const { error } = await db.from("staff_invites").upsert({ email: p.data.email, role: p.data.role, invited_by: s.user.id });
+    if (error) return { error: "Couldn't save the invite. Please try again." };
+    revalidatePath("/admin/team");
+    return { ok: `${p.data.email} will be ${p.data.role} as soon as they create an account with that email.` };
+  }
   if (user.id === s.user.id && p.data.role !== "admin") return { error: "You can't remove your own admin role." };
   await db.from("profiles").update({ staff_role: p.data.role === "none" ? null : p.data.role }).eq("id", user.id);
   revalidatePath("/admin/team");

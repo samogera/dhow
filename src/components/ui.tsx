@@ -21,6 +21,11 @@ export function ButtonLink({ variant = "primary", className, ...p }: ComponentPr
   return <Link className={cn(base, variants[variant], className)} {...p} />;
 }
 
+/** A button-styled plain link for files and API routes, which must not be prefetched as pages. */
+export function ButtonAnchor({ variant = "primary", className, ...p }: ComponentProps<"a"> & { variant?: Variant }) {
+  return <a className={cn(base, variants[variant], className)} {...p} />;
+}
+
 export function Card({ className, ...p }: ComponentProps<"div">) {
   return <div className={cn("card", className)} {...p} />;
 }

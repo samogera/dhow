@@ -18,9 +18,10 @@ export default async function Team() {
   const isAdmin = s.staffRole === "admin";
   // Staff emails live in auth.users, which only the service role can read. This page is staff-only.
   const db = createAdminClient();
-  const [{ data: staff }, { data: list }] = await Promise.all([
+  const [{ data: staff }, { data: list }, { data: invites }] = await Promise.all([
     db.from("profiles").select("id, full_name, staff_role").not("staff_role", "is", null).order("full_name"),
     db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    db.from("staff_invites").select("email, role, created_at").order("created_at"),
   ]);
   const email = (id: string) => list?.users.find((u) => u.id === id)?.email ?? "—";
 
@@ -37,6 +38,13 @@ export default async function Team() {
                 <td><Badge tone={p.staff_role === "admin" ? "mint" : "neutral"}>{p.staff_role}</Badge></td>
               </tr>
             ))}
+            {(invites ?? []).map((i) => (
+              <tr key={i.email}>
+                <td className="text-muted">Invited</td>
+                <td className="text-muted">{i.email}</td>
+                <td><Badge tone="warn">{i.role} · waiting for sign-up</Badge></td>
+              </tr>
+            ))}
           </Table>
           <ul className="mt-6 space-y-2 border-t border-line pt-5 text-sm">
             {ROLES.map((r) => <li key={r.value}><span className="font-medium">{r.label}.</span> <span className="text-muted">{r.note}</span></li>)}
@@ -44,7 +52,7 @@ export default async function Team() {
         </Card>
         {isAdmin ? (
           <Card className="self-start">
-            <CardHeader title="Give or change access" sub="They need a Dhow account first." />
+            <CardHeader title="Give or change access" sub="Works before they sign up too: the role applies when they create their account." />
             <ActionForm action={setStaffRole} submit="Save role">
               <Field label="Email"><Input name="email" type="email" required /></Field>
               <Field label="Role">

@@ -2,7 +2,7 @@
 
 /* Dhow OS design tokens, from the Dhow Partners brand: navy, green and mint on a cool off-white. */
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans-brand), ui-sans-serif, system-ui, sans-serif;
 
   --color-canvas: #f3f5f7;
   --color-surface: #ffffff;
@@ -83,4 +83,12 @@
   .prose-dhow ol { @apply mb-4 list-decimal space-y-1 pl-5; }
   .prose-dhow a { @apply text-navy-600 underline underline-offset-2; }
   .prose-dhow code { @apply rounded bg-sunken px-1.5 py-0.5 text-sm; }
+}
+
+/* House style: no italics anywhere. Emphasis is shown with weight instead. */
+@layer base {
+  em, i, cite, dfn, var, address { font-style: normal; }
+  em, i { font-weight: 600; }
+  body { font-feature-settings: "ss01", "cv11"; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  h1, h2, h3 { letter-spacing: -0.02em; }
 }

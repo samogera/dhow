@@ -23,8 +23,11 @@ async function session(email, password) {
   return { ctx, page };
 }
 
-async function shot(page, path, name, { full = true } = {}) {
-  const res = await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
+async function shot(page, path, name, opts = {}) {
+  try { await shotInner(page, path, name, opts); } catch (e) { log("FAILED", path, e.message.split("\n")[0]); }
+}
+async function shotInner(page, path, name, { full = true } = {}) {
+  const res = await page.goto(`${BASE}${path}`, { waitUntil: "load", timeout: 20000 });
   await page.waitForTimeout(400);
   const status = res?.status();
   const err = await page.locator("text=Application error").count();

@@ -3,7 +3,7 @@ import { BadgeCheck, CalendarDays, CheckCircle2, Circle, Plus } from "lucide-rea
 import { requireStaff } from "@/lib/auth";
 import { upcomingEvents } from "@/lib/calendar";
 import { BarChart } from "@/components/bar-chart";
-import { ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
+import { ButtonAnchor, ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { day, kes, time } from "@/lib/format";
 import { toggleTask } from "@/actions/admin";
 
@@ -60,7 +60,7 @@ export default async function AdminHome() {
           <CardHeader title="This week" sub="From your Google Calendar" href="/admin/calendar" />
           {events === null ? (
             <Empty title="Calendar not connected" sub="Connect Google Calendar to see client pitches and reviews here.">
-              <ButtonLink href="/api/calendar/connect" variant="outline"><CalendarDays className="size-4" /> Connect</ButtonLink>
+              <ButtonAnchor href="/api/calendar/connect" variant="outline"><CalendarDays className="size-4" /> Connect</ButtonAnchor>
             </Empty>
           ) : events.length ? (
             <ul className="space-y-3">

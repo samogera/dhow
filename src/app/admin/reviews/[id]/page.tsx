@@ -6,7 +6,7 @@ import { Badge, Button, Card, CardHeader, StatusBadge, Table } from "@/component
 import { bytes, day, label } from "@/lib/format";
 import { DOC_KINDS } from "@/lib/types";
 import { reviewDocument } from "@/actions/admin";
-import { DecisionForm } from "./decision";
+import { DecisionForm, RerunCheck } from "./decision";
 
 export default async function ReviewDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,11 +43,12 @@ export default async function ReviewDetail({ params }: { params: Promise<{ id: s
               <div><dt className="label">Website</dt><dd className="mt-1 truncate">{org.website ? <a href={org.website} target="_blank" rel="noopener noreferrer" className="text-navy-600 underline">{org.website.replace(/^https?:\/\//, "")}</a> : "—"}</dd></div>
             </dl>
           </Card>
-          {result?.reason ? (
+          {result?.reason || open ? (
             <Card>
               <CardHeader title="Automatic check" sub={v.provider ? label(v.provider) : undefined} />
-              <p className="text-sm">{result.reason}</p>
-              {result.details ? <pre className="mt-3 max-h-48 overflow-auto rounded-2xl bg-sunken p-3 text-xs">{JSON.stringify(result.details, null, 2)}</pre> : null}
+              {result?.reason ? <p className="text-sm">{result.reason}</p> : <p className="text-sm text-muted">Not run yet.</p>}
+              {result?.details ? <pre className="mt-3 max-h-48 overflow-auto rounded-2xl bg-sunken p-3 text-xs">{JSON.stringify(result.details, null, 2)}</pre> : null}
+              {open ? <div className="mt-4"><RerunCheck id={v.id} /></div> : null}
             </Card>
           ) : null}
           {pays?.length ? (

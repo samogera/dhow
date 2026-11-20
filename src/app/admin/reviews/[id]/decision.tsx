@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { reviewVerification } from "@/actions/admin";
+import { rerunAutomaticCheck, reviewVerification } from "@/actions/admin";
 import { FormMessage, Submit } from "@/components/forms";
 
 export function DecisionForm({ id }: { id: string }) {
@@ -14,6 +14,17 @@ export function DecisionForm({ id }: { id: string }) {
         <Submit name="decision" value="verified" variant="accent" className="flex-1">Verify</Submit>
         <Submit name="decision" value="rejected" variant="danger" className="flex-1">Reject</Submit>
       </div>
+    </form>
+  );
+}
+
+export function RerunCheck({ id }: { id: string }) {
+  const [state, act] = useActionState(rerunAutomaticCheck, undefined);
+  return (
+    <form action={act} className="space-y-3">
+      <input type="hidden" name="id" value={id} />
+      <FormMessage state={state} />
+      <Submit variant="outline" pending="Checking the registry…">Run automatic check again</Submit>
     </form>
   );
 }

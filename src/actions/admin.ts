@@ -5,6 +5,7 @@ import { z } from "zod";
 import { staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decideVerification } from "@/lib/workflows";
+import { verifyBusiness } from "@/lib/kyb";
 import { loadInvoice } from "@/lib/invoices";
 import { paystackConfigured } from "@/lib/paystack";
 import { invoicePayUrl } from "@/lib/payments";
@@ -42,6 +43,33 @@ export async function reviewVerification(_: ActionState, fd: FormData): Promise<
   }
   revalidatePath("/admin/reviews");
   redirect("/admin/reviews");
+}
+
+/** Runs the automatic registry check again for a request in review (e.g. after switching the provider on). */
+export async function rerunAutomaticCheck(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull(["reviewer"]);
+  if (!s) return DENIED;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return { error: "Bad request." };
+  const db = createAdminClient();
+  const { data: v } = await db.from("verifications").select("id, status, org_id").eq("id", id.data).single();
+  if (!v || !["pending", "in_review"].includes(v.status)) return { error: "This request is already decided." };
+  const { data: org } = await db.from("organizations").select("id, name, country, brs_number, postal_address, postal_code").eq("id", v.org_id).single();
+  if (!org?.brs_number) return { error: "The company has no registration number on its profile." };
+
+  const outcome = await verifyBusiness({ orgId: org.id, companyName: org.name, registrationNumber: org.brs_number, country: org.country, postalAddress: org.postal_address, postalCode: org.postal_code });
+  if (outcome.status === "verified") {
+    await decideVerification(v.id, "verified", s.user.id, `Matched by ${outcome.provider}`, outcome.provider, outcome.ref, outcome.details);
+    revalidatePath(`/admin/reviews/${v.id}`);
+    revalidatePath("/admin/reviews");
+    return { ok: `Verified automatically by ${outcome.provider}. The company has been notified.` };
+  }
+  await db.from("verifications").update({
+    status: "in_review", provider: outcome.provider, provider_ref: outcome.ref ?? null,
+    result: { reason: outcome.reason, details: outcome.details ?? null },
+  }).eq("id", v.id);
+  revalidatePath(`/admin/reviews/${v.id}`);
+  return { error: `Not verified automatically: ${outcome.reason}` };
 }
 
 export async function reviewDocument(fd: FormData) {

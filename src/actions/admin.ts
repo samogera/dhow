@@ -363,9 +363,16 @@ const OppIn = z.object({
   body: z.string().trim().max(20000).default(""),
   source: text(120), location: text(120), deadline: date,
   url: z.string().trim().url().optional().or(z.literal("")).transform((v) => v || null),
+  image_url: z.string().trim().optional().transform((v) => (v && /^https:\/\//i.test(v) ? v : null)),
+  eligibility: z.string().optional().transform(lines),
+  benefits: z.string().optional().transform(lines),
+  sectors: z.string().optional().transform((v) => (v ?? "").split(",").map((x) => x.trim()).filter(Boolean).slice(0, 6)),
   requires_verified: z.enum(["on"]).optional().transform((v) => v === "on"),
   published: z.enum(["on"]).optional().transform((v) => v === "on"),
 });
+function lines(v?: string) {
+  return (v ?? "").split("\n").map((x) => x.replace(/^[\s•\-*]+/, "").trim()).filter(Boolean).slice(0, 6).map((x) => x.slice(0, 200));
+}
 export async function saveOpportunity(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
@@ -377,6 +384,75 @@ export async function saveOpportunity(_: ActionState, fd: FormData): Promise<Act
   revalidatePath("/admin/opportunities");
   revalidatePath("/app/opportunities");
   return { ok: row.published ? "Saved and published." : "Saved as a draft." };
+}
+
+// ----------------------------------------------------------------- imported opportunities
+export async function publishOpportunity(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const publish = fd.get("publish") !== "0";
+  await s.supabase.from("opportunities").update({ published: publish }).eq("id", id.data);
+  revalidatePath("/admin/opportunities");
+  revalidatePath("/app/opportunities");
+}
+
+export async function deleteOpportunity(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  // Imported drafts are removed; the external id stays known so the post isn't imported again.
+  const { data } = await s.supabase.from("opportunities").select("external_id").eq("id", id.data).single();
+  if (data?.external_id) await s.supabase.from("opportunities").update({ published: false, dismissed_at: new Date().toISOString() }).eq("id", id.data);
+  else await s.supabase.from("opportunities").delete().eq("id", id.data);
+  revalidatePath("/admin/opportunities");
+  revalidatePath("/app/opportunities");
+}
+
+export async function importOpportunitiesNow(): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const { importAllSources } = await import("@/lib/opportunity-import");
+  const results = await importAllSources();
+  revalidatePath("/admin/opportunities");
+  const added = results.reduce((n, r) => n + r.added, 0);
+  const failed = results.filter((r) => r.error);
+  return failed.length && !added
+    ? { error: `Import failed: ${failed.map((f) => `${f.name}: ${f.error}`).join("; ")}` }
+    : { ok: `${added} new ${added === 1 ? "opportunity" : "opportunities"} to review.${failed.length ? ` ${failed.length} source(s) had a problem.` : ""}` };
+}
+
+const SourceIn = z.object({
+  id: optUuid,
+  name: z.string().trim().min(2).max(80),
+  kind: z.enum(["wordpress", "rss", "grants_gov"]),
+  url: z.string().trim().url().refine((u) => u.startsWith("https://"), "Use an https:// address"),
+  auto_publish: z.enum(["on"]).optional().transform((v) => v === "on"),
+  requires_verified: z.enum(["on"]).optional().transform((v) => v === "on"),
+  active: z.enum(["on"]).optional().transform((v) => v === "on"),
+});
+export async function saveSource(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const p = SourceIn.safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  const { id, ...row } = p.data;
+  const { error } = id ? await s.supabase.from("opportunity_sources").update(row).eq("id", id) : await s.supabase.from("opportunity_sources").insert({ ...row, active: true });
+  if (error) return { error: error.code === "23505" ? "That source is already added." : error.message };
+  revalidatePath("/admin/opportunities");
+  return { ok: "Source saved." };
+}
+
+export async function toggleSource(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const field = fd.get("field") === "auto_publish" ? "auto_publish" : "active";
+  await s.supabase.from("opportunity_sources").update({ [field]: fd.get("value") === "1" }).eq("id", id.data);
+  revalidatePath("/admin/opportunities");
 }
 
 export async function setApplicationStatus(fd: FormData) {

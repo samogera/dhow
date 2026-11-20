@@ -4,5 +4,8 @@
       "ci-results": false,
       "screenshots": false
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/daily", "schedule": "0 4 * * *" }
+  ]
 }

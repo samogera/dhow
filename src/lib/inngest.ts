@@ -1,6 +1,7 @@
 import "server-only";
 import { Inngest } from "inngest";
 import { deadlineReminders, dailyMaintenance, processPaidVerification } from "@/lib/workflows";
+import { importAllSources } from "@/lib/opportunity-import";
 
 export const inngest = new Inngest({ id: "dhow-os" });
 
@@ -28,7 +29,15 @@ const morningReminders = inngest.createFunction(
   },
 );
 
-export const functions = [onVerificationPaid, nightly, morningReminders];
+const opportunityImport = inngest.createFunction(
+  { id: "opportunity-import" },
+  { cron: "TZ=Africa/Nairobi 0 6,12,18 * * *" },
+  async ({ step }) => {
+    await step.run("import", () => importAllSources());
+  },
+);
+
+export const functions = [onVerificationPaid, nightly, morningReminders, opportunityImport];
 
 /** Queue a paid verification; runs inline when Inngest isn't set up yet. */
 export async function queueVerificationPaid(paymentId: string) {

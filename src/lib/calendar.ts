@@ -43,7 +43,7 @@ type TokenResponse = { access_token?: string; refresh_token?: string; id_token?:
 
 async function tokenRequest(p: CalendarProvider, body: Record<string, string>): Promise<TokenResponse & { ok: boolean }> {
   const url = p === "google" ? "https://oauth2.googleapis.com/token" : `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/token`;
-  const creds = p === "google"
+  const creds: Record<string, string> = p === "google"
     ? { client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET! }
     : { client_id: process.env.MICROSOFT_CLIENT_ID!, client_secret: process.env.MICROSOFT_CLIENT_SECRET!, scope: MS_SCOPE };
   const r = await fetch(url, {

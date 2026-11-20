@@ -9,8 +9,8 @@ export default function SignUp() {
   const [state, action] = useActionState(signUp, undefined);
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">Create your account</h1>
-      <p className="mt-2 mb-6 text-sm text-muted">Create a free account for your company.</p>
+      <h1 className="text-center text-2xl font-semibold tracking-tight text-navy-900 sm:text-[1.75rem]">Create your account</h1>
+      <p className="mt-2 mb-8 text-center text-sm text-muted">Create a free account for your company.</p>
       <form action={action} className="space-y-3">
         <label className="relative block">
           <User className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />

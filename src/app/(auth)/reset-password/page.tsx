@@ -7,8 +7,8 @@ export default function ResetPassword() {
   const [state, action] = useActionState(updatePassword, undefined);
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">Choose a new password</h1>
-      <p className="mt-2 mb-6 text-sm text-muted">Use at least 10 characters.</p>
+      <h1 className="text-center text-2xl font-semibold tracking-tight text-navy-900 sm:text-[1.75rem]">Choose a new password</h1>
+      <p className="mt-2 mb-8 text-center text-sm text-muted">Use at least 10 characters.</p>
       <form action={action} className="space-y-3">
         <input name="password" type="password" required minLength={10} autoComplete="new-password" placeholder="New password" className="field" />
         <FormMessage state={state} />

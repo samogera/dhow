@@ -54,6 +54,7 @@ async function shotInner(page, path, name, { full = true } = {}) {
   await shot(page, "/app/opportunities", "13-member-opportunities");
   await shot(page, "/app/opportunities/b0000000-0000-4000-8000-000000000001", "14-member-opportunity");
   await shot(page, "/app/applications", "15-member-applications");
+  await shot(page, "/app/events", "15b-member-events");
   await shot(page, "/app/settings", "16-member-settings");
   await ctx.close();
 }
@@ -62,6 +63,9 @@ async function shotInner(page, path, name, { full = true } = {}) {
 {
   const { ctx, page } = await session("admin@dhow.test", "Demo-password-2026!");
   await shot(page, "/admin", "20-staff-dashboard");
+  await shot(page, "/admin/analytics", "20b-staff-analytics");
+  await shot(page, "/admin/partners", "20c-staff-partners");
+  await shot(page, "/admin/company", "20d-staff-dhow-profile");
   await shot(page, "/admin/reviews", "21-staff-reviews");
   const review = await page.locator('a[href^="/admin/reviews/"]').first().getAttribute("href").catch(() => null);
   if (review) await shot(page, review, "22-staff-review-detail");

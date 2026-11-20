@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BadgeCheck, CalendarDays, CheckCircle2, Circle, Plus } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { upcomingEvents } from "@/lib/calendar";
-import { BarChart } from "@/components/bar-chart";
+import { ColumnChart } from "@/components/charts";
 import { ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { day, kes, time } from "@/lib/format";
 import { toggleTask } from "@/actions/admin";
@@ -54,7 +54,7 @@ export default async function AdminHome() {
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
         <Card>
           <CardHeader title="Money received" sub="Client payments by month" href="/admin/finance" />
-          <BarChart data={months.map(({ label, value }) => ({ label, value }))} highlight={5} />
+          <ColumnChart data={months.map(({ label, value }) => ({ label, value }))} money label="Money received per month" />
         </Card>
         <Card>
           <CardHeader title="This week" sub="From your connected calendars" href="/admin/calendar" />

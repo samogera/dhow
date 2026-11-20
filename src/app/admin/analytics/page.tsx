@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
-import { BarChart } from "@/components/bar-chart";
+import { AreaChart, BarList, ColumnChart } from "@/components/charts";
 import { Card, CardHeader, PageHeader, Stat, Table } from "@/components/ui";
-import { cn, label } from "@/lib/format";
+import { label } from "@/lib/format";
 import { kindLabel } from "@/lib/opportunity-display";
 import { PLAN_LABEL, type PlanTier } from "@/lib/types";
 
@@ -18,22 +18,6 @@ function lastMonths(n: number) {
   });
 }
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
-
-function Breakdown({ rows, total, tone = "bg-navy-500" }: { rows: { label: string; value: number; href?: string }[]; total: number; tone?: string }) {
-  return (
-    <ul className="space-y-3">
-      {rows.map((r) => (
-        <li key={r.label}>
-          <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-            {r.href ? <Link href={r.href} className="font-medium hover:text-navy-700">{r.label}</Link> : <span className="font-medium">{r.label}</span>}
-            <span className="num text-muted">{r.value} <span className="text-faint">· {pct(r.value, total)}%</span></span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-sunken"><div className={cn("h-full rounded-full", tone)} style={{ width: `${pct(r.value, total)}%` }} /></div>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export default async function Analytics() {
   const s = await requireStaff();
@@ -52,9 +36,17 @@ export default async function Analytics() {
   const live = P.filter((p) => p.published && !p.dismissed_at && (!p.deadline || p.deadline >= today));
   const events = live.filter((p) => p.kind === "event");
 
-  const months = lastMonths(6);
+  const months = lastMonths(12);
   const joins = months.map((m) => ({ label: m.label, value: O.filter((o) => o.created_at.startsWith(m.key)).length }));
-  const appsByMonth = months.map((m) => ({ label: m.label, value: A.filter((a) => a.submitted_at?.startsWith(m.key)).length }));
+  const members = months.map((m, i) => {
+    const end = i === months.length - 1 ? "9999" : months[i + 1].key;
+    const added = joins[i].value;
+    return { label: m.label, value: O.filter((o) => o.created_at.slice(0, 7) < end).length, note: added ? `+${added} joined` : "No new companies" };
+  });
+  const appsByMonth = months.map((m) => {
+    const inMonth = A.filter((a) => a.submitted_at?.startsWith(m.key));
+    return { label: m.label, value: inMonth.length, note: `${new Set(inMonth.map((a) => a.org_id)).size} companies` };
+  });
 
   const verRows = ["verified", "pending", "unverified", "rejected", "expired"].map((v) => ({
     label: v === "pending" ? "In review" : label(v), value: O.filter((o) => o.verification_status === v).length,
@@ -89,20 +81,32 @@ export default async function Analytics() {
         <Stat label="Applications tracked" value={A.length} note={`${A.filter((a) => a.status === "won").length} won`} />
         <Stat label="Paid plans" value={paid} note={`${O.length - paid} on Free`} />
         <Stat label="Live opportunities" value={live.length} note={`${live.filter((p) => p.imported_at).length} imported · ${live.filter((p) => !p.imported_at).length} added by Dhow`} />
-        <Stat label="Upcoming events" value={events.length} />
+        <Stat label="Upcoming events" value={events.length} note={<Link href="/admin/opportunities?tab=events" className="underline">Manage events</Link>} />
         <Stat label="Waiting for review" value={P.filter((p) => !p.published && !p.dismissed_at && p.imported_at && (!p.deadline || p.deadline >= today)).length} note={<Link href="/admin/opportunities" className="underline">Review imports</Link>} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader title="New member companies" sub="Last six months" /><BarChart data={joins} money={false} highlight={joins.length - 1} /></Card>
-        <Card><CardHeader title="Applications" sub="Last six months" /><BarChart data={appsByMonth} money={false} highlight={appsByMonth.length - 1} /></Card>
+        <Card className="p-6">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div><p className="font-semibold text-navy-900">Member companies</p><p className="text-sm text-muted">Total on Dhow, last 12 months</p></div>
+            <div className="text-right"><p className="num text-2xl font-semibold tracking-tight">{O.length}</p><p className="text-xs text-muted">+{joins.at(-1)?.value ?? 0} this month</p></div>
+          </div>
+          <AreaChart data={members} unit="companies" label="Member companies over the last 12 months" />
+        </Card>
+        <Card className="p-6">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div><p className="font-semibold text-navy-900">Applications</p><p className="text-sm text-muted">Tracked by members each month</p></div>
+            <div className="text-right"><p className="num text-2xl font-semibold tracking-tight">{appsByMonth.at(-1)?.value ?? 0}</p><p className="text-xs text-muted">this month</p></div>
+          </div>
+          <ColumnChart data={appsByMonth} unit="applications" label="Applications per month over the last 12 months" />
+        </Card>
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card><CardHeader title="Verification" /><Breakdown rows={verRows} total={O.length} tone="bg-green" /></Card>
-        <Card><CardHeader title="Plans" /><Breakdown rows={planRows} total={O.length} tone="bg-amber" /></Card>
-        <Card><CardHeader title="Sectors" /><Breakdown rows={tally(O.map((o) => o.sector))} total={O.length} /></Card>
-        <Card><CardHeader title="Application outcomes" /><Breakdown rows={statusRows} total={A.length} tone="bg-mint" /></Card>
+        <Card><CardHeader title="Verification" /><BarList rows={verRows} total={O.length} empty="No companies yet." /></Card>
+        <Card><CardHeader title="Plans" /><BarList rows={planRows} total={O.length} empty="No companies yet." /></Card>
+        <Card><CardHeader title="Sectors" /><BarList rows={tally(O.map((o) => o.sector))} total={O.length} empty="No companies yet." /></Card>
+        <Card><CardHeader title="Application outcomes" /><BarList rows={statusRows} total={A.length} empty="No applications yet." /></Card>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
@@ -119,11 +123,11 @@ export default async function Analytics() {
                 </tr>
               ))}
             </Table>
-          ) : <p className="text-sm text-muted">No applications yet.</p>}
+          ) : <p className="py-8 text-center text-sm text-muted">No applications yet. Once members track opportunities, the most popular show here.</p>}
         </Card>
         <div className="space-y-4">
-          <Card><CardHeader title="What members apply to" /><Breakdown rows={kindRows} total={A.length} tone="bg-navy-700" /></Card>
-          <Card><CardHeader title="Countries" /><Breakdown rows={tally(O.map((o) => o.country))} total={O.length} /></Card>
+          <Card><CardHeader title="What members apply to" /><BarList rows={kindRows} total={A.length} empty="No applications yet." /></Card>
+          <Card><CardHeader title="Countries" /><BarList rows={tally(O.map((o) => o.country))} total={O.length} empty="No companies yet." /></Card>
         </div>
       </div>
     </>

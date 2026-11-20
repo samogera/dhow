@@ -23,6 +23,11 @@ const OrgInput = z.object({
   brs_number: z.string().trim().toUpperCase().max(40).optional().transform((v) => v || null),
   kra_pin: z.string().trim().toUpperCase().optional().transform((v) => v || null)
     .refine((v) => !v || KRA_PIN.test(v), "A KRA PIN looks like P051234567X"),
+  // Kenya's business registry lookup needs the registered P.O. Box and postal code.
+  postal_address: z.string().trim().optional().transform((v) => (v ? v.replace(/^p\.?\s*o\.?\s*box\s*/i, "").trim() || null : null))
+    .refine((v) => !v || /^\d{1,6}$/.test(v), "Enter just the P.O. Box number, e.g. 12345"),
+  postal_code: z.string().trim().optional().transform((v) => v || null)
+    .refine((v) => !v || /^\d{5}$/.test(v), "A Kenyan postal code has 5 digits, e.g. 00100"),
 });
 
 export async function createOrganization(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -47,12 +52,14 @@ export async function updateOrganization(_: ActionState, fd: FormData): Promise<
   if (!m || !isOrgAdmin(m.role)) return { error: "Only owners and admins can edit the company." };
   const p = OrgInput.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: p.error.issues[0].message };
-  const { kra_pin, brs_number, ...rest } = p.data;
+  const { kra_pin, brs_number, postal_address, postal_code, ...rest } = p.data;
 
   const patch: Record<string, unknown> = { ...rest };
   // Registration details lock once verified, so a badge can't be moved to another company.
   if (m.org.verification_status !== "verified") {
     patch.brs_number = brs_number;
+    patch.postal_address = postal_address;
+    patch.postal_code = postal_code;
     if (kra_pin) {
       patch.kra_pin_enc = encrypt(kra_pin);
       patch.kra_pin_last4 = kra_pin.slice(-4);

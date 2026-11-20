@@ -17,6 +17,8 @@ export interface Organization {
   sector: string | null;
   website: string | null;
   brs_number: string | null;
+  postal_address: string | null;
+  postal_code: string | null;
   kra_pin_last4: string | null;
   plan: PlanTier;
   verification_status: VerificationState;

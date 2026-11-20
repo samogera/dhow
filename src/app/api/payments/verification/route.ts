@@ -4,20 +4,25 @@ import { isOrgAdmin, memberOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mpesaConfigured, normalizeKenyanPhone, stkPush } from "@/lib/mpesa";
 import { rateLimit } from "@/lib/rate-limit";
+import { initializeTransaction, paymentProvider, paystackConfigured } from "@/lib/paystack";
 
 const Body = z.object({ phone: z.string().min(9).max(16) });
 
-/** Starts an instant verification: creates the request, then sends an M-Pesa STK push. */
+/** Starts an instant verification: creates the request, then sends the member to Paystack checkout (M-Pesa or card), or an M-Pesa STK push when Daraja is the provider. */
 export async function POST(req: Request) {
   const m = await memberOrNull();
   if (!m) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   if (!isOrgAdmin(m.role)) return NextResponse.json({ error: "Only company owners and admins can pay." }, { status: 403 });
-  if (!mpesaConfigured()) return NextResponse.json({ error: "M-Pesa payments aren't switched on yet. Use free verification for now." }, { status: 503 });
-  if (!(await rateLimit("stk", 5, 600))) return NextResponse.json({ error: "Too many payment attempts. Try again in 10 minutes." }, { status: 429 });
+  const provider = paymentProvider();
+  if (provider === "paystack" ? !paystackConfigured() : !mpesaConfigured()) return NextResponse.json({ error: "Online payments aren't switched on yet. Use free verification for now." }, { status: 503 });
+  if (!(await rateLimit("pay", 5, 600))) return NextResponse.json({ error: "Too many payment attempts. Try again in 10 minutes." }, { status: 429 });
 
-  const parsed = Body.safeParse(await req.json().catch(() => null));
-  const phone = parsed.success ? normalizeKenyanPhone(parsed.data.phone) : null;
-  if (!phone) return NextResponse.json({ error: "Enter a Safaricom number like 0712 345 678." }, { status: 400 });
+  let phone = "";
+  if (provider === "daraja") {
+    const parsed = Body.safeParse(await req.json().catch(() => null));
+    phone = (parsed.success ? normalizeKenyanPhone(parsed.data.phone) : null) ?? "";
+    if (!phone) return NextResponse.json({ error: "Enter a Safaricom number like 0712 345 678." }, { status: 400 });
+  }
 
   const org = m.org;
   if (org.verification_status === "verified") return NextResponse.json({ error: "Your company is already verified." }, { status: 409 });
@@ -49,6 +54,24 @@ export async function POST(req: Request) {
     .select("id")
     .single();
   if (!pay) return NextResponse.json({ error: "Could not start payment." }, { status: 500 });
+
+  if (provider === "paystack") {
+    const reference = `DV-${pay.id}`;
+    await db.from("payments").update({ checkout_request_id: reference }).eq("id", pay.id);
+    try {
+      const t = await initializeTransaction({
+        email: m.user.email!,
+        amountKes: fee,
+        reference,
+        callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/app/verification`,
+        metadata: { purpose: "verification", org_id: org.id, payment_id: pay.id, company: org.name },
+      });
+      return NextResponse.json({ url: t.authorization_url });
+    } catch (e) {
+      await db.from("payments").update({ status: "failed", result_desc: (e as Error).message }).eq("id", pay.id);
+      return NextResponse.json({ error: "Paystack couldn't start the payment. Please try again." }, { status: 502 });
+    }
+  }
 
   try {
     const r = await stkPush({ phone, amount: fee, reference: "DHOWVERIFY", description: "Verification" });

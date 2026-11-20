@@ -6,6 +6,8 @@ import { staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decideVerification } from "@/lib/workflows";
 import { loadInvoice } from "@/lib/invoices";
+import { paystackConfigured } from "@/lib/paystack";
+import { invoicePayUrl } from "@/lib/payments";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { emailLayout, notifyOrg, sendEmail } from "@/lib/notify";
 import { kes } from "@/lib/format";
@@ -258,13 +260,14 @@ export async function sendInvoice(_: ActionState, fd: FormData): Promise<ActionS
     html: emailLayout(`Invoice ${inv.number}`, [
       `Hello ${inv.client.name},`,
       `Please find attached invoice ${inv.number} for ${kes(inv.total_kes - inv.paid_kes)}, due on ${new Date(inv.due_date).toDateString()}.`,
+      paystackConfigured() ? "You can pay online by M-Pesa or card using the button below, or by bank transfer as shown on the invoice." : "Payment details are on the invoice.",
       "Thank you for working with Dhow Partners.",
-    ]),
+    ], paystackConfigured() ? { label: `Pay ${kes(inv.total_kes - inv.paid_kes)} online`, href: invoicePayUrl(inv.id) } : undefined),
     attachments: [{ filename: `Dhow-Partners-Invoice-${inv.number}.pdf`, content: pdf }],
   });
   if (inv.status === "draft") await s.supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", inv.id);
   else await s.supabase.from("invoices").update({ sent_at: new Date().toISOString() }).eq("id", inv.id);
-  await s.supabase.rpc("recalc_invoice", { p_invoice: inv.id });
+  await createAdminClient().rpc("recalc_invoice", { p_invoice: inv.id });
   revalidatePath(`/admin/finance/invoices/${inv.id}`);
   return { ok: `Sent to ${inv.client.email}.` };
 }
@@ -433,10 +436,11 @@ export async function setStaffRole(_: ActionState, fd: FormData): Promise<Action
 
 // ----------------------------------------------------------------- calendar
 /** Forget this person's Google Calendar connection. Only ever touches their own row. */
-export async function disconnectCalendar() {
+export async function disconnectCalendar(fd: FormData) {
   const s = await staffOrNull();
   if (!s) return;
-  await createAdminClient().from("calendar_connections").delete().eq("user_id", s.user.id);
+  const provider = fd.get("provider") === "microsoft" ? "microsoft" : "google";
+  await createAdminClient().from("calendar_connections").delete().eq("user_id", s.user.id).eq("provider", provider);
   revalidatePath("/admin/calendar");
   revalidatePath("/admin");
 }

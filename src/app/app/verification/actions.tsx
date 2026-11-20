@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Smartphone } from "lucide-react";
+import { CreditCard, Smartphone } from "lucide-react";
 import { requestManualVerification } from "@/actions/member";
 import { FormMessage, Submit } from "@/components/forms";
 import { Button } from "@/components/ui";
@@ -81,6 +81,33 @@ export function PayAndVerify({ defaultPhone }: { defaultPhone: string }) {
       <Button onClick={pay} disabled={!phone || phase === "sending" || phase === "waiting" || phase === "paid"} className="w-full">
         {phase === "sending" ? "Sending to your phone…" : phase === "waiting" ? "Waiting for your PIN…" : phase === "failed" ? "Try again" : "Pay with M-Pesa"}
       </Button>
+    </div>
+  );
+}
+
+/** Paystack checkout: we create the payment, then send the member to Paystack's secure page (M-Pesa or card). */
+export function PaystackCheckout({ fee }: { fee: number }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  async function start() {
+    setBusy(true);
+    setMsg("");
+    const r = await fetch("/api/payments/verification", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.url) {
+      setBusy(false);
+      setMsg(j.error ?? "Something went wrong. Please try again.");
+      return;
+    }
+    window.location.assign(j.url);
+  }
+  return (
+    <div className="space-y-3">
+      {msg ? <p className="rounded-2xl bg-bad/10 px-4 py-3 text-sm text-bad">{msg}</p> : null}
+      <Button onClick={start} disabled={busy} className="w-full">
+        <CreditCard className="size-4" /> {busy ? "Opening secure checkout…" : `Pay KSh ${fee.toLocaleString("en-KE")}`}
+      </Button>
+      <p className="text-center text-xs text-ink/60">Secure checkout by Paystack. Pay with M-Pesa or card.</p>
     </div>
   );
 }

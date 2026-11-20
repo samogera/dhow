@@ -24,6 +24,8 @@ export function OnboardingForm() {
       </Field>
       <Field label="BRS registration number" hint="Optional now, needed to get verified"><Input name="brs_number" placeholder="PVT-AB1CD2EF" /></Field>
       <Field label="Company KRA PIN" hint="Stored encrypted"><Input name="kra_pin" placeholder="P051234567X" /></Field>
+      <Field label="Registered P.O. Box" hint="Optional now, used for verification"><Input name="postal_address" inputMode="numeric" placeholder="12345" /></Field>
+      <Field label="Postal code"><Input name="postal_code" inputMode="numeric" placeholder="00100" /></Field>
       <div className="sm:col-span-2"><Field label="Website"><Input name="website" placeholder="acme.co.ke" /></Field></div>
       <div className="sm:col-span-2 space-y-3">
         <FormMessage state={state} />

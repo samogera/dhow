@@ -107,12 +107,12 @@ Only **owners and admins** can request verification. First, add your **BRS regis
 2. Go to **Verification** and click **Request free review**.
 3. A Dhow reviewer checks your documents. You'll get an email when it's done.
 
-## Option 2: Instant, by M-Pesa
+## Option 2: Instant, by M-Pesa or card
 
-1. Go to **Verification**.
-2. Enter the M-Pesa number to pay from and click **Pay with M-Pesa**.
-3. Approve the request on your phone with your M-Pesa PIN.
-4. We check your registration automatically. If it matches, you're verified straight away.
+1. Add your **registered P.O. Box and postal code** in **Settings**, as they appear on your CR12. The registry check uses them.
+2. Go to **Verification** and click **Pay KSh 500**.
+3. On Paystack's secure page, choose **M-Pesa** (approve the prompt on your phone) or **card**.
+4. You come back to Dhow and we check your registration automatically. If it matches, you're verified straight away.
 
 If the automatic check can't confirm a match, your request goes to a reviewer. You won't be asked to pay again.
 
@@ -121,23 +121,27 @@ If the automatic check can't confirm a match, your request goes to a reviewer. Y
   },
   {
     slug: "mpesa-payment-problems", audience: "member", section: "Verification",
-    title: "M-Pesa payment problems",
-    summary: "What to do if the payment prompt doesn't arrive or fails.",
+    title: "Payment problems",
+    summary: "What to do if an M-Pesa or card payment doesn't go through.",
     body: `
-**The prompt didn't appear on my phone**
+Payments are handled by **Paystack**, on its own secure page. Dhow never sees your card details or M-Pesa PIN.
 
-- Check the number is a Safaricom line in the format 07… or 01….
-- Make sure your phone is on and unlocked, then click **Try again**.
+**The M-Pesa prompt didn't appear on my phone**
+
+- Check the number is a Safaricom line, and that your phone is on and unlocked.
+- Go back to **Verification** and click **Pay** again. Nothing is charged until you enter your PIN.
 
 **It says the payment was cancelled**
 
-You closed the prompt or it timed out. Nothing was charged. Click **Try again**.
+You closed the checkout or the prompt timed out. Nothing was charged. Try again.
 
-**"We didn't hear back from M-Pesa"**
+**I paid but the page didn't update**
 
-Sometimes the confirmation is slow. If money left your account, the payment will show on the **Verification** page within a few minutes, and we also check outstanding payments automatically every night. You won't be charged twice for the same request.
+If money left your account, Dhow confirms it with Paystack automatically, usually within a minute and at the latest overnight. You won't be charged twice for the same request.
 
-**Still stuck?** Email hello@dhowpartners.com with your M-Pesa confirmation code.
+**Paying an invoice from Dhow Partners?** Use the **Pay online** button in the invoice email. The payment is recorded against your invoice automatically.
+
+**Still stuck?** Email hello@dhowpartners.com with the Paystack or M-Pesa reference.
 `,
   },
   {
@@ -373,14 +377,18 @@ The top of the Finance page shows: **Net position** = (received + clients owe us
   },
   {
     slug: "calendar", audience: "staff", section: "Company",
-    title: "Connect Google Calendar",
-    summary: "See your meetings in the workspace.",
+    title: "Connect Google and Outlook calendars",
+    summary: "See meetings from both calendars in the workspace.",
     body: `
-1. Go to **Calendar** and click **Connect Google Calendar**.
-2. Sign in with Google and allow Dhow to **read** your calendar. Dhow never changes your events.
-3. You'll see the next two weeks, and this week appears on your dashboard. Meetings with a video link show a **Join** button.
+You can connect a **Google Calendar** and an **Outlook / Microsoft 365** calendar. Events from both appear together.
 
-Click **Disconnect** to remove the connection at any time. Each person connects their own calendar.
+1. Go to **Calendar**.
+2. Click **Connect** on the Google card or the Outlook card, and sign in with the account whose calendar you want, for example the company Gmail or *hello@dhowpartners.com*.
+3. Allow Dhow to **read** your calendar. Dhow never changes your events.
+
+You'll see the next two weeks, colour-coded by calendar, and this week appears on your dashboard. Meetings with a video link show a **Join** button.
+
+Click **Disconnect** on a card to remove that calendar at any time. Each person connects their own calendars.
 `,
   },
 ];

@@ -2,68 +2,98 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt, encrypt } from "@/lib/crypto";
 
-// Google Calendar, read-only. Each staff member connects their own calendar.
+// Read-only calendars. Each staff member can connect a Google calendar and an
+// Outlook / Microsoft 365 calendar; events from both are shown together.
 
-const SCOPE = "https://www.googleapis.com/auth/calendar.readonly openid email";
-const redirectUri = () => `${process.env.NEXT_PUBLIC_APP_URL}/api/calendar/callback`;
+export type CalendarProvider = "google" | "microsoft";
+export const PROVIDER_LABEL: Record<CalendarProvider, string> = { google: "Google Calendar", microsoft: "Outlook / Microsoft 365" };
 
+const APP = () => process.env.NEXT_PUBLIC_APP_URL ?? "";
+const REDIRECT: Record<CalendarProvider, () => string> = {
+  google: () => `${APP()}/api/calendar/callback`,
+  microsoft: () => `${APP()}/api/calendar/callback/microsoft`,
+};
+const MS_TENANT = () => process.env.MICROSOFT_TENANT_ID || "common";
+const MS_SCOPE = "openid email offline_access User.Read Calendars.Read";
+const GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar.readonly openid email";
+
+export function providerConfigured(p: CalendarProvider) {
+  return p === "google"
+    ? Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+    : Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
+}
 export function calendarConfigured() {
-  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  return providerConfigured("google") || providerConfigured("microsoft");
 }
 
-export function authUrl(state: string) {
-  const p = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: redirectUri(),
-    response_type: "code",
-    scope: SCOPE,
-    access_type: "offline",
-    prompt: "consent",
-    state,
-  });
-  return `https://accounts.google.com/o/oauth2/v2/auth?${p}`;
+export function authUrl(p: CalendarProvider, state: string) {
+  if (p === "google") {
+    return `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: REDIRECT.google(), response_type: "code",
+      scope: GOOGLE_SCOPE, access_type: "offline", prompt: "consent", state,
+    })}`;
+  }
+  return `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/authorize?${new URLSearchParams({
+    client_id: process.env.MICROSOFT_CLIENT_ID!, redirect_uri: REDIRECT.microsoft(), response_type: "code",
+    response_mode: "query", scope: MS_SCOPE, prompt: "select_account", state,
+  })}`;
 }
 
-export async function exchangeCode(userId: string, code: string) {
-  const r = await fetch("https://oauth2.googleapis.com/token", {
+type TokenResponse = { access_token?: string; refresh_token?: string; id_token?: string; error?: string; error_description?: string };
+
+async function tokenRequest(p: CalendarProvider, body: Record<string, string>): Promise<TokenResponse & { ok: boolean }> {
+  const url = p === "google" ? "https://oauth2.googleapis.com/token" : `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/token`;
+  const creds = p === "google"
+    ? { client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET! }
+    : { client_id: process.env.MICROSOFT_CLIENT_ID!, client_secret: process.env.MICROSOFT_CLIENT_SECRET!, scope: MS_SCOPE };
+  const r = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code,
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: redirectUri(),
-      grant_type: "authorization_code",
-    }),
+    body: new URLSearchParams({ ...creds, ...body }),
     cache: "no-store",
   });
-  const j = (await r.json()) as { refresh_token?: string; id_token?: string; error?: string };
-  if (!r.ok || !j.refresh_token) throw new Error(j.error ?? "Google did not return a refresh token");
-  const email = j.id_token ? (JSON.parse(Buffer.from(j.id_token.split(".")[1], "base64url").toString()) as { email?: string }).email : null;
+  const j = (await r.json().catch(() => ({}))) as TokenResponse;
+  return { ...j, ok: r.ok };
+}
+
+function emailFromIdToken(idToken?: string) {
+  if (!idToken) return null;
+  try {
+    const c = JSON.parse(Buffer.from(idToken.split(".")[1], "base64url").toString()) as { email?: string; preferred_username?: string };
+    return c.email ?? c.preferred_username ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function exchangeCode(p: CalendarProvider, userId: string, code: string) {
+  const j = await tokenRequest(p, { code, redirect_uri: REDIRECT[p](), grant_type: "authorization_code" });
+  if (!j.ok || !j.refresh_token) throw new Error(j.error_description ?? j.error ?? "No refresh token returned");
   await createAdminClient().from("calendar_connections").upsert({
     user_id: userId,
-    google_email: email ?? null,
+    provider: p,
+    google_email: emailFromIdToken(j.id_token),
     refresh_token_enc: encrypt(j.refresh_token),
     connected_at: new Date().toISOString(),
-  });
+  }, { onConflict: "user_id,provider" });
 }
 
-async function accessToken(userId: string) {
-  const { data } = await createAdminClient().from("calendar_connections").select("refresh_token_enc").eq("user_id", userId).maybeSingle();
+export interface CalendarConnection { provider: CalendarProvider; email: string | null }
+
+export async function connections(userId: string): Promise<CalendarConnection[]> {
+  const { data } = await createAdminClient().from("calendar_connections").select("provider, google_email").eq("user_id", userId);
+  return (data ?? []).map((c) => ({ provider: c.provider as CalendarProvider, email: c.google_email }));
+}
+
+async function accessToken(p: CalendarProvider, userId: string) {
+  const db = createAdminClient();
+  const { data } = await db.from("calendar_connections").select("refresh_token_enc").eq("user_id", userId).eq("provider", p).maybeSingle();
   if (!data) return null;
-  const r = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: decrypt(data.refresh_token_enc),
-      grant_type: "refresh_token",
-    }),
-    cache: "no-store",
-  });
-  if (!r.ok) return null;
-  return ((await r.json()) as { access_token: string }).access_token;
+  const j = await tokenRequest(p, { refresh_token: decrypt(data.refresh_token_enc), grant_type: "refresh_token" });
+  if (!j.ok || !j.access_token) return null;
+  // Microsoft rotates refresh tokens: keep the newest one.
+  if (j.refresh_token) await db.from("calendar_connections").update({ refresh_token_enc: encrypt(j.refresh_token) }).eq("user_id", userId).eq("provider", p);
+  return j.access_token;
 }
 
 export interface CalEvent {
@@ -75,34 +105,68 @@ export interface CalEvent {
   location?: string;
   link?: string;
   attendees: number;
+  source: CalendarProvider;
 }
 
-/** Upcoming events on the user's primary calendar. null = not connected. */
-export async function upcomingEvents(userId: string, days = 7): Promise<CalEvent[] | null> {
-  const token = await accessToken(userId);
-  if (!token) return null;
-  const now = new Date();
-  const p = new URLSearchParams({
-    timeMin: now.toISOString(),
-    timeMax: new Date(now.getTime() + days * 86_400_000).toISOString(),
-    singleEvents: "true",
-    orderBy: "startTime",
-    maxResults: "50",
-  });
-  const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${p}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (!r.ok) return null;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function googleEvents(token: string, from: Date, to: Date): Promise<CalEvent[]> {
+  const q = new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "100" });
+  const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${q}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  if (!r.ok) return [];
   const j = (await r.json()) as { items?: Record<string, any>[] };
-  return (j.items ?? []).map((e) => ({
-    id: e.id,
+  return (j.items ?? []).filter((e) => e.status !== "cancelled").map((e) => ({
+    id: `g-${e.id}`,
     title: e.summary ?? "(no title)",
     start: e.start?.dateTime ?? e.start?.date,
     end: e.end?.dateTime ?? e.end?.date,
     allDay: !e.start?.dateTime,
     location: e.location,
-    link: e.hangoutLink ?? e.htmlLink,
+    link: e.hangoutLink ?? e.conferenceData?.entryPoints?.[0]?.uri,
     attendees: e.attendees?.length ?? 0,
+    source: "google" as const,
   }));
+}
+
+async function microsoftEvents(token: string, from: Date, to: Date): Promise<CalEvent[]> {
+  const q = new URLSearchParams({
+    startDateTime: from.toISOString(), endDateTime: to.toISOString(),
+    $orderby: "start/dateTime", $top: "100",
+    $select: "id,subject,start,end,isAllDay,isCancelled,location,onlineMeeting,attendees",
+  });
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/calendarView?${q}`, {
+    headers: { Authorization: `Bearer ${token}`, Prefer: 'outlook.timezone="Africa/Nairobi"' },
+    cache: "no-store",
+  });
+  if (!r.ok) return [];
+  const j = (await r.json()) as { value?: Record<string, any>[] };
+  // Times come back in Nairobi time without an offset; add it so they sort and display correctly.
+  const withOffset = (s?: string) => (s ? `${s.slice(0, 19)}+03:00` : s ?? "");
+  return (j.value ?? []).filter((e) => !e.isCancelled).map((e) => ({
+    id: `m-${e.id}`,
+    title: e.subject || "(no title)",
+    start: e.isAllDay ? e.start?.dateTime?.slice(0, 10) : withOffset(e.start?.dateTime),
+    end: e.isAllDay ? e.end?.dateTime?.slice(0, 10) : withOffset(e.end?.dateTime),
+    allDay: Boolean(e.isAllDay),
+    location: e.location?.displayName || undefined,
+    link: e.onlineMeeting?.joinUrl,
+    attendees: e.attendees?.length ?? 0,
+    source: "microsoft" as const,
+  }));
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/** Upcoming events from every calendar the user has connected, merged and sorted. null = nothing connected. */
+export async function upcomingEvents(userId: string, days = 7): Promise<CalEvent[] | null> {
+  const conns = await connections(userId);
+  if (!conns.length) return null;
+  const from = new Date();
+  const to = new Date(from.getTime() + days * 86_400_000);
+  const lists = await Promise.all(conns.map(async (c) => {
+    if (!providerConfigured(c.provider)) return [];
+    const token = await accessToken(c.provider, userId);
+    if (!token) return [];
+    return c.provider === "google" ? googleEvents(token, from, to) : microsoftEvents(token, from, to);
+  }));
+  const key = (e: CalEvent) => (e.allDay ? `${e.start}T00:00:00+03:00` : e.start);
+  return lists.flat().sort((a, b) => new Date(key(a)).getTime() - new Date(key(b)).getTime());
 }

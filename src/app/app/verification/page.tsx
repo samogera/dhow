@@ -4,12 +4,18 @@ import { BadgeCheck, Check, Clock3, Zap } from "lucide-react";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { Card, CardHeader, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { day, kes, label } from "@/lib/format";
-import { ManualRequest, PayAndVerify } from "./actions";
+import { ManualRequest, PayAndVerify, PaystackCheckout } from "./actions";
+import { paymentProvider } from "@/lib/paystack";
+import { confirmPaystack } from "@/lib/payments";
 
 export const metadata: Metadata = { title: "Verification" };
 
-export default async function Verification() {
+export default async function Verification({ searchParams }: { searchParams: Promise<{ reference?: string }> }) {
+  const { reference } = await searchParams;
+  // Coming back from Paystack checkout: confirm the payment with Paystack before reading the page.
+  const paid = reference ? await confirmPaystack(reference).catch(() => null) : null;
   const { org, role, supabase, profile } = await requireMember();
+  const provider = paymentProvider();
   const { data: history } = await supabase
     .from("verifications")
     .select("id, tier, status, review_note, created_at, decided_at")
@@ -23,6 +29,12 @@ export default async function Verification() {
   return (
     <>
       <PageHeader title="Get Dhow Verified" sub="A badge that tells partners and buyers your company's records check out." />
+
+      {paid ? (
+        <p className={`mb-4 rounded-2xl px-5 py-4 text-sm ${paid.state === "paid" ? "bg-good/10 text-good" : paid.state === "failed" ? "bg-bad/10 text-bad" : "bg-warn/10 text-warn"}`}>
+          {paid.message}{paid.receipt ? ` Reference ${paid.receipt}.` : ""}
+        </p>
+      ) : null}
 
       {verified ? (
         <div className="card mb-4 flex flex-wrap items-center gap-5 bg-mint-100">
@@ -48,18 +60,18 @@ export default async function Verification() {
               <div><p className="font-semibold">Free review</p><p className="text-sm text-muted">A Dhow reviewer checks your documents</p></div>
             </div>
             <ul className="my-6 space-y-2 text-sm">
-              {["Upload your CR12 and KRA PIN certificate", "Reply within 3 working days", "No cost"].map((t) => <li key={t} className="flex gap-2"><Check className="size-4 text-good" />{t}</li>)}
+              {["Upload your CR12 and KRA PIN certificate", "We email you the result", "No cost"].map((t) => <li key={t} className="flex gap-2"><Check className="size-4 text-good" />{t}</li>)}
             </ul>
             {canAct ? <ManualRequest /> : <p className="text-sm text-muted">{busy ? "Your request is in review." : "Only company owners and admins can apply."}</p>}
           </Card>
           <div className="card bg-mint">
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-2xl bg-white/60"><Zap className="size-5" /></span>
-              <div><p className="font-semibold">Instant by M-Pesa</p><p className="text-sm text-ink/70">Automatic check of your BRS records</p></div>
+              <div><p className="font-semibold">{provider === "paystack" ? "Instant: M-Pesa or card" : "Instant by M-Pesa"}</p><p className="text-sm text-ink/70">Automatic check of your BRS records</p></div>
             </div>
             <p className="mt-6 text-4xl font-semibold tracking-tight">{kes(fee)}</p>
             <p className="mb-6 text-sm text-ink/70">One-off, valid for 12 months, plus 500 MB storage</p>
-            {canAct ? <PayAndVerify defaultPhone={profile?.phone ?? ""} /> : <p className="text-sm text-ink/70">{busy ? "Your request is in progress." : "Only company owners and admins can pay."}</p>}
+            {canAct ? (provider === "paystack" ? <PaystackCheckout fee={fee} /> : <PayAndVerify defaultPhone={profile?.phone ?? ""} />) : <p className="text-sm text-ink/70">{busy ? "Your request is in progress." : "Only company owners and admins can pay."}</p>}
           </div>
         </div>
       ) : null}

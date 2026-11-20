@@ -4,6 +4,7 @@ import { verifyBusiness, type KybOutcome } from "@/lib/kyb";
 import { notifyOrg, notifyStaff } from "@/lib/notify";
 import { deleteObject } from "@/lib/r2";
 import { stkQuery } from "@/lib/mpesa";
+import { confirmPaystack } from "@/lib/payments";
 
 // Business processes shared by API routes and background jobs.
 // Each step is idempotent: running it twice gives the same result.
@@ -19,13 +20,13 @@ export async function processPaidVerification(paymentId: string) {
   const { data: v } = await db.from("verifications").select("id, status").eq("id", pay.reference_id).single();
   if (!v || !["awaiting_payment", "pending"].includes(v.status)) return; // already handled
 
-  const { data: org } = await db.from("organizations").select("id, name, country, brs_number").eq("id", pay.org_id).single();
+  const { data: org } = await db.from("organizations").select("id, name, country, brs_number, postal_address, postal_code").eq("id", pay.org_id).single();
   if (!org) return;
 
   await db.from("verifications").update({ status: "pending" }).eq("id", v.id);
 
   const outcome: KybOutcome = org.brs_number
-    ? await verifyBusiness({ orgId: org.id, companyName: org.name, registrationNumber: org.brs_number, country: org.country })
+    ? await verifyBusiness({ orgId: org.id, companyName: org.name, registrationNumber: org.brs_number, country: org.country, postalAddress: org.postal_address, postalCode: org.postal_code })
     : { status: "needs_review", provider: "manual", reason: "No registration number on the profile" };
 
   if (outcome.status === "verified") {
@@ -114,11 +115,15 @@ export async function dailyMaintenance() {
   const today = new Date().toISOString().slice(0, 10);
   await db.from("invoices").update({ status: "overdue" }).in("status", ["sent"]).lt("due_date", today);
 
-  // 4. Payments stuck in pending for over 10 minutes: ask Daraja what happened.
+  // 4. Payments stuck in pending for over 10 minutes: ask Paystack or Daraja what happened.
   const tenMin = new Date(Date.now() - 600_000).toISOString();
   const { data: pending } = await db.from("payments").select("id, checkout_request_id").eq("status", "pending").lt("created_at", tenMin).limit(50);
   for (const p of pending ?? []) {
     if (!p.checkout_request_id) continue;
+    if (p.checkout_request_id.startsWith("DV-")) {
+      await confirmPaystack(p.checkout_request_id).catch(() => null);
+      continue;
+    }
     const q = await stkQuery(p.checkout_request_id).catch(() => null);
     if (q?.resultCode && q.resultCode !== "0") {
       await db.from("payments").update({ status: q.resultCode === "1032" ? "cancelled" : "failed", result_desc: q.resultDesc }).eq("id", p.id).eq("status", "pending");

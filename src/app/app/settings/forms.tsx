@@ -22,6 +22,8 @@ export function CompanyForm({ org, disabled }: { org: Organization; disabled: bo
         <Field label="Company KRA PIN" hint={org.kra_pin_last4 ? `Saved, ending ${org.kra_pin_last4}. Type to replace.` : "Stored encrypted"}>
           <Input name="kra_pin" placeholder={org.kra_pin_last4 ? `•••••••${org.kra_pin_last4}` : "P051234567X"} readOnly={locked} />
         </Field>
+        <Field label="Registered P.O. Box" hint="Number only, as on your CR12"><Input name="postal_address" inputMode="numeric" placeholder="12345" defaultValue={org.postal_address ?? ""} readOnly={locked} /></Field>
+        <Field label="Postal code"><Input name="postal_code" inputMode="numeric" placeholder="00100" defaultValue={org.postal_code ?? ""} readOnly={locked} /></Field>
         <div className="sm:col-span-2"><Field label="Website"><Input name="website" defaultValue={org.website ?? ""} /></Field></div>
         <div className="space-y-3 sm:col-span-2">
           <FormMessage state={state} />

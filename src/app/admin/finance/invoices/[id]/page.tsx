@@ -7,6 +7,8 @@ import { ActionForm, ConfirmSubmit } from "@/components/forms";
 import { ButtonAnchor, Card, CardHeader, Field, Input, Select, StatusBadge, Table } from "@/components/ui";
 import { day, kes } from "@/lib/format";
 import { cancelInvoice, recordPayment, sendInvoice } from "@/actions/admin";
+import { paystackConfigured } from "@/lib/paystack";
+import { invoicePayUrl } from "@/lib/payments";
 
 export const metadata: Metadata = { title: "Invoice" };
 
@@ -74,6 +76,14 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                   <Field label="Reference"><Input name="reference" placeholder="QK7…" /></Field>
                 </div>
               </ActionForm>
+            </Card>
+          ) : null}
+
+          {live && balance > 0 && inv.status !== "draft" && paystackConfigured() ? (
+            <Card>
+              <CardHeader title="Online payment link" sub="M-Pesa or card through Paystack. Payments are recorded here automatically." />
+              <input readOnly value={invoicePayUrl(inv.id)} aria-label="Payment link" className="field text-xs" />
+              <p className="mt-2 text-xs text-muted">This link is included in the invoice email. You can also send it on WhatsApp.</p>
             </Card>
           ) : null}
 

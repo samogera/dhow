@@ -13,7 +13,7 @@ const csp = [
   `connect-src 'self' ${supabaseUrl} ${supabaseUrl.replace("https://", "wss://")} ${r2Endpoint}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  "form-action 'self' https://checkout.paystack.com",
   "object-src 'none'",
 ].join("; ");
 

@@ -3,7 +3,7 @@ import { BadgeCheck, CalendarDays, CheckCircle2, Circle, Plus } from "lucide-rea
 import { requireStaff } from "@/lib/auth";
 import { upcomingEvents } from "@/lib/calendar";
 import { BarChart } from "@/components/bar-chart";
-import { ButtonAnchor, ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
+import { ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { day, kes, time } from "@/lib/format";
 import { toggleTask } from "@/actions/admin";
 
@@ -57,10 +57,10 @@ export default async function AdminHome() {
           <BarChart data={months.map(({ label, value }) => ({ label, value }))} highlight={5} />
         </Card>
         <Card>
-          <CardHeader title="This week" sub="From your Google Calendar" href="/admin/calendar" />
+          <CardHeader title="This week" sub="From your connected calendars" href="/admin/calendar" />
           {events === null ? (
-            <Empty title="Calendar not connected" sub="Connect Google Calendar to see client pitches and reviews here.">
-              <ButtonAnchor href="/api/calendar/connect" variant="outline"><CalendarDays className="size-4" /> Connect</ButtonAnchor>
+            <Empty title="No calendar connected" sub="Connect Google or Outlook to see your meetings here.">
+              <ButtonLink href="/admin/calendar" variant="outline"><CalendarDays className="size-4" /> Connect a calendar</ButtonLink>
             </Empty>
           ) : events.length ? (
             <ul className="space-y-3">

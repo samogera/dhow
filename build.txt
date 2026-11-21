@@ -1,0 +1,121 @@
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+   ▲ Next.js 15.5.7
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (116kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (272kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled successfully in 11.7s
+   Linting and checking validity of types ...
+
+./src/actions/member.ts
+157:49  Warning: '_' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/reviews/[id]/page.tsx
+18:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/poster.tsx
+21:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/profile-bits.tsx
+42:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/lib/invoice-pdf.tsx
+46:11  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./src/lib/invoices.ts
+13:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/62) ...
+   Generating static pages (15/62) 
+   Generating static pages (30/62) 
+   Generating static pages (46/62) 
+ ✓ Generating static pages (62/62)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                      193 B         102 kB
+├ ○ /_not-found                            193 B         102 kB
+├ ƒ /admin                                 194 B         105 kB
+├ ƒ /admin/analytics                       194 B         105 kB
+├ ƒ /admin/calendar                       1.6 kB         107 kB
+├ ƒ /admin/clients                        1.6 kB         107 kB
+├ ƒ /admin/company                        1.6 kB         107 kB
+├ ƒ /admin/finance                        1.6 kB         107 kB
+├ ƒ /admin/finance/invoices/[id]          1.6 kB         107 kB
+├ ƒ /admin/finance/invoices/new          3.75 kB         109 kB
+├ ƒ /admin/help                            194 B         105 kB
+├ ƒ /admin/help/[slug]                     172 B         105 kB
+├ ƒ /admin/leads                           191 B         108 kB
+├ ƒ /admin/links                          1.6 kB         107 kB
+├ ƒ /admin/members                         194 B         105 kB
+├ ƒ /admin/members/[id]                    194 B         105 kB
+├ ƒ /admin/opportunities                   128 B         108 kB
+├ ƒ /admin/opportunities/[id]              127 B         108 kB
+├ ƒ /admin/partners                        185 B         108 kB
+├ ƒ /admin/partners/[id]                  1.6 kB         107 kB
+├ ƒ /admin/projects                        191 B         108 kB
+├ ƒ /admin/reviews                         194 B         105 kB
+├ ƒ /admin/reviews/[id]                  2.16 kB         107 kB
+├ ƒ /admin/search                          194 B         105 kB
+├ ƒ /admin/team                            191 B         108 kB
+├ ƒ /admin/wiki                            194 B         105 kB
+├ ƒ /admin/wiki/[slug]                     179 B         108 kB
+├ ƒ /admin/wiki/new                        178 B         108 kB
+├ ƒ /api/calendar/callback                 193 B         102 kB
+├ ƒ /api/calendar/callback/microsoft       193 B         102 kB
+├ ƒ /api/calendar/connect                  193 B         102 kB
+├ ƒ /api/cron/daily                        193 B         102 kB
+├ ƒ /api/documents/[id]/download           193 B         102 kB
+├ ƒ /api/inngest                           193 B         102 kB
+├ ƒ /api/internal-files/[id]               193 B         102 kB
+├ ƒ /api/invoices/[id]/pdf                 193 B         102 kB
+├ ƒ /api/payments/[id]                     193 B         102 kB
+├ ƒ /api/payments/callback                 193 B         102 kB
+├ ƒ /api/payments/paystack                 193 B         102 kB
+├ ƒ /api/payments/verification             193 B         102 kB
+├ ƒ /api/uploads/complete                  193 B         102 kB
+├ ƒ /api/uploads/presign                   193 B         102 kB
+├ ƒ /app                                   194 B         105 kB
+├ ƒ /app/applications                     1.6 kB         107 kB
+├ ƒ /app/documents                       3.45 kB         109 kB
+├ ƒ /app/events                          2.21 kB         107 kB
+├ ƒ /app/opportunities                    2.2 kB         107 kB
+├ ƒ /app/opportunities/[id]              3.66 kB         109 kB
+├ ƒ /app/settings                        5.08 kB         110 kB
+├ ƒ /app/verification                    3.66 kB         109 kB
+├ ○ /apple-icon.png                          0 B            0 B
+├ ƒ /auth/callback                         193 B         102 kB
+├ ○ /forgot-password                     2.13 kB         107 kB
+├ ƒ /help                                  172 B         105 kB
+├ ● /help/[slug]                           172 B         105 kB
+├   ├ /help/create-your-account
+├   ├ /help/your-dashboard
+├   ├ /help/invite-your-team
+├   └ [+7 more paths]
+├ ○ /icon.png                                0 B            0 B
+├ ƒ /invite/[token]                      1.61 kB         112 kB
+├ ƒ /login                                 714 B         108 kB
+├ ƒ /onboarding                          2.67 kB         113 kB
+├ ○ /opengraph-image.jpg                     0 B            0 B
+├ ƒ /pay/[id]                            2.08 kB         112 kB
+├ ○ /privacy                               193 B         102 kB
+├ ○ /reset-password                      2.06 kB         107 kB
+├ ○ /signup                               1.1 kB         109 kB
+└ ○ /terms                                 193 B         102 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1255-4cbd6caf8b45e0d3.js      45.7 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js  54.2 kB
+  └ other shared chunks (total)          1.93 kB
+
+
+ƒ Middleware                             95.4 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

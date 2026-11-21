@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, Briefcase, CalendarDays, FileText, LayoutGrid, Megaphone, Menu, Receipt, Send, Settings, Target, X,
+  BadgeCheck, Briefcase, CalendarDays, FileText, LayoutGrid, LifeBuoy, Megaphone, Menu, Receipt, Send, Settings, Target, X,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { AdminNav } from "@/components/admin-nav";
@@ -80,17 +80,49 @@ export function AdminMobileNav({ role, account, counts }: { role: "reviewer" | "
   );
 }
 
-/** Member app on phones: a bottom tab bar with every section. */
+/** Member app on phones: four main tabs and a "More" sheet for the rest. */
 export function MemberTabBar() {
+  const path = usePathname();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+  const more = [
+    { href: "/app/verification", label: "Verification", sub: "Get or renew your Dhow Verified badge", icon: BadgeCheck },
+    { href: "/app/documents", label: "Documents", sub: "Your company files", icon: FileText },
+    { href: "/app/settings", label: "Settings", sub: "Company profile, logo, team", icon: Settings },
+    { href: "/help", label: "Help Centre", sub: "Guides for every page", icon: LifeBuoy },
+  ];
   return (
-    <TabBar tabs={[
-      { href: "/app", label: "Home", icon: LayoutGrid, exact: true },
-      { href: "/app/documents", label: "Files", icon: FileText },
-      { href: "/app/verification", label: "Verify", icon: BadgeCheck },
-      { href: "/app/opportunities", label: "Explore", icon: Megaphone },
-      { href: "/app/events", label: "Events", icon: CalendarDays },
-      { href: "/app/applications", label: "Applied", icon: Send },
-      { href: "/app/settings", label: "Settings", icon: Settings },
-    ]} />
+    <>
+      <TabBar onMore={() => setOpen((o) => !o)} moreOpen={open || more.some((m) => path.startsWith(m.href))} tabs={[
+        { href: "/app", label: "Home", icon: LayoutGrid, exact: true },
+        { href: "/app/opportunities", label: "Explore", icon: Megaphone },
+        { href: "/app/events", label: "Events", icon: CalendarDays },
+        { href: "/app/applications", label: "Applied", icon: Send },
+      ]} />
+      {open ? (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More">
+          <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="absolute inset-0 bg-navy-950/30 backdrop-blur-[2px]" />
+          <div className="absolute inset-x-0 bottom-0 rounded-t-[2rem] bg-white px-5 pt-3 pb-10 shadow-2xl" style={{ paddingBottom: "calc(2.5rem + env(safe-area-inset-bottom))" }}>
+            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-line" />
+            <div className="mb-3 flex items-center justify-between"><p className="text-lg font-semibold">More</p>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="grid size-9 place-items-center rounded-full hover:bg-sunken"><X className="size-5" /></button></div>
+            <ul className="space-y-1">
+              {more.map((m) => (
+                <li key={m.href}>
+                  <Link href={m.href} className={cn("flex items-center gap-4 rounded-2xl p-3 transition", path.startsWith(m.href) ? "bg-navy-50" : "hover:bg-sunken")}>
+                    <span className="grid size-10 place-items-center rounded-xl bg-navy-50 text-navy-700"><m.icon className="size-5" /></span>
+                    <span><span className="block font-medium">{m.label}</span><span className="block text-sm text-muted">{m.sub}</span></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

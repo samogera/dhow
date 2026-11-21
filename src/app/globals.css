@@ -54,6 +54,8 @@
       linear-gradient(180deg, #f6f9fb 0%, #eef3f6 100%);
     background-attachment: fixed;
   }
+  /* Nothing may push the page sideways on phones. clip (not hidden) keeps sticky headers working. */
+  html, body { overflow-x: clip; }
   ::selection {
     background: var(--color-mint);
     color: var(--color-ink);
@@ -67,7 +69,7 @@
 @layer components {
   /* Frosted glass panel. */
   .card, .glass {
-    @apply rounded-[var(--radius-card)] border border-white/80 bg-white/72 p-6 shadow-[0_1px_2px_rgba(13,28,41,0.04),0_12px_32px_-18px_rgba(13,28,41,0.18)] backdrop-blur-xl;
+    @apply min-w-0 rounded-[var(--radius-card)] border border-white/80 bg-white/72 p-6 shadow-[0_1px_2px_rgba(13,28,41,0.04),0_12px_32px_-18px_rgba(13,28,41,0.18)] backdrop-blur-xl;
   }
   .glass { @apply p-0; }
   /* Interactive cards rise a little on hover. */

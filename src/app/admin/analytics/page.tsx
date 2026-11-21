@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BadgeCheck, Building2, CalendarDays, CreditCard, Inbox, ListChecks, Megaphone, Send } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { AreaChart, BarList, ColumnChart } from "@/components/charts";
 import { Card, CardHeader, PageHeader, Stat, Table } from "@/components/ui";
@@ -75,14 +76,14 @@ export default async function Analytics() {
       <PageHeader title="Analytics" sub="Members, verification and opportunities at a glance. Figures are live." />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Member companies" value={O.length} note={`${joins.at(-1)?.value ?? 0} joined this month`} />
-        <Stat label="Verified" value={verified} note={`${pct(verified, O.length)}% of members · ${pending} in review`} highlight />
-        <Stat label="Applied to something" value={applied.size} note={<Link href="/admin/members?f=not_applied" className="underline">{O.length - applied.size} haven&apos;t yet</Link>} />
-        <Stat label="Applications tracked" value={A.length} note={`${A.filter((a) => a.status === "won").length} won`} />
-        <Stat label="Paid plans" value={paid} note={`${O.length - paid} on Free`} />
-        <Stat label="Live opportunities" value={live.length} note={`${live.filter((p) => p.imported_at).length} imported · ${live.filter((p) => !p.imported_at).length} added by Dhow`} />
-        <Stat label="Upcoming events" value={events.length} note={<Link href="/admin/opportunities?tab=events" className="underline">Manage events</Link>} />
-        <Stat label="Waiting for review" value={P.filter((p) => !p.published && !p.dismissed_at && p.imported_at && (!p.deadline || p.deadline >= today)).length} note={<Link href="/admin/opportunities" className="underline">Review imports</Link>} />
+        <Stat icon={Building2} label="Member companies" value={O.length} note={`${joins.at(-1)?.value ?? 0} joined this month`} />
+        <Stat icon={BadgeCheck} label="Verified" value={verified} note={`${pct(verified, O.length)}% of members · ${pending} in review`} highlight />
+        <Stat icon={Send} label="Applied to something" value={applied.size} note={<Link href="/admin/members?f=not_applied" className="underline">{O.length - applied.size} haven&apos;t yet</Link>} />
+        <Stat icon={ListChecks} label="Applications tracked" value={A.length} note={`${A.filter((a) => a.status === "won").length} won`} />
+        <Stat icon={CreditCard} label="Paid plans" value={paid} note={`${O.length - paid} on Free`} />
+        <Stat icon={Megaphone} label="Live opportunities" value={live.length} note={`${live.filter((p) => p.imported_at).length} imported · ${live.filter((p) => !p.imported_at).length} added by Dhow`} />
+        <Stat icon={CalendarDays} label="Upcoming events" value={events.length} note={<Link href="/admin/opportunities?tab=events" className="underline">Manage events</Link>} />
+        <Stat icon={Inbox} label="Waiting for review" value={P.filter((p) => !p.published && !p.dismissed_at && p.imported_at && (!p.deadline || p.deadline >= today)).length} note={<Link href="/admin/opportunities" className="underline">Review imports</Link>} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

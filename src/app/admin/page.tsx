@@ -44,17 +44,18 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     if (m) m.value += Number(r.amount_kes);
   }
   const first = s.profile?.full_name?.split(" ")[0];
+  const needs = (reviews.data?.length ?? 0) + (tasks.data?.filter((t) => t.due_date && t.due_date < today).length ?? 0);
 
   return (
     <>
       <PageHeader title={`${greeting()}${first ? `, ${first}` : ""}`}
-        sub={`${new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Nairobi" }).format(new Date())} · ${(reviews.data?.length ?? 0) + (tasks.data?.filter((t) => t.due_date && t.due_date < today).length ?? 0)} things need you today`}>
+        sub={`${new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Nairobi" }).format(new Date())} · ${needs === 0 ? "nothing urgent today" : `${needs} ${needs === 1 ? "thing needs" : "things need"} you today`}`}>
         <ButtonLink href="/admin/finance/invoices/new" variant="outline"><Plus className="size-4" /> New invoice</ButtonLink>
         <ButtonLink href="/admin/reviews" variant="accent"><BadgeCheck className="size-4" /> Reviews ({reviews.data?.length ?? 0})</ButtonLink>
       </PageHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat highlight icon={Scale} label="Net position" value={kes(net)} note="Received + owed to us − paid out − owed by us" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <Stat highlight icon={Scale} label="Net position" value={kes(net)} note="After what we owe and are owed" />
         <Stat icon={HandCoins} href="/admin/finance" label="Owed to us" value={kes(p.owed_by_clients_kes)} note="Unpaid client invoices" />
         <Stat icon={Wallet} href="/admin/finance" label="Owed by us" value={kes(p.owed_to_partners_kes)} note="Partner and vendor bills" />
         <Stat icon={Target} href="/admin/leads" label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />

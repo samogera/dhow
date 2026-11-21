@@ -91,14 +91,14 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function Stat({ label, value, note, highlight, icon: Icon, href }: { label: string; value: ReactNode; note?: ReactNode; highlight?: boolean; icon?: ComponentType<{ className?: string }>; href?: string }) {
   const body = (
-    <div className={cn("card lift flex h-full flex-col justify-between gap-5", highlight && "border-amber/30 bg-amber-100/80")}>
+    <div className={cn("card lift flex h-full flex-col justify-between gap-4 p-4 sm:gap-5 sm:p-6", highlight && "border-amber/30 bg-amber-100/80")}>
       <div className="flex items-center justify-between gap-3">
         <p className={cn("label", highlight && "text-amber-700")}>{label}</p>
-        {Icon ? <span className={cn("grid size-9 place-items-center rounded-xl", highlight ? "bg-white/70 text-amber-700" : "bg-navy-50 text-navy-700")}><Icon className="size-4" /></span> : null}
+        {Icon ? <span className={cn("hidden size-9 place-items-center rounded-xl sm:grid", highlight ? "bg-white/70 text-amber-700" : "bg-navy-50 text-navy-700")}><Icon className="size-4" /></span> : null}
       </div>
       <div>
-        <p className="num text-3xl font-semibold tracking-tight">{value}</p>
-        {note ? <p className={cn("mt-1 text-sm", highlight ? "text-ink/70" : "text-muted")}>{note}</p> : null}
+        <p className="num text-xl font-semibold tracking-tight sm:text-3xl">{value}</p>
+        {note ? <p className={cn("mt-1 text-xs sm:text-sm", highlight ? "text-ink/70" : "text-muted")}>{note}</p> : null}
       </div>
     </div>
   );

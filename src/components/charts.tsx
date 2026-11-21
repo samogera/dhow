@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/format";
 
 // Server-rendered charts: one series, one hue (navy), recessive grid, thin marks with
@@ -139,5 +140,59 @@ export function BarList({ rows, total, empty = "No data yet." }: { rows: { label
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Share of a whole as a ring with the total in the middle. Each slice is named in the legend with its number. */
+export function Donut({ rows, center, sub, empty = "No data yet." }: { rows: { label: string; value: number; color: string; href?: string }[]; center: string; sub: string; empty?: string }) {
+  const total = rows.reduce((n, r) => n + r.value, 0);
+  if (!total) return <p className="py-10 text-center text-sm text-muted">{empty}</p>;
+  const R = 42, C = 2 * Math.PI * R, gap = rows.filter((r) => r.value).length > 1 ? 1.5 : 0;
+  let acc = 0;
+  return (
+    <div className="flex flex-col items-center gap-6 sm:flex-row lg:flex-col xl:flex-row">
+      <div className="relative size-44 shrink-0">
+        <svg viewBox="0 0 100 100" className="size-full -rotate-90" role="img" aria-label={`${center} ${sub}`}>
+          <circle cx="50" cy="50" r={R} fill="none" stroke="var(--color-navy-50)" strokeWidth="11" />
+          {rows.filter((r) => r.value).map((r) => {
+            const len = (r.value / total) * C;
+            const el = (
+              <circle key={r.label} cx="50" cy="50" r={R} fill="none" stroke={r.color} strokeWidth="11" strokeLinecap="butt"
+                strokeDasharray={`${Math.max(len - gap, 0.01)} ${C}`} strokeDashoffset={-acc} className="transition-opacity hover:opacity-80">
+                <title>{`${r.label}: ${r.value} (${Math.round((r.value / total) * 100)}%)`}</title>
+              </circle>
+            );
+            acc += len;
+            return el;
+          })}
+        </svg>
+        <div className="absolute inset-0 grid place-content-center text-center">
+          <p className="num text-2xl font-semibold tracking-tight">{center}</p>
+          <p className="text-[11px] text-muted">{sub}</p>
+        </div>
+      </div>
+      <ul className="w-full space-y-2.5">
+        {rows.map((r) => (
+          <li key={r.label} className="flex items-center gap-2.5 text-sm">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ background: r.color }} />
+            {r.href ? <a href={r.href} className="min-w-0 flex-1 truncate hover:text-navy-700">{r.label}</a> : <span className="min-w-0 flex-1 truncate">{r.label}</span>}
+            <span className="num font-semibold">{r.value}</span>
+            <span className="num w-9 text-right text-xs text-muted">{Math.round((r.value / total) * 100)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** A small segmented control that switches a chart's range through the URL (?range=3). */
+export function RangeTabs({ value, options, param = "range", base }: { value: number; options: number[]; param?: string; base: string }) {
+  return (
+    <div className="inline-flex rounded-full bg-navy-50/80 p-1 text-xs">
+      {options.map((o) => (
+        <Link key={o} href={`${base}?${param}=${o}`} scroll={false} aria-current={o === value ? "true" : undefined}
+          className={cn("rounded-full px-3 py-1.5 font-medium transition", o === value ? "bg-white text-navy-900 shadow-sm" : "text-muted hover:text-ink")}>{o} months</Link>
+      ))}
+    </div>
   );
 }

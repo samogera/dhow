@@ -1,34 +1,42 @@
 import Link from "next/link";
-import { BadgeCheck, CalendarDays, CheckCircle2, Circle, Plus } from "lucide-react";
+import { BadgeCheck, CalendarDays, CheckCircle2, Circle, HandCoins, Plus, Scale, Target, Wallet } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { upcomingEvents } from "@/lib/calendar";
-import { ColumnChart } from "@/components/charts";
+import { ColumnChart, Donut, RangeTabs } from "@/components/charts";
 import { ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { day, kes, time } from "@/lib/format";
 import { toggleTask } from "@/actions/admin";
 
-export default async function AdminHome() {
+function greeting() {
+  const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: "Africa/Nairobi" }).format(new Date()));
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+}
+
+export default async function AdminHome({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
   const s = await requireStaff();
+  const range = [3, 6, 12].includes(Number((await searchParams).range)) ? Number((await searchParams).range) : 6;
   const db = s.supabase;
   const today = new Date().toISOString().slice(0, 10);
-  const sixMonthsAgo = new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString().slice(0, 10);
+  const sixMonthsAgo = new Date(new Date().getFullYear(), new Date().getMonth() - (range - 1), 1).toISOString().slice(0, 10);
 
-  const [pos, reviews, tasks, leads, paid, events] = await Promise.all([
+  const [pos, reviews, tasks, leads, paid, events, orgs] = await Promise.all([
     db.from("finance_position").select("*").single(),
     db.from("verifications").select("id, tier, created_at, organizations(name)").eq("status", "in_review").order("created_at").limit(5),
     db.from("tasks").select("id, title, due_date, status, projects(name)").neq("status", "done").order("due_date", { ascending: true, nullsFirst: false }).limit(8),
     db.from("leads").select("est_value_kes, status").not("status", "in", "(won,lost)"),
     db.from("invoice_payments").select("amount_kes, paid_on").gte("paid_on", sixMonthsAgo),
     upcomingEvents(s.user.id, 7).catch(() => null),
+    db.from("organizations").select("verification_status").limit(5000),
   ]);
+  const vs = (k: string[]) => (orgs.data ?? []).filter((o) => k.includes(o.verification_status)).length;
 
   const p = pos.data ?? { received_kes: 0, owed_by_clients_kes: 0, paid_out_kes: 0, owed_to_partners_kes: 0 };
   const net = Number(p.received_kes) + Number(p.owed_by_clients_kes) - Number(p.paid_out_kes) - Number(p.owed_to_partners_kes);
   const pipeline = (leads.data ?? []).reduce((sum, l) => sum + Number(l.est_value_kes ?? 0), 0);
 
   // Money received per month, last 6 months.
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(new Date().getFullYear(), new Date().getMonth() - 5 + i, 1);
+  const months = Array.from({ length: range }, (_, i) => {
+    const d = new Date(new Date().getFullYear(), new Date().getMonth() - (range - 1) + i, 1);
     return { key: d.toISOString().slice(0, 7), label: d.toLocaleString("en-GB", { month: "short" }), value: 0 };
   });
   for (const r of paid.data ?? []) {
@@ -39,23 +47,41 @@ export default async function AdminHome() {
 
   return (
     <>
-      <PageHeader title="Good to see you," accent={first ?? "team"} sub="Everything that needs you today, in one place.">
+      <PageHeader title={`${greeting()}${first ? `, ${first}` : ""}`}
+        sub={`${new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Nairobi" }).format(new Date())} · ${(reviews.data?.length ?? 0) + (tasks.data?.filter((t) => t.due_date && t.due_date < today).length ?? 0)} things need you today`}>
         <ButtonLink href="/admin/finance/invoices/new" variant="outline"><Plus className="size-4" /> New invoice</ButtonLink>
         <ButtonLink href="/admin/reviews" variant="accent"><BadgeCheck className="size-4" /> Reviews ({reviews.data?.length ?? 0})</ButtonLink>
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat highlight label="Net position" value={kes(net)} note="Received + owed to us − paid out − owed by us" />
-        <Stat label="Owed to us" value={kes(p.owed_by_clients_kes)} note="Unpaid client invoices" />
-        <Stat label="Owed by us" value={kes(p.owed_to_partners_kes)} note="Partner and vendor bills" />
-        <Stat label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />
+        <Stat highlight icon={Scale} label="Net position" value={kes(net)} note="Received + owed to us − paid out − owed by us" />
+        <Stat icon={HandCoins} href="/admin/finance" label="Owed to us" value={kes(p.owed_by_clients_kes)} note="Unpaid client invoices" />
+        <Stat icon={Wallet} href="/admin/finance" label="Owed by us" value={kes(p.owed_to_partners_kes)} note="Partner and vendor bills" />
+        <Stat icon={Target} href="/admin/leads" label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <Card>
-          <CardHeader title="Money received" sub="Client payments by month" href="/admin/finance" />
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[15px] font-semibold">Money received</h2>
+              <p className="mt-0.5 text-sm text-muted">{kes(months.reduce((n, m) => n + m.value, 0))} in the last {range} months</p>
+            </div>
+            <RangeTabs value={range} options={[3, 6, 12]} base="/admin" />
+          </div>
           <ColumnChart data={months.map(({ label, value }) => ({ label, value }))} money label="Money received per month" />
         </Card>
+        <Card>
+          <CardHeader title="Member companies" sub="By verification status" href="/admin/analytics" />
+          <Donut center={String(orgs.data?.length ?? 0)} sub="companies" empty="No member companies yet." rows={[
+            { label: "Verified", value: vs(["verified"]), color: "var(--color-green)", href: "/admin/members?f=verified" },
+            { label: "In review", value: vs(["pending"]), color: "var(--color-amber)", href: "/admin/members?f=pending" },
+            { label: "Not verified", value: vs(["unverified", "rejected", "expired"]), color: "var(--color-navy-300)", href: "/admin/members?f=unverified" },
+          ]} />
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader title="This week" sub="From your connected calendars" href="/admin/calendar" />
           {events === null ? (
@@ -79,9 +105,6 @@ export default async function AdminHome() {
             </ul>
           ) : <p className="text-sm text-muted">No meetings in the next 7 days.</p>}
         </Card>
-      </div>
-
-      <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader title="Open tasks" sub="Soonest due first" href="/admin/projects" />
           {tasks.data?.length ? (

@@ -9,7 +9,7 @@ export default async function MemberLayout({ children }: { children: React.React
   const m = await requireMember();
   return (
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
-      <header className="flex items-center justify-between gap-3 rounded-[1.75rem] bg-white py-2 pr-2 pl-4 sm:rounded-full sm:pl-5">
+      <header className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-white/80 bg-white/70 py-2 pr-2 pl-4 shadow-[0_12px_40px_-24px_rgba(13,28,41,0.25)] backdrop-blur-xl sm:rounded-full sm:pl-5">
         <div className="flex items-center gap-4">
           <Logo href="/app" size="sm" />
           {m.orgs.length > 1 ? (

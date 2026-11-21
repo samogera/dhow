@@ -64,6 +64,7 @@ async function shotInner(page, path, name, { full = true } = {}) {
   const { ctx, page } = await session("admin@dhow.test", "Demo-password-2026!");
   await shot(page, "/admin", "20-staff-dashboard");
   await shot(page, "/admin/analytics", "20b-staff-analytics");
+  await shot(page, "/admin/search?q=a", "20e-staff-search");
   await shot(page, "/admin/partners", "20c-staff-partners");
   await shot(page, "/admin/company", "20d-staff-dhow-profile");
   await shot(page, "/admin/reviews", "21-staff-reviews");

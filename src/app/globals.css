@@ -46,6 +46,16 @@
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
   }
+  /* Soft brand light behind the frosted panels: mint top-left, navy wash right, white below. */
+  body {
+    min-height: 100dvh;
+    background:
+      radial-gradient(60rem 40rem at -10% -10%, rgb(99 184 168 / 0.22), transparent 60%),
+      radial-gradient(50rem 36rem at 110% 0%, rgb(42 101 147 / 0.14), transparent 60%),
+      radial-gradient(40rem 30rem at 50% 110%, rgb(232 163 61 / 0.08), transparent 60%),
+      linear-gradient(180deg, #f6f9fb 0%, #eef3f6 100%);
+    background-attachment: fixed;
+  }
   ::selection {
     background: var(--color-mint);
     color: var(--color-ink);
@@ -57,9 +67,17 @@
 }
 
 @layer components {
-  .card {
-    @apply rounded-[var(--radius-card)] bg-surface p-6;
+  /* Frosted glass panel. */
+  .card, .glass {
+    @apply rounded-[var(--radius-card)] border border-white/80 bg-white/72 p-6 shadow-[0_1px_2px_rgba(13,28,41,0.04),0_12px_32px_-18px_rgba(13,28,41,0.18)] backdrop-blur-xl;
   }
+  .glass { @apply p-0; }
+  /* Interactive cards rise a little on hover. */
+  .lift {
+    @apply transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(13,28,41,0.04),0_22px_44px_-20px_rgba(13,28,41,0.28)];
+  }
+  .enter { animation: enter 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .skeleton { @apply animate-pulse rounded-2xl bg-navy-100/50; }
   .label {
     @apply text-xs font-medium tracking-wide text-muted;
   }
@@ -92,4 +110,12 @@
   em, i { font-weight: 600; }
   body { font-feature-settings: "ss01", "cv11"; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   h1, h2, h3 { letter-spacing: -0.02em; }
+}
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enter, .lift, .skeleton { animation: none !important; transition: none !important; transform: none !important; }
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, ComponentType, ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/format";
 
@@ -89,16 +89,20 @@ export function StatusBadge({ status }: { status: string }) {
   return <Badge tone={statusTone[status] ?? "neutral"} dot>{status.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())}</Badge>;
 }
 
-export function Stat({ label, value, note, highlight }: { label: string; value: ReactNode; note?: ReactNode; highlight?: boolean }) {
-  return (
-    <div className={cn("card flex flex-col justify-between gap-6", highlight && "bg-amber-100")}>
-      <p className={cn("label", highlight && "text-amber-700")}>{label}</p>
+export function Stat({ label, value, note, highlight, icon: Icon, href }: { label: string; value: ReactNode; note?: ReactNode; highlight?: boolean; icon?: ComponentType<{ className?: string }>; href?: string }) {
+  const body = (
+    <div className={cn("card lift flex h-full flex-col justify-between gap-5", highlight && "border-amber/30 bg-amber-100/80")}>
+      <div className="flex items-center justify-between gap-3">
+        <p className={cn("label", highlight && "text-amber-700")}>{label}</p>
+        {Icon ? <span className={cn("grid size-9 place-items-center rounded-xl", highlight ? "bg-white/70 text-amber-700" : "bg-navy-50 text-navy-700")}><Icon className="size-4" /></span> : null}
+      </div>
       <div>
         <p className="num text-3xl font-semibold tracking-tight">{value}</p>
         {note ? <p className={cn("mt-1 text-sm", highlight ? "text-ink/70" : "text-muted")}>{note}</p> : null}
       </div>
     </div>
   );
+  return href ? <Link href={href} className="block h-full">{body}</Link> : body;
 }
 
 export function Empty({ title, sub, children }: { title: string; sub?: string; children?: ReactNode }) {

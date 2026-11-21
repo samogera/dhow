@@ -48,7 +48,7 @@ const groups = [
   },
 ];
 
-export function AdminNav({ role }: { role: "reviewer" | "finance" | "admin" }) {
+export function AdminNav({ role, counts = {} }: { role: "reviewer" | "finance" | "admin"; counts?: Record<string, number> }) {
   const path = usePathname();
   // Reviewers don't see money. The pages check roles on the server too; this just keeps the menu honest.
   const visible = groups.filter((g) => g.title !== "Money" || role !== "reviewer");
@@ -63,9 +63,10 @@ export function AdminNav({ role }: { role: "reviewer" | "finance" | "admin" }) {
               return (
                 <li key={href}>
                   <Link href={href} aria-current={on ? "page" : undefined}
-                    className={cn("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition", on ? "bg-navy-50 font-medium text-navy-900" : "text-ink/75 hover:bg-sunken")}>
+                    className={cn("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition", on ? "bg-white font-medium text-navy-900 shadow-sm" : "text-ink/75 hover:bg-white/60")}>
                     <Icon className="size-4 shrink-0" />
-                    {label}
+                    <span className="flex-1">{label}</span>
+                    {counts[href] ? <span className={cn("num min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold", on ? "bg-navy-900 text-white" : "bg-navy-100 text-navy-900")}>{counts[href]}</span> : null}
                   </Link>
                 </li>
               );

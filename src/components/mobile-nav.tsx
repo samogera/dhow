@@ -16,7 +16,7 @@ function TabBar({ tabs, onMore, moreOpen }: { tabs: Tab[]; onMore?: () => void; 
   const item = "flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[11px] font-medium transition";
   return (
     <nav aria-label="Sections"
-      className="fixed inset-x-3 bottom-3 z-40 flex rounded-[1.75rem] border border-line bg-white/95 p-1.5 shadow-[0_8px_30px_-12px_rgba(13,28,41,0.25)] backdrop-blur-md lg:hidden"
+      className="fixed inset-x-3 bottom-3 z-40 flex rounded-[1.75rem] border border-white/80 bg-white/80 p-1.5 shadow-[0_8px_30px_-12px_rgba(13,28,41,0.25)] backdrop-blur-xl lg:hidden"
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
       {tabs.map((t) => {
         const on = t.exact ? path === t.href : path.startsWith(t.href);
@@ -39,7 +39,7 @@ function TabBar({ tabs, onMore, moreOpen }: { tabs: Tab[]; onMore?: () => void; 
 }
 
 /** Staff workspace on phones and tablets: top bar, bottom tabs, and a slide-up sheet with the full menu. */
-export function AdminMobileNav({ role, account }: { role: "reviewer" | "finance" | "admin"; account: React.ReactNode }) {
+export function AdminMobileNav({ role, account, counts }: { role: "reviewer" | "finance" | "admin"; account: React.ReactNode; counts?: Record<string, number> }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -57,7 +57,7 @@ export function AdminMobileNav({ role, account }: { role: "reviewer" | "finance"
 
   return (
     <>
-      <div className="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-md lg:hidden">
+      <div className="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between border-b border-white/70 bg-white/60 px-4 py-3 backdrop-blur-xl lg:hidden">
         <Logo href="/admin" size="sm" />
         {account}
       </div>
@@ -72,7 +72,7 @@ export function AdminMobileNav({ role, account }: { role: "reviewer" | "finance"
               <p className="text-lg font-semibold">Menu</p>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="grid size-9 place-items-center rounded-full bg-sunken"><X className="size-4" /></button>
             </div>
-            <AdminNav role={role} />
+            <AdminNav role={role} counts={counts} />
           </div>
         </div>
       ) : null}

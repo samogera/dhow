@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { after } from "next/server";
 import { friendlyError } from "@/lib/form-errors";
 import { staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,7 +13,7 @@ import { paystackConfigured } from "@/lib/paystack";
 import { invoicePayUrl } from "@/lib/payments";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { loadIssuer } from "@/lib/dhow-profile";
-import { emailLayout, notifyOrg, sendEmail } from "@/lib/notify";
+import { emailLayout, notifyOrg, sendEmail, notifyUser } from "@/lib/notify";
 import { kes } from "@/lib/format";
 import type { ActionState } from "@/components/forms";
 import { appUrl } from "@/lib/app-url";
@@ -250,9 +251,15 @@ export async function addTask(_: ActionState, fd: FormData): Promise<ActionState
   const values = form(fd);
   const p = TaskIn.safeParse(values);
   if (!p.success) return first(p.error, values);
-  const { error } = await s.supabase.from("tasks").insert({ ...p.data, assignee: p.data.assignee ?? s.user.id });
+  const assignee = p.data.assignee ?? s.user.id;
+  const { error } = await s.supabase.from("tasks").insert({ ...p.data, assignee });
   if (error) return { error: error.message };
   revalidateWork(p.data.project_id);
+  if (assignee !== s.user.id) {
+    const by = s.profile?.full_name || "A colleague";
+    after(() => notifyUser(assignee, `New task: ${p.data.title}`, [`${by} gave you a task: ${p.data.title}.`, p.data.due_date ? `Due ${p.data.due_date}.` : "No due date set."],
+      { label: "Open the task", href: `${appUrl()}/admin/projects${p.data.project_id ? `/${p.data.project_id}` : ""}` }));
+  }
   return { ok: "Task added." };
 }
 
@@ -296,6 +303,9 @@ export async function requestTaskReview(_: ActionState, fd: FormData): Promise<A
   const { error } = await s.supabase.from("tasks").update({ reviewer: p.data.reviewer, status: "review", review_state: "requested", review_note: null, reviewed_by: null, reviewed_at: null }).eq("id", p.data.id);
   if (error) return { error: error.message };
   revalidateWork(t.project_id);
+  const by = s.profile?.full_name || "A colleague";
+  after(() => notifyUser(p.data.reviewer, `Please review: ${t.title}`, [`${by} asked you to check a finished task: ${t.title}.`, "Approve it, or send it back with a note."],
+    { label: "Review it", href: `${appUrl()}/admin/projects/${t.project_id ?? ""}` }));
   return { ok: "Sent for review." };
 }
 
@@ -305,7 +315,7 @@ export async function reviewTask(_: ActionState, fd: FormData): Promise<ActionSt
   if (!s) return DENIED;
   const p = z.object({ id: uuid, decision: z.enum(["approve", "changes"]), note: text(1000) }).safeParse(form(fd));
   if (!p.success) return first(p.error);
-  const { data: t } = await s.supabase.from("tasks").select("assignee, reviewer, project_id").eq("id", p.data.id).single();
+  const { data: t } = await s.supabase.from("tasks").select("assignee, reviewer, project_id, title").eq("id", p.data.id).single();
   if (!t) return { error: "Task not found." };
   if (t.assignee === s.user.id) return { error: "Someone other than the person who did the task has to review it." };
   if (t.reviewer && t.reviewer !== s.user.id && s.staffRole !== "admin") return { error: "This review is assigned to someone else." };
@@ -316,7 +326,11 @@ export async function reviewTask(_: ActionState, fd: FormData): Promise<ActionSt
     : { status: "in_progress", done_at: null, review_state: "changes", review_note: p.data.note, reviewed_by: s.user.id, reviewed_at: now }).eq("id", p.data.id);
   if (error) return { error: error.message };
   revalidateWork(t.project_id);
-  return { ok: p.data.decision === "approve" ? "Approved and marked done." : "Sent back with your note." };
+  const approved = p.data.decision === "approve";
+  after(() => notifyUser(t.assignee, approved ? `Approved: ${t.title}` : `Changes needed: ${t.title}`,
+    [approved ? `Your task "${t.title}" was checked and approved.` : `Your task "${t.title}" needs changes.`, ...(p.data.note ? [`Note: ${p.data.note}`] : [])],
+    { label: "Open the task", href: `${appUrl()}/admin/projects/${t.project_id ?? ""}` }));
+  return { ok: approved ? "Approved and marked done." : "Sent back with your note." };
 }
 
 export async function deleteTask(fd: FormData) {
@@ -846,4 +860,21 @@ export async function importLeads(_: ActionState, fd: FormData): Promise<ActionS
   if (error) return { error: error.message };
   revalidatePath("/admin/leads");
   return { ok: `Added ${rows.length} ${rows.length === 1 ? "person" : "people"} to New.` };
+}
+
+// ----------------------------------------------------------------- calendar subscription and email settings
+/** Creates (or replaces) this person's private calendar link. The old link stops working. */
+export async function makeCalendarFeed() {
+  const s = await staffOrNull();
+  if (!s) return;
+  const { randomBytes } = await import("node:crypto");
+  await createAdminClient().from("profiles").update({ calendar_token: randomBytes(24).toString("base64url") }).eq("id", s.user.id);
+  revalidatePath("/admin/calendar");
+}
+
+export async function saveEmailPrefs(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  await createAdminClient().from("profiles").update({ daily_digest: fd.get("daily_digest") === "on", instant_emails: fd.get("instant_emails") === "on" }).eq("id", s.user.id);
+  revalidatePath("/admin/calendar");
 }

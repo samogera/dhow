@@ -3,6 +3,7 @@ import { enrichImported, importAllSources, retireExpired } from "@/lib/opportuni
 import { dailyMaintenance, deadlineReminders } from "@/lib/workflows";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
+import { sendMorningAlerts } from "@/lib/notify";
 
 export const maxDuration = 60;
 
@@ -19,5 +20,6 @@ export async function GET(req: Request) {
   const enriched = await enrichImported(15).catch(() => 0);
   await dailyMaintenance().catch(() => undefined);
   await deadlineReminders().catch(() => undefined);
-  return NextResponse.json({ ok: true, retired, opportunities, enriched });
+  const alertEmails = await sendMorningAlerts().catch(() => 0);
+  return NextResponse.json({ ok: true, retired, opportunities, enriched, alertEmails });
 }

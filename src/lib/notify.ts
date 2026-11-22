@@ -88,12 +88,52 @@ export async function notifyOrg(orgId: string, template: string, subject: string
   }
 }
 
-/** Notify Dhow staff with a given role (reviewers, finance) by email. */
+/** Notify Dhow staff with a given role by email. Admins always get it; anyone who turned instant emails off is skipped. */
 export async function notifyStaff(roles: ("reviewer" | "finance" | "admin")[], subject: string, paragraphs: string[], cta?: { label: string; href: string }) {
   const admin = createAdminClient();
-  const { data: staff } = await admin.from("profiles").select("id").in("staff_role", roles);
+  const wanted = [...new Set([...roles, "admin" as const])];
+  const { data: staff } = await admin.from("profiles").select("id, instant_emails").in("staff_role", wanted);
   for (const s of staff ?? []) {
+    if (s.instant_emails === false) continue;
     const { data: u } = await admin.auth.admin.getUserById(s.id);
     if (u.user?.email) await sendEmail({ template: "staff_alert", to: u.user.email, subject, html: emailLayout(subject, paragraphs, cta) });
   }
+}
+
+/** Email one staff member (a task given to them, a review waiting for them), unless they turned instant emails off. */
+export async function notifyUser(userId: string | null | undefined, subject: string, paragraphs: string[], cta?: { label: string; href: string }) {
+  if (!userId) return;
+  const admin = createAdminClient();
+  const { data: p } = await admin.from("profiles").select("instant_emails").eq("id", userId).maybeSingle();
+  if (p?.instant_emails === false) return;
+  const { data: u } = await admin.auth.admin.getUserById(userId);
+  if (u.user?.email) await sendEmail({ template: "staff_direct", to: u.user.email, subject, html: emailLayout(subject, paragraphs, cta) });
+}
+
+/** Morning email to each staff member with what needs attention today. Sent only when there is something to say. */
+export async function sendMorningAlerts() {
+  const { loadAlerts } = await import("@/lib/alerts");
+  const admin = createAdminClient();
+  const { data: staff } = await admin.from("profiles").select("id, full_name, staff_role, daily_digest").not("staff_role", "is", null);
+  let sent = 0;
+  for (const s of staff ?? []) {
+    if (s.daily_digest === false) continue;
+    const money = s.staff_role === "admin" || s.staff_role === "finance";
+    const alerts = await loadAlerts(admin, s.id, money);
+    if (!alerts.length) continue;
+    const { data: u } = await admin.auth.admin.getUserById(s.id);
+    if (!u.user?.email) continue;
+    const urgent = alerts.filter((a) => a.level === "urgent");
+    const rest = alerts.filter((a) => a.level !== "urgent");
+    const lines = [
+      ...(urgent.length ? [`Urgent (${urgent.length}):`, ...urgent.slice(0, 12).map((a) => `• ${a.title}. ${a.detail}`)] : []),
+      ...(rest.length ? [`Coming up (${rest.length}):`, ...rest.slice(0, 12).map((a) => `• ${a.title}. ${a.detail}`)] : []),
+    ];
+    const first = (s.full_name ?? "").split(" ")[0];
+    const subject = urgent.length ? `${urgent.length} urgent item${urgent.length === 1 ? "" : "s"} today` : `${rest.length} item${rest.length === 1 ? "" : "s"} coming up`;
+    await sendEmail({ template: "morning_alerts", to: u.user.email, subject: `Dhow: ${subject}`,
+      html: emailLayout(first ? `Good morning, ${first}` : "Good morning", lines, { label: "Open alerts", href: `${appUrl()}/admin/alerts` }) });
+    sent++;
+  }
+  return sent;
 }

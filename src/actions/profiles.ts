@@ -2,6 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { after } from "next/server";
+import { notifyStaff } from "@/lib/notify";
+import { appUrl } from "@/lib/app-url";
 import { friendlyError } from "@/lib/form-errors";
 import { isOrgAdmin, memberOrNull, staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -227,6 +230,8 @@ export async function submitPartnerReview(_: ActionState, fd: FormData): Promise
   });
   if (error) return { error: "Could not save your review. Try again." };
   revalidatePath(`/admin/partners/${partner.id}`);
+  after(() => notifyStaff(["admin"], `New partner review: ${p.data.rating}/5`, [`${p.data.reviewer_name}${p.data.reviewer_company ? ` (${p.data.reviewer_company})` : ""} rated a partner ${p.data.rating} out of 5.`, ...(p.data.comment ? [`"${p.data.comment}"`] : [])],
+    { label: "See the partner", href: `${appUrl()}/admin/partners/${partner.id}` }));
   return { ok: "Thank you. Your review has been sent to Dhow Partners." };
 }
 
@@ -259,6 +264,8 @@ export async function submitClientReview(_: ActionState, fd: FormData): Promise<
   const { error } = await db.from("client_reviews").insert({ client_id: c.id, reviewer_name: p.data.reviewer_name, rating: p.data.rating, comment: p.data.comment, may_publish: p.data.may_publish });
   if (error) return { error: "Could not save your review. Try again." };
   revalidatePath(`/admin/clients/${c.id}`);
+  after(() => notifyStaff(["admin"], `New client review: ${p.data.rating}/5`, [`${p.data.reviewer_name} left a ${p.data.rating}-star review.`, ...(p.data.comment ? [`"${p.data.comment}"`] : [])],
+    { label: "See the client", href: `${appUrl()}/admin/clients/${c.id}` }));
   return { ok: "Thank you for your review." };
 }
 

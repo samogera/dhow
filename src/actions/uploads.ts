@@ -1,5 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyStaff } from "@/lib/notify";
+import { appUrl } from "@/lib/app-url";
 import { z } from "zod";
 import { staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -73,6 +76,13 @@ export async function finishFileUpload(target: UploadTarget, file: { name: strin
   });
   if (error) { await removeInternal(path).catch(() => undefined); return { error: "Could not save the file. Try again." }; }
   if (r.owner_type === "partner") revalidatePath(`/admin/partners/${r.owner_id}`); else revalidatePath("/admin/company");
-  if (target.via === "partner") revalidatePath(`/partner/${target.token}`);
+  if (target.via === "partner") {
+    revalidatePath(`/partner/${target.token}`);
+    after(async () => {
+      const { data: p } = await createAdminClient().from("partners").select("name").eq("id", r.owner_id!).maybeSingle();
+      await notifyStaff(["admin"], `${p?.name ?? "A partner"} uploaded a document`, [`${p?.name ?? "A partner"} sent their ${r.label.toLowerCase()} through the upload link.`],
+        { label: "See their documents", href: `${appUrl()}/admin/partners/${r.owner_id}` });
+    });
+  }
   return { ok: `${r.label} uploaded.` };
 }

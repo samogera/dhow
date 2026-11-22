@@ -11,12 +11,19 @@ mkdirSync(OUT, { recursive: true });
 const results = [];
 const pass = (name, note = "") => { results.push(["PASS", name, note]); console.log("PASS", name, note); };
 const fail = (name, note = "") => { results.push(["FAIL", name, note]); console.log("FAIL", name, note); };
+let current = null; // the page in use, for a screenshot when a check fails
+let failShots = 0;
 async function check(name, fn) {
   try {
     const note = await fn();
     pass(name, note ?? "");
   } catch (e) {
-    fail(name, String(e?.message ?? e).split("\n")[0].slice(0, 300));
+    let seen = "";
+    if (current) {
+      await current.screenshot({ path: `${OUT}/FAIL-${++failShots}.png`, fullPage: true }).catch(() => {});
+      seen = await current.locator(".text-bad, [role=alert]").allInnerTexts().then((t) => t.join(" | ")).catch(() => "");
+    }
+    fail(name, `${String(e?.message ?? e).split("\n")[0].slice(0, 200)}${seen ? ` · on screen: ${seen.slice(0, 200)}` : ""} · FAIL-${failShots}.png`);
   }
 }
 
@@ -25,6 +32,7 @@ const browser = await chromium.launch();
 async function signIn(email, viewport = { width: 1440, height: 900 }, mobile = false) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: mobile ? 2 : 1, isMobile: mobile, hasTouch: mobile });
   const page = await ctx.newPage();
+  current = page;
   page.on("pageerror", (e) => console.log("PAGE ERROR", page.url(), e.message));
   await page.goto(`${BASE}/login`);
   await page.fill('input[name="email"]', email);
@@ -91,7 +99,8 @@ async function visit(page, path, shotName) {
     await page.goto(`${BASE}/app/opportunities/b0000000-0000-4000-8000-000000000003`);
     await page.getByRole("radio", { name: "Started" }).first().click();
     await page.getByRole("button", { name: "Add to My applications" }).first().click();
-    await page.getByText("Added to My applications as started").first().waitFor({ timeout: 10000 });
+    // The card switches to "In My applications" with the stage picker once it's saved.
+    await page.getByText("In My applications").first().waitFor({ timeout: 10000 });
   });
 
   await check("My applications shows it as Started and filters work", async () => {

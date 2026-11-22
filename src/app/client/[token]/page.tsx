@@ -8,6 +8,7 @@ import { paystackConfigured } from "@/lib/paystack";
 import { invoicePayUrl } from "@/lib/payments";
 import { cn, day, kes } from "@/lib/format";
 import { ClientReviewForm } from "./review";
+import { HelpForm } from "@/components/help-form";
 
 export const metadata: Metadata = { title: "Your work with Dhow Partners", robots: { index: false } };
 
@@ -17,7 +18,7 @@ export default async function ClientPortal({ params }: { params: Promise<{ token
   const { token } = await params;
   if (!/^[A-Za-z0-9_-]{24,64}$/.test(token)) notFound();
   const db = createAdminClient();
-  const { data: c } = await db.from("clients").select("id, name").eq("portal_token", token).maybeSingle();
+  const { data: c } = await db.from("clients").select("id, name, email, phone").eq("portal_token", token).maybeSingle();
   if (!c) notFound();
   const [{ data: projects }, { data: invoices }, { data: reviews }, issuer] = await Promise.all([
     db.from("projects").select("id, name, status, due_date, description").eq("client_id", c.id).order("created_at", { ascending: false }),
@@ -117,10 +118,16 @@ export default async function ClientPortal({ params }: { params: Promise<{ token
           <div className="mt-5"><ClientReviewForm token={token} /></div>
         </section>
 
-        <section className="flex flex-wrap gap-3 text-sm">
-          {issuer.phone ? <a href={`tel:${issuer.phone}`} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 shadow-sm"><Phone className="size-4 text-navy-600" />{issuer.phone}</a> : null}
-          {issuer.phone ? <a href={`https://wa.me/${issuer.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 shadow-sm"><MessageCircle className="size-4 text-green" />WhatsApp</a> : null}
-          {issuer.email ? <a href={`mailto:${issuer.email}`} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 shadow-sm"><Mail className="size-4 text-navy-600" />{issuer.email}</a> : null}
+        <section className="card">
+          <HelpForm side="client" token={token} email={c.email} phone={c.phone} title="Need something from us?" sub="Pick one. We'll get back to you within one working day." />
+          {issuer.phone || issuer.email ? (
+            <div className="mt-6 flex flex-wrap gap-2 border-t border-line pt-5 text-sm">
+              <span className="mr-1 self-center text-muted">Or reach us directly:</span>
+              {issuer.phone ? <a href={`tel:${issuer.phone}`} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 hover:bg-sunken"><Phone className="size-4 text-navy-600" />Call</a> : null}
+              {issuer.phone ? <a href={`https://wa.me/${issuer.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 hover:bg-sunken"><MessageCircle className="size-4 text-green" />WhatsApp</a> : null}
+              {issuer.email ? <a href={`mailto:${issuer.email}`} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 hover:bg-sunken"><Mail className="size-4 text-navy-600" />Email</a> : null}
+            </div>
+          ) : null}
         </section>
       </main>
     </div>

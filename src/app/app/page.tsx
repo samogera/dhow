@@ -6,6 +6,7 @@ import { Card, CardHeader, StatusBadge } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, day } from "@/lib/format";
 import { rankForCompany } from "@/lib/matching";
+import { HelpForm } from "@/components/help-form";
 
 const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, sectors";
 
@@ -15,7 +16,7 @@ function greeting() {
 }
 
 export default async function Dashboard() {
-  const { org, profile, supabase } = await requireMember();
+  const { org, profile, user, supabase } = await requireMember();
   const today = new Date().toISOString().slice(0, 10);
   const [{ count: docCount }, { data: opps }, { data: events }, { data: apps }, { data: dhow }] = await Promise.all([
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("org_id", org.id).in("status", ["uploaded", "approved"]),
@@ -80,8 +81,8 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.65fr_1fr]">
-        <div className="min-w-0 space-y-6">
+      <div className={cn("grid grid-cols-1 gap-6", !allDone && "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]")}>
+        {!allDone ? <div className="min-w-0 space-y-6">
           {/* Getting started */}
           {!allDone ? (
             <Card className="p-0">
@@ -109,31 +110,9 @@ export default async function Dashboard() {
               </ol>
             </Card>
           ) : null}
+        </div> : null}
 
-          {/* Opportunities */}
-          <section>
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight">Picked for you</h2>
-                <p className="text-sm text-muted">Open to companies in Kenya, checked by the Dhow team.</p>
-              </div>
-              <Link href="/app/opportunities" className="shrink-0 text-sm font-medium text-navy-600 hover:text-navy-900">See all</Link>
-            </div>
-            {picked.length ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {picked.map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && !verified} />)}
-              </div>
-            ) : (
-              <Card className="text-center">
-                <Briefcase className="mx-auto size-6 text-faint" />
-                <p className="mt-2 font-medium">New opportunities are on the way</p>
-                <p className="text-sm text-muted">We check new grants, programmes and tenders every day.</p>
-              </Card>
-            )}
-          </section>
-        </div>
-
-        <aside className="space-y-6">
+        <aside className={cn("min-w-0 space-y-6", allDone && "lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:space-y-0")}>
           {/* Verification */}
           <Card className={verified ? "bg-mint-100/70" : ""}>
             <div className="flex items-start gap-3">
@@ -183,26 +162,55 @@ export default async function Dashboard() {
               <ul className="space-y-3">
                 {(apps as unknown as { id: string; status: string; opportunities: { title: string } | null }[]).map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">{a.opportunities?.title}</span>
+                    <span className="min-w-0 truncate">{a.opportunities?.title}</span>
                     <StatusBadge status={a.status} />
                   </li>
                 ))}
               </ul>
             </Card>
           ) : null}
-
-          {/* Talk to Dhow */}
-          <Card className="bg-sunken/70">
-            <p className="font-semibold">Need a hand?</p>
-            <p className="mt-0.5 text-sm text-muted">Talk to the Dhow team about setting up, partners or an opportunity.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {dhow?.booking_link ? <a href={dhow.booking_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white"><PhoneCall className="size-4" />Book a call</a> : null}
-              {wa ? <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium"><MessageCircle className="size-4" />WhatsApp</a> : null}
-              <a href="mailto:hello@dhowpartners.com" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium">Email us</a>
-            </div>
-          </Card>
         </aside>
       </div>
+
+      {/* Opportunities */}
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Picked for you</h2>
+            <p className="text-sm text-muted">Open to companies in Kenya, checked by the Dhow team.</p>
+          </div>
+          <Link href="/app/opportunities" className="shrink-0 text-sm font-medium text-navy-600 hover:text-navy-900">See all</Link>
+        </div>
+        {picked.length ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {picked.map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && !verified} />)}
+          </div>
+        ) : (
+          <Card className="text-center">
+            <Briefcase className="mx-auto size-6 text-faint" />
+            <p className="mt-2 font-medium">New opportunities are on the way</p>
+            <p className="text-sm text-muted">We check new grants, programmes and tenders every day.</p>
+          </Card>
+        )}
+      </section>
+
+      {/* Talk to Dhow */}
+      <Card className="p-6 sm:p-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-start">
+          <div>
+            <p className="text-sm font-medium text-green">We're here</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Need a hand?</h2>
+            <p className="mt-2 text-sm text-muted">Pick what you need and leave your details. The Dhow team will reach out within one working day.</p>
+            {wa || dhow?.booking_link ? (
+              <div className="mt-5 flex flex-wrap gap-2 text-sm">
+                {dhow?.booking_link ? <a href={dhow.booking_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 font-medium hover:bg-sunken"><PhoneCall className="size-4" />Book a call</a> : null}
+                {wa ? <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 font-medium hover:bg-sunken"><MessageCircle className="size-4" />WhatsApp</a> : null}
+              </div>
+            ) : null}
+          </div>
+          <HelpForm side="member" title="What do you need help with?" name={profile?.full_name} email={user.email} phone={profile?.phone} />
+        </div>
+      </Card>
     </div>
   );
 }

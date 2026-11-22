@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 // Member documents go to Cloudflare R2 when it is configured, otherwise to the private
 // Supabase Storage bucket "member-documents". Same functions either way.
-const useR2 = () => !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY);
+const r2Configured = () => !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY);
 const SB_BUCKET = "member-documents";
 const sb = () => createAdminClient().storage.from(SB_BUCKET);
 
@@ -28,7 +28,7 @@ const bucket = () => process.env.R2_BUCKET ?? "dhow-os-documents";
 
 /** A 5-minute upload link locked to one key, one content type and one exact size. */
 export async function presignUpload(key: string, contentType: string, size: number) {
-  if (!useR2()) {
+  if (!r2Configured()) {
     const { data, error } = await sb().createSignedUploadUrl(key);
     if (error || !data) throw new Error("Could not start the upload. Try again.");
     return data.signedUrl;
@@ -42,7 +42,7 @@ export async function presignUpload(key: string, contentType: string, size: numb
 
 /** A 2-minute download link that saves under the original file name. */
 export async function presignDownload(key: string, fileName: string) {
-  if (!useR2()) {
+  if (!r2Configured()) {
     const { data } = await sb().createSignedUrl(key, 120, { download: fileName.replace(/[^\w.\- ]/g, "_") });
     if (!data?.signedUrl) throw new Error("Could not open that file.");
     return data.signedUrl;
@@ -66,7 +66,7 @@ async function sbRange(key: string, bytes: string) {
 }
 
 export async function headObject(key: string) {
-  if (!useR2()) {
+  if (!r2Configured()) {
     const res = await sbRange(key, "0-0");
     if (!res) return null;
     const size = Number(res.headers.get("content-range")?.split("/")[1] ?? res.headers.get("content-length") ?? 0);
@@ -81,7 +81,7 @@ export async function headObject(key: string) {
 }
 
 export async function deleteObject(key: string) {
-  if (!useR2()) {
+  if (!r2Configured()) {
     await sb().remove([key]);
     return;
   }
@@ -91,7 +91,7 @@ export async function deleteObject(key: string) {
 /** First bytes of a PDF are "%PDF", a PNG starts 89 50 4E 47, a JPEG FF D8 FF. */
 export async function sniffMatches(key: string, mime: string) {
   let b: Buffer;
-  if (!useR2()) {
+  if (!r2Configured()) {
     const res = await sbRange(key, "0-7");
     if (!res) return false;
     b = Buffer.from(new Uint8Array(await res.arrayBuffer()).slice(0, 8));

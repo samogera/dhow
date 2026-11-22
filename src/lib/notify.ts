@@ -14,7 +14,7 @@ async function log(row: { org_id?: string | null; channel: "email" | "sms"; temp
 }
 
 export async function sendEmail(opts: Log & {
-  to: string; subject: string; html: string;
+  to: string; subject: string; html: string; replyTo?: string;
   attachments?: { filename: string; content: Buffer }[];
 }) {
   const key = process.env.RESEND_API_KEY;
@@ -25,6 +25,7 @@ export async function sendEmail(opts: Log & {
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
+      replyTo: opts.replyTo,
       attachments: opts.attachments,
     });
     await log({ org_id: opts.orgId, channel: "email", template: opts.template, to_address: opts.to, status: error ? "failed" : "sent", provider_id: data?.id, error: error?.message });

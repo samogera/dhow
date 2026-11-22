@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { inviteMember, updateOrganization, updateProfile } from "@/actions/member";
+import { deleteMyCompany, inviteMember, updateOrganization, updateProfile } from "@/actions/member";
 import { saveCompanyProfile } from "@/actions/profiles";
 import { ImageInput, SocialFields } from "@/components/profile-bits";
 import { FormMessage, Submit } from "@/components/forms";
@@ -83,6 +83,18 @@ export function CompanyProfileForm({ org, disabled }: { org: Organization; disab
           {!disabled ? <Submit>Save profile</Submit> : <p className="text-sm text-muted">Only owners and admins can edit.</p>}
         </div>
       </fieldset>
+    </form>
+  );
+}
+
+export function DeleteCompanyForm({ name }: { name: string }) {
+  const [state, action] = useActionState(deleteMyCompany, undefined);
+  return (
+    <form action={action} className="space-y-3">
+      <p className="text-sm text-ink/80">This removes {name}, its profile, documents, applications and verification from Dhow. Your login stays, so you can create a new company later. It can&apos;t be undone.</p>
+      <Field label={`Type ${name} to confirm`}><Input name="confirm" autoComplete="off" /></Field>
+      <FormMessage state={state} />
+      <Submit variant="danger" pending="Deleting…">Delete company</Submit>
     </form>
   );
 }

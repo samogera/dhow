@@ -85,6 +85,12 @@ async function shotInner(page, path, name, { full = true } = {}) {
     console.log("PDF status", res.status(), res.headers()["content-type"]);
     if (res.status() !== 200) console.log("PDF body", (await res.text()).slice(0, 2000));
     writeFileSync(`${OUT}/30c-invoice.pdf`, await res.body());
+    for (const f of ["pdf", "xlsx"]) {
+      const r = await page.request.get(`${BASE}/api/analytics/export?format=${f}`);
+      console.log("Analytics", f, r.status());
+      if (r.status() !== 200) console.log((await r.text()).slice(0, 1500));
+      writeFileSync(`${OUT}/30e-analytics.${f}`, await r.body());
+    }
   } catch (e) { console.log("pdf failed", e.message); }
   await shot(page, "/admin/wiki", "31-staff-wiki");
   await shot(page, "/admin/wiki/client-journey", "32-staff-wiki-page");

@@ -14,6 +14,7 @@ type D = {
   legal_name: string; trading_name: string | null; tagline: string | null; about: string | null; registration_no: string | null; kra_pin: string | null;
   vat_no: string | null; founded_year: number | null; address: string | null; postal_address: string | null; email: string | null; phone: string | null;
   whatsapp: string | null; website: string | null; booking_link: string | null; logo_url: string | null; bank_details: string | null; socials: Record<string, string> | null; updated_at: string;
+  mission: string | null; vision: string | null; promises: string | null; audience: string | null; services: string | null;
   bank_name: string | null; bank_account_name: string | null; bank_account_no: string | null; bank_branch: string | null; bank_swift: string | null; paybill: string | null; paybill_account: string | null; invoice_terms: string | null;
 };
 
@@ -62,6 +63,26 @@ export default async function Company() {
         {d.about ? <p className="mt-6 max-w-3xl whitespace-pre-line border-t border-line pt-6 text-[0.95rem] leading-relaxed text-ink/85">{d.about}</p> : null}
       </Card>
 
+      {d.mission || d.vision || d.promises ? (
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          {d.mission ? <div className="card"><p className="label">Mission</p><p className="mt-2 text-[0.95rem] leading-relaxed">{d.mission}</p></div> : null}
+          {d.vision ? <div className="card"><p className="label">Vision</p><p className="mt-2 text-[0.95rem] leading-relaxed">{d.vision}</p></div> : null}
+          {d.audience ? <div className="card"><p className="label">Who we serve</p><p className="mt-2 text-[0.95rem] leading-relaxed">{d.audience}</p></div> : null}
+          {d.promises ? (
+            <div className="card lg:col-span-2">
+              <p className="label">Our promises</p>
+              <ol className="mt-3 space-y-3">{d.promises.split("\n").filter(Boolean).map((p, i) => <li key={i} className="flex gap-3 text-sm"><span className="num grid size-6 shrink-0 place-items-center rounded-full bg-navy-900 text-xs text-white">{i + 1}</span><span className="leading-relaxed">{p}</span></li>)}</ol>
+            </div>
+          ) : null}
+          {d.services ? (
+            <div className="card">
+              <p className="label">Services</p>
+              <ul className="mt-3 flex flex-wrap gap-1.5">{d.services.split("\n").filter(Boolean).map((sv) => <li key={sv} className="rounded-full bg-sunken px-2.5 py-1 text-xs">{sv}</li>)}</ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
         <Card className="p-6 sm:p-8">
           <CardHeader title="Edit details" sub={isAdmin ? undefined : "Only admins can change these."} />
@@ -74,6 +95,13 @@ export default async function Company() {
                 <W><Field label="Tagline"><Input name="tagline" defaultValue={d.tagline ?? ""} /></Field></W>
                 <W><Field label="About us"><Textarea name="about" rows={5} defaultValue={d.about ?? ""} /></Field></W>
                 <Field label="Year founded"><Input name="founded_year" type="number" min={1900} max={2100} defaultValue={d.founded_year ?? ""} /></Field>
+              </Block>
+              <Block title="Mission and promises" sub="One point per line for promises and services">
+                <W><Field label="Mission"><Textarea name="mission" rows={2} defaultValue={d.mission ?? ""} /></Field></W>
+                <W><Field label="Vision"><Textarea name="vision" rows={2} defaultValue={d.vision ?? ""} /></Field></W>
+                <W><Field label="Our promises"><Textarea name="promises" rows={4} defaultValue={d.promises ?? ""} /></Field></W>
+                <W><Field label="Who we serve"><Textarea name="audience" rows={2} defaultValue={d.audience ?? ""} /></Field></W>
+                <W><Field label="Services"><Textarea name="services" rows={6} defaultValue={d.services ?? ""} /></Field></W>
               </Block>
               <Block title="Registration and tax" sub="The KRA PIN shows on invoices">
                 <Field label="Registration number"><Input name="registration_no" defaultValue={d.registration_no ?? ""} /></Field>

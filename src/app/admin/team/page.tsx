@@ -32,7 +32,7 @@ function PersonFields({ p }: { p?: Person }) {
 export const metadata: Metadata = { title: "Team" };
 
 const ROLES = [
-  { value: "reviewer", label: "Reviewer", note: "Reviews documents and verifications, runs the CRM, wiki and marketplace." },
+  { value: "reviewer", label: "Reviewer", note: "Reviews documents and verifications, runs clients, leads, partners and projects." },
   { value: "finance", label: "Finance", note: "Everything a reviewer can do, plus invoices, payments and bills." },
   { value: "admin", label: "Admin", note: "Everything, plus plans and staff roles." },
 ] as const;

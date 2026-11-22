@@ -232,7 +232,7 @@ Read the full [privacy policy](/privacy).
     body: `
 The staff workspace is at **/admin**. What you see depends on your role:
 
-- **Reviewer**: verification reviews, member companies, opportunities, leads, clients, partners, projects, the wiki and links.
+- **Reviewer**: verification reviews, member companies, opportunities, leads, clients, partners, projects.
 - **Finance**: everything a reviewer can do, plus **Finance** (invoices, payments and partner bills).
 - **Admin**: everything, plus setting company plans and managing staff roles.
 
@@ -366,20 +366,6 @@ Go to **Finance → Partner bills**.
 - When you pay, enter the amount next to the bill and click **Pay**. Part payments are fine. The bill shows *Part paid* until it's cleared.
 
 The top of the Finance page shows: **Net position** = (received + clients owe us) − (paid out + we owe partners). Keeping bills up to date is what makes that number honest.
-`,
-  },
-  {
-    slug: "wiki-and-links", audience: "staff", section: "Company",
-    title: "Wiki, SOPs and links",
-    summary: "Write internal procedures and keep shared links.",
-    body: `
-**Wiki and SOPs**
-
-- Click **New page**, give it a title, a section (e.g. *Operations*) and an address (lowercase and dashes, e.g. *client-onboarding*).
-- Write in Markdown: \`#\` for headings, \`-\` for lists, \`**bold**\`, \`[text](https://link)\` and \`- [ ]\` for checklists.
-- Search finds words in titles and page text. **Edit** is at the top of every page.
-
-**Links** keeps every tool, portal and shared folder in one place, grouped by category. Hover over a link to remove it.
 `,
   },
   {

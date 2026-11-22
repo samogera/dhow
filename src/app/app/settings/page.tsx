@@ -6,7 +6,7 @@ import { ConfirmSubmit } from "@/components/forms";
 import { kes, label } from "@/lib/format";
 import { PLAN_LABEL, PLAN_PRICE_KES } from "@/lib/types";
 import { removeMember } from "@/actions/member";
-import { CompanyForm, CompanyProfileForm, InviteForm, ProfileForm } from "./forms";
+import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InviteForm, ProfileForm } from "./forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -89,6 +89,13 @@ export default async function Settings() {
         </Table>
         {admin ? <div className="mt-6 border-t border-line pt-6"><InviteForm /></div> : null}
       </Card>
+
+      {m.role === "owner" ? (
+        <Card className="mt-4 border-bad/20 bg-bad/5">
+          <CardHeader title="Delete company" sub="If you no longer want to be part of Dhow" />
+          <DeleteCompanyForm name={m.org.name} />
+        </Card>
+      ) : null}
     </>
   );
 }

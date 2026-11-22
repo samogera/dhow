@@ -179,6 +179,7 @@ const DhowIn = z.object({
   bank_branch: text(120), bank_swift: text(20),
   paybill: z.string().trim().max(10).regex(/^\d*$/, "Paybill: digits only").optional().transform((v) => v || null),
   paybill_account: text(40), invoice_terms: text(300),
+  mission: text(1000), vision: text(1000), promises: text(2000), audience: text(1000), services: text(3000),
 });
 export async function saveDhowProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["admin"]);

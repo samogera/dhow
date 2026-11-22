@@ -594,46 +594,6 @@ export async function setApplicationStatus(fd: FormData) {
   revalidatePath("/admin/opportunities");
 }
 
-// ----------------------------------------------------------------- wiki and links
-const WikiIn = z.object({
-  id: optUuid,
-  title: z.string().trim().min(2).max(160),
-  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers and dashes in the address").max(80),
-  section: z.string().trim().min(1).max(60),
-  body: z.string().max(100_000),
-});
-export async function saveWikiPage(_: ActionState, fd: FormData): Promise<ActionState> {
-  const s = await staffOrNull();
-  if (!s) return DENIED;
-  const p = WikiIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
-  const { id, ...row } = p.data;
-  const payload = { ...row, updated_by: s.user.id, updated_at: new Date().toISOString() };
-  const { error } = id ? await s.supabase.from("wiki_pages").update(payload).eq("id", id) : await s.supabase.from("wiki_pages").insert(payload);
-  if (error) return { error: error.code === "23505" ? "That address is already used by another page." : error.message };
-  revalidatePath("/admin/wiki");
-  redirect(`/admin/wiki/${row.slug}`);
-}
-
-const LinkIn = z.object({ title: z.string().trim().min(2).max(120), url: z.string().trim().url().refine((u) => /^https?:\/\//.test(u), "Links must start with http or https"), category: z.string().trim().min(1).max(60), notes: text(300) });
-export async function saveLink(_: ActionState, fd: FormData): Promise<ActionState> {
-  const s = await staffOrNull();
-  if (!s) return DENIED;
-  const p = LinkIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
-  const { error } = await s.supabase.from("links").insert(p.data);
-  if (error) return { error: error.message };
-  revalidatePath("/admin/links");
-  return { ok: "Link added." };
-}
-
-export async function deleteLink(fd: FormData) {
-  const s = await staffOrNull();
-  if (!s) return;
-  const id = uuid.safeParse(fd.get("id"));
-  if (id.success) await s.supabase.from("links").delete().eq("id", id.data);
-  revalidatePath("/admin/links");
-}
 
 // ----------------------------------------------------------------- staff roles (admins only)
 export async function setStaffRole(_: ActionState, fd: FormData): Promise<ActionState> {

@@ -202,3 +202,18 @@ export async function withdrawApplication(fd: FormData) {
   await m.supabase.from("applications").update({ status: "withdrawn" }).eq("id", id.data).eq("org_id", m.org.id);
   revalidatePath("/app/applications");
 }
+
+/** The company's owner removes their company page and everything it uploaded. The owner keeps their login. */
+export async function deleteMyCompany(_: ActionState, fd: FormData): Promise<ActionState> {
+  const m = await memberOrNull();
+  if (!m || m.role !== "owner") return { error: "Only the company owner can delete it." };
+  if (String(fd.get("confirm") ?? "").trim().toLowerCase() !== m.org.name.trim().toLowerCase()) return { error: `Type ${m.org.name} exactly to confirm.` };
+  const db = createAdminClient();
+  const { data: docs } = await db.from("documents").select("object_key").eq("org_id", m.org.id);
+  await Promise.all((docs ?? []).map((d) => deleteObject(d.object_key).catch(() => null)));
+  const { error } = await db.from("organizations").delete().eq("id", m.org.id);
+  if (error) return { error: "Could not delete the company. Contact hello@dhowpartners.com." };
+  await notifyStaff(["admin"], "Member company deleted", [`${m.org.name} deleted its company page.`]).catch(() => null);
+  (await cookies()).delete(ORG_COOKIE);
+  redirect("/onboarding");
+}

@@ -17,6 +17,15 @@ export interface InvoiceForPdf {
   items: { description: string; quantity: number; unit_price_kes: number }[];
 }
 
+/** The built-in PDF fonts only cover Western European characters: swap or drop anything else so a stray emoji can't break the file. */
+export function pdfText(v: string | null | undefined): string {
+  if (!v) return "";
+  return v.normalize("NFKC")
+    .replace(/[\u2018\u2019\u201A\u2032]/g, "'").replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/[\u2010-\u2015\u2212]/g, "-").replace(/\u2026/g, "...").replace(/[\u00A0\u2007\u202F]/g, " ")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A1-\u00FF\u20AC]/g, "");
+}
+
 const money = (n: number) => `KSh ${new Intl.NumberFormat("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
 const d = (s: string) => new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
@@ -43,10 +52,18 @@ const s = StyleSheet.create({
   foot: { position: "absolute", bottom: 30, left: 52, right: 52, flexDirection: "row", justifyContent: "space-between", fontSize: 8, color: MUTED },
 });
 
-function InvoiceDoc({ inv, issuer, payUrl }: { inv: InvoiceForPdf; issuer: Issuer; payUrl?: string }) {
+function clean<T>(v: T): T {
+  if (typeof v === "string") return pdfText(v) as T;
+  if (Array.isArray(v)) return v.map(clean) as T;
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, clean(x)])) as T;
+  return v;
+}
+
+function InvoiceDoc({ inv: rawInv, issuer: rawIssuer, payUrl }: { inv: InvoiceForPdf; issuer: Issuer; payUrl?: string }) {
+  const inv = clean(rawInv), issuer = clean(rawIssuer);
   const balance = inv.total_kes - inv.paid_kes;
   return (
-    <Document title={`Invoice ${inv.number} · ${issuer.trading}`} author={issuer.name}>
+    <Document title={`Invoice ${inv.number} - ${issuer.trading}`} author={issuer.name}>
       <Page size="A4" style={s.page}>
         <View style={s.band}><View style={{ flex: 5, backgroundColor: NAVY }} /><View style={{ flex: 1, backgroundColor: MINT }} /></View>
 
@@ -112,8 +129,8 @@ function InvoiceDoc({ inv, issuer, payUrl }: { inv: InvoiceForPdf; issuer: Issue
         {inv.notes ? <Text style={[s.muted, { marginTop: 22 }]}>{inv.notes}</Text> : null}
 
         <View style={s.foot} fixed>
-          <Text>{issuer.name}{issuer.kra_pin ? `  ·  KRA PIN ${issuer.kra_pin}` : ""}</Text>
-          <Text>{[issuer.email, issuer.phone, issuer.website].filter(Boolean).join("  ·  ")}</Text>
+          <Text>{issuer.name}{issuer.kra_pin ? `   |   KRA PIN ${issuer.kra_pin}` : ""}</Text>
+          <Text>{[issuer.email, issuer.phone, issuer.website].filter(Boolean).join("   |   ")}</Text>
         </View>
       </Page>
     </Document>

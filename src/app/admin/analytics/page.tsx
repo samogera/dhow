@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, Building2, CalendarDays, CreditCard, Inbox, ListChecks, Megaphone, Send } from "lucide-react";
+import { BadgeCheck, Building2, Download, CalendarDays, CreditCard, Inbox, ListChecks, Megaphone, Send } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { AreaChart, BarList, ColumnChart } from "@/components/charts";
 import { Card, CardHeader, PageHeader, Stat, Table } from "@/components/ui";
@@ -73,7 +73,12 @@ export default async function Analytics() {
 
   return (
     <>
-      <PageHeader title="Analytics" sub="Members, verification and opportunities at a glance. Figures are live." />
+      <PageHeader title="Analytics" sub="Members, verification and opportunities at a glance. Figures are live.">
+        <div className="flex flex-wrap gap-2">
+          <a href="/api/analytics/export?format=pdf" className="inline-flex items-center gap-2 rounded-full bg-navy-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-navy-700"><Download className="size-4" />PDF report</a>
+          <a href="/api/analytics/export?format=xlsx" className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-5 py-2.5 text-sm font-medium hover:bg-sunken"><Download className="size-4" />Excel</a>
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat icon={Building2} label="Member companies" value={O.length} note={`${joins.at(-1)?.value ?? 0} joined this month`} />

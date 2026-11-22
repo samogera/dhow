@@ -64,7 +64,7 @@ export function emailLayout(title: string, paragraphs: string[], cta?: { label: 
   return `<!doctype html><html><body style="margin:0;background:#f3f5f7;font-family:Inter,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center">
   <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:24px;padding:36px">
-  <tr><td style="padding-bottom:24px"><img src="${escapeHtml(appUrl())}/brand/wordmark-navy.png" alt="Dhow Partners" height="22" style="height:22px;width:auto;display:block;border:0"></td></tr>
+  <tr><td style="padding-bottom:24px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="vertical-align:middle"><img src="https://raw.githubusercontent.com/samogera/dhow/main/public/brand/email-icon.png" alt="" width="32" height="32" style="width:32px;height:32px;display:block;border:0;border-radius:8px"></td><td style="vertical-align:middle;padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#0d1c29;letter-spacing:-0.2px">Dhow Partners</td></tr></table></td></tr>
   <tr><td><h1 style="margin:0 0 16px;font-size:22px;color:#0d1c29">${escapeHtml(title)}</h1>${p}${button}</td></tr>
   <tr><td style="padding-top:28px;font-size:12px;color:#98a3ad">Dhow Partners · Nairobi, Kenya · dhowpartners.com</td></tr>
   </table></td></tr></table></body></html>`;

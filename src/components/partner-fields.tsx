@@ -35,7 +35,7 @@ export function PartnerFields({ p, full }: { p?: PartnerRow; full?: boolean }) {
           <Field label="Contract"><Select name="contract_status" defaultValue={p?.contract_status ?? "none"}>{Object.entries(CONTRACT_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
           <Field label="Contract date" hint="When it was signed, sent or discussed"><Input name="contract_date" type="date" defaultValue={p?.contract_date ?? ""} /></Field>
           <div className="sm:col-span-2"><Field label="Contract notes" hint="What was agreed or still open"><Textarea name="contract_notes" rows={3} maxLength={3000} placeholder="Discussed terms in March. Waiting for our first client before signing." defaultValue={p?.contract_notes ?? ""} /></Field></div>
-          <div className="sm:col-span-2"><Field label="Agreement terms" hint="How the percentage works, payment timing"><Input name="commission_terms" placeholder="10% of fees on clients we refer, paid monthly" defaultValue={p?.commission_terms ?? ""} /></Field></div>
+          <div className="sm:col-span-2"><Field label="Agreement terms" hint="How the percentage works, payment timing"><Textarea name="commission_terms" rows={3} maxLength={3000} placeholder="10% of fees on clients we refer, paid monthly" defaultValue={p?.commission_terms ?? ""} /></Field></div>
           <div className="sm:col-span-2"><Field label="Notes"><Textarea name="notes" rows={4} defaultValue={p?.notes ?? ""} /></Field></div>
           <div className="sm:col-span-2"><p className="mb-3 text-sm font-semibold">Social links</p><SocialFields value={p?.socials} /></div>
         </>

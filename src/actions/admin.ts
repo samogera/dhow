@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { friendlyError } from "@/lib/form-errors";
 import { staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decideVerification } from "@/lib/workflows";
@@ -25,7 +26,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")
 const money = z.preprocess((v) => (v === "" || v === undefined || v === null ? null : Number(v)), z.number().min(0).max(1e12).nullable());
 const uuid = z.string().uuid();
 const optUuid = z.string().uuid().optional().or(z.literal("")).transform((v) => v || null);
-const first = (e: z.ZodError) => ({ error: e.issues[0]?.message ?? "Check the form." });
+const first = (e: z.ZodError, values?: Record<string, unknown>) => friendlyError(e, values);
 const form = (fd: FormData) => Object.fromEntries(fd);
 
 // ----------------------------------------------------------------- verification
@@ -101,8 +102,9 @@ const ClientIn = z.object({
 export async function saveClient(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = ClientIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = ClientIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   if (id) {
     const { error } = await s.supabase.from("clients").update(row).eq("id", id);
@@ -128,8 +130,9 @@ const LeadIn = z.object({
 export async function saveLead(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = LeadIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = LeadIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   const { error } = id ? await s.supabase.from("leads").update(row).eq("id", id) : await s.supabase.from("leads").insert({ ...row, owner: s.user.id });
   if (error) return { error: error.message };
@@ -172,8 +175,9 @@ const PartnerIn = z.object({
 export async function savePartner(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = PartnerIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = PartnerIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   const { error } = id ? await s.supabase.from("partners").update(row).eq("id", id) : await s.supabase.from("partners").insert(row);
   if (error) return { error: error.message };
@@ -185,8 +189,9 @@ const ContactIn = z.object({ name: z.string().trim().min(2).max(120), role: text
 export async function saveContact(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = ContactIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = ContactIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { error } = await s.supabase.from("contacts").insert(p.data);
   if (error) return { error: error.message };
   revalidatePath("/admin/clients", "layout");
@@ -205,8 +210,9 @@ const ProjectIn = z.object({
 export async function saveProject(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = ProjectIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = ProjectIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   if (id) {
     const { error } = await s.supabase.from("projects").update(row).eq("id", id);
@@ -241,8 +247,9 @@ function revalidateWork(projectId?: string | null) {
 export async function addTask(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = TaskIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = TaskIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { error } = await s.supabase.from("tasks").insert({ ...p.data, assignee: p.data.assignee ?? s.user.id });
   if (error) return { error: error.message };
   revalidateWork(p.data.project_id);
@@ -346,8 +353,9 @@ const InvoiceIn = z.object({
 export async function createInvoice(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["finance"]);
   if (!s) return DENIED;
-  const p = InvoiceIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = InvoiceIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   if (p.data.due_date < p.data.issue_date) return { error: "The due date is before the issue date." };
   const { items, new_client_name, new_client_email, new_client_country, client_id, ...head } = p.data;
   let clientId = client_id;
@@ -455,8 +463,9 @@ const BillIn = z.object({
 export async function addBill(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["finance"]);
   if (!s) return DENIED;
-  const p = BillIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = BillIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, paid_now, ...row } = p.data;
   const today = new Date().toISOString().slice(0, 10);
   const paid = paid_now ? { paid_kes: row.amount_kes, paid_on: row.due_date ?? today } : {};
@@ -488,8 +497,9 @@ export async function updateInvoice(_: ActionState, fd: FormData): Promise<Actio
   if (!s) return DENIED;
   const id = uuid.safeParse(fd.get("id"));
   if (!id.success) return { error: "Bad request." };
-  const p = InvoiceIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = InvoiceIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   if (p.data.due_date < p.data.issue_date) return { error: "The due date is before the issue date." };
   const { data: cur } = await s.supabase.from("invoices").select("status").eq("id", id.data).single();
   if (!cur) return { error: "Invoice not found." };
@@ -574,8 +584,9 @@ function lines(v?: string) {
 export async function saveOpportunity(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = OppIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = OppIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   const { error } = id ? await s.supabase.from("opportunities").update(row).eq("id", id) : await s.supabase.from("opportunities").insert({ ...row, created_by: s.user.id });
   if (error) return { error: error.message };
@@ -649,8 +660,9 @@ const SourceIn = z.object({
 export async function saveSource(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = SourceIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = SourceIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   const { error } = id ? await s.supabase.from("opportunity_sources").update(row).eq("id", id) : await s.supabase.from("opportunity_sources").insert({ ...row, active: true });
   if (error) return { error: error.code === "23505" ? "That source is already added." : error.message };

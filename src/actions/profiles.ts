@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { friendlyError } from "@/lib/form-errors";
 import { isOrgAdmin, memberOrNull, staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isFile, removeInternal, uploadImage } from "@/lib/storage";
@@ -17,7 +18,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")
 const year = z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().int().min(1900).max(2100).nullable());
 const uuid = z.string().uuid();
 const optUuid = z.string().uuid().optional().or(z.literal("")).transform((v) => v || null);
-const first = (e: z.ZodError) => ({ error: e.issues[0]?.message ?? "Check the form." });
+const first = (e: z.ZodError, values?: Record<string, unknown>) => friendlyError(e, values);
 const form = (fd: FormData) => Object.fromEntries([...fd.entries()].filter(([, v]) => typeof v === "string"));
 
 /** Reads social_* fields into { linkedin: "https://…", … }. Plain handles become links. */
@@ -51,8 +52,9 @@ const CompanyProfileIn = z.object({
 export async function saveCompanyProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const m = await memberOrNull();
   if (!m || !isOrgAdmin(m.role)) return { error: "Only owners and admins can edit the company profile." };
-  const p = CompanyProfileIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = CompanyProfileIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const db = createAdminClient();
   const { data: cur } = await db.from("organizations").select("logo_url").eq("id", m.org.id).single();
   const img = await imageField(fd, `orgs/${m.org.id}`, cur?.logo_url ?? null);
@@ -70,7 +72,7 @@ const PartnerIn = z.object({
   industry: text(120), discipline: text(120), address: text(300),
   relationship: z.enum(["service", "referral", "institution"]),
   status: z.enum(["vetting", "approved", "paused", "rejected"]),
-  commission_terms: text(300), website: url, email: text(160), phone: text(40), notes: text(4000),
+  commission_terms: text(3000), website: url, email: text(160), phone: text(40), notes: text(4000),
   about: text(3000),
   agreed_pct: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0, "Percentage between 0 and 100").max(100, "Percentage between 0 and 100").nullable()).optional(),
   contract_status: z.enum(["none", "discussed", "sent", "signed", "ended"]).optional(),
@@ -93,8 +95,9 @@ function ratesFrom(fd: FormData): { service: string; pct: number | null }[] | { 
 export async function savePartnerProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = PartnerIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = PartnerIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   const rates = ratesFrom(fd);
   if ("error" in rates) return rates;
@@ -137,8 +140,9 @@ const PersonIn = z.object({
 export async function savePerson(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = PersonIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = PersonIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { id, ...row } = p.data;
   let current: string | null = null;
   if (id) current = (await s.supabase.from("team_people").select("photo_url").eq("id", id).single()).data?.photo_url ?? null;
@@ -175,8 +179,9 @@ const DhowIn = z.object({
 export async function saveDhowProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["admin"]);
   if (!s) return { error: "Only admins can edit the Dhow profile." };
-  const p = DhowIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = DhowIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { data: cur } = await s.supabase.from("dhow_profile").select("logo_url").eq("id", 1).single();
   const img = await imageField(fd, "dhow", cur?.logo_url ?? null);
   if ("error" in img) return img;
@@ -210,8 +215,9 @@ const ReviewIn = z.object({
 });
 /** A client reviews a partner through the partner's review link. */
 export async function submitPartnerReview(_: ActionState, fd: FormData): Promise<ActionState> {
-  const p = ReviewIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = ReviewIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   if (!(await rateLimit(`partner-review:${p.data.token}`, 10, 3600))) return { error: "Too many reviews from this link. Try later." };
   const db = createAdminClient();
   const { data: partner } = await db.from("partners").select("id").eq("review_token", p.data.token).maybeSingle();
@@ -243,8 +249,9 @@ const ClientReviewIn = z.object({
   may_publish: z.enum(["on"]).optional().transform((v) => v === "on"),
 });
 export async function submitClientReview(_: ActionState, fd: FormData): Promise<ActionState> {
-  const p = ClientReviewIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = ClientReviewIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   if (!(await rateLimit(`client-review:${p.data.token}`, 5, 3600))) return { error: "Too many reviews. Try later." };
   const db = createAdminClient();
   const { data: c } = await db.from("clients").select("id").eq("portal_token", p.data.token).maybeSingle();
@@ -260,8 +267,9 @@ const IdeaIn = z.object({ title: z.string().trim().min(3, "Give the idea a short
 export async function addIdea(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const p = IdeaIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
+  const values = form(fd);
+  const p = IdeaIn.safeParse(values);
+  if (!p.success) return first(p.error, values);
   const { error } = await s.supabase.from("ideas").insert({ ...p.data, author: s.user.id });
   if (error) return { error: error.message };
   revalidatePath("/admin/ideas");

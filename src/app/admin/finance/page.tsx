@@ -4,7 +4,9 @@ import { requireStaff } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { ButtonLink, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Stat, StatusBadge, Table, Tabs } from "@/components/ui";
 import { day, kes } from "@/lib/format";
-import { addBill, markInvoicePaid, payBill, setBankBalance } from "@/actions/admin";
+import { addBill, deleteBill, markInvoicePaid, payBill, setBankBalance } from "@/actions/admin";
+import { BillFields } from "./bill-fields";
+import { ConfirmSubmit } from "@/components/forms";
 import { Download, Landmark } from "lucide-react";
 import { Drawer } from "@/components/drawer";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -19,7 +21,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   const [{ data: pos }, { data: invoices }, { data: bills }, { data: partners }, { data: projects }] = await Promise.all([
     s.supabase.from("finance_position").select("*").single(),
     s.supabase.from("invoices").select("id, number, status, issue_date, due_date, total_kes, paid_kes, clients(name)").order("created_at", { ascending: false }).limit(200),
-    s.supabase.from("bills").select("id, description, amount_kes, paid_kes, due_date, status, category, payee, repeats, partners(name)").order("due_date", { ascending: true, nullsFirst: false }),
+    s.supabase.from("bills").select("id, description, amount_kes, paid_kes, due_date, paid_on, status, category, payee, repeats, partner_id, project_id, partners(name)").order("due_date", { ascending: true, nullsFirst: false }),
     s.supabase.from("partners").select("id, name").order("name"),
     s.supabase.from("projects").select("id, name").neq("status", "done").order("name"),
   ]);
@@ -40,7 +42,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <PageHeader title="Finance" sub="Net position = (received + owed by clients) − (paid out + owed to partners)">
+      <PageHeader title="Finance" sub="Net position = money in (received + owed to us) minus money out (spent + bills still to pay)">
         <div className="flex flex-wrap gap-2">
           <Drawer label="Download" title="Download finance records" sub="CSV files open in Excel and Google Sheets." variant="outline" plus={false}>
             <div className="space-y-3">
@@ -75,13 +77,13 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
         <Stat label="Net position" value={<span className="num">{kes(net)}</span>} highlight />
         <Stat label="Received" value={<span className="num">{kes(p.received_kes)}</span>} />
-        <Stat label="Clients owe us" value={<span className="num">{kes(p.owed_by_clients_kes)}</span>} />
-        <Stat label="Paid out" value={<span className="num">{kes(p.paid_out_kes)}</span>} />
-        <Stat label="We owe partners" value={<span className="num">{kes(p.owed_to_partners_kes)}</span>} />
+        <Stat label="Owed to us" value={<span className="num">{kes(p.owed_by_clients_kes)}</span>} />
+        <Stat label="Spent" value={<span className="num">{kes(p.paid_out_kes)}</span>} />
+        <Stat label="Bills to pay" value={<span className="num">{kes(p.owed_to_partners_kes)}</span>} />
       </div>
 
       <div className="mt-8">
-        <Tabs current={`/admin/finance?tab=${tab}`} items={[{ href: "/admin/finance?tab=invoices", label: "Invoices" }, { href: "/admin/finance?tab=bills", label: "Bills and expenses" }, { href: "/admin/finance?tab=calculator", label: "Share calculator" }]} />
+        <Tabs current={`/admin/finance?tab=${tab}`} items={[{ href: "/admin/finance?tab=invoices", label: "Invoices" }, { href: "/admin/finance?tab=bills", label: "Bills and spending" }, { href: "/admin/finance?tab=calculator", label: "Share calculator" }]} />
       </div>
 
       {tab === "calculator" ? (
@@ -95,8 +97,18 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
               const due = unpaid.reduce((n, b) => n + Number(b.amount_kes) - Number(b.paid_kes), 0);
               const cats = [...new Set(all.map((b) => b.category))];
               const shown = all.filter((b) => !cat || b.category === cat);
+              const ym = today.slice(0, 7), yr = today.slice(0, 4);
+              const spentIn = (pre: string) => all.filter((b) => Number(b.paid_kes) > 0 && (b.paid_on ?? b.due_date ?? "").startsWith(pre));
+              const month = spentIn(ym).reduce((n, b) => n + Number(b.paid_kes), 0);
+              const year = spentIn(yr);
+              const byCat = Object.entries(year.reduce<Record<string, number>>((m, b) => { m[b.category] = (m[b.category] ?? 0) + Number(b.paid_kes); return m; }, {})).sort((a, b) => b[1] - a[1]);
               return (
                 <>
+                  <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-sunken/70 p-4"><p className="label">Spent this month</p><p className="num mt-1 text-xl font-semibold">{kes(month)}</p></div>
+                    <div className="rounded-2xl bg-sunken/70 p-4"><p className="label">Spent this year</p><p className="num mt-1 text-xl font-semibold">{kes(year.reduce((n, b) => n + Number(b.paid_kes), 0))}</p></div>
+                    <div className="rounded-2xl bg-sunken/70 p-4"><p className="label">Biggest this year</p>{byCat.length ? <ul className="mt-1 space-y-0.5 text-xs">{byCat.slice(0, 3).map(([c, v]) => <li key={c} className="flex justify-between gap-2"><span>{BILL_CATEGORY_LABEL[c] ?? c}</span><span className="num font-medium">{kes(v)}</span></li>)}</ul> : <p className="mt-1 text-sm text-muted">Nothing yet</p>}</div>
+                  </div>
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-1.5">
                       <Link href="/admin/finance?tab=bills" className={`rounded-full px-3.5 py-1.5 text-xs font-medium ${!cat ? "bg-navy-900 text-white" : "bg-sunken text-ink/70"}`}>All</Link>
@@ -105,7 +117,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                     <p className="text-sm text-muted">Still to pay: <span className="num font-semibold text-ink">{kes(due)}</span></p>
                   </div>
                   {shown.length ? (
-                    <Table head={["Bill", "Due", "Amount", "Still to pay", ""]}>
+                    <Table head={["Bill or expense", "Date", "Amount", "Still to pay", ""]}>
                       {shown.map((b) => {
                         const left = Number(b.amount_kes) - Number(b.paid_kes);
                         const late = b.due_date && b.due_date < today && left > 0;
@@ -123,13 +135,22 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                             <td className="num">{kes(b.amount_kes)}</td>
                             <td className="num">{left > 0 ? kes(left) : <StatusBadge status="paid" />}</td>
                             <td>
-                              {left > 0 ? (
-                                <form action={payBill} className="flex gap-1">
-                                  <input type="hidden" name="id" value={b.id} />
-                                  <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-28 rounded-full bg-sunken px-3 py-1.5 text-xs" />
-                                  <button className="rounded-full bg-green px-3 py-1.5 text-xs font-medium text-white">Paid</button>
-                                </form>
-                              ) : null}
+                              <div className="flex flex-wrap items-center justify-end gap-1">
+                                {left > 0 ? (
+                                  <form action={payBill} className="flex gap-1">
+                                    <input type="hidden" name="id" value={b.id} />
+                                    <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-24 rounded-full bg-sunken px-3 py-1.5 text-xs" />
+                                    <button className="rounded-full bg-green px-3 py-1.5 text-xs font-medium text-white">Paid</button>
+                                  </form>
+                                ) : null}
+                                <Drawer label="Edit" title="Edit bill or expense" variant="outline" plus={false}>
+                                  <ActionForm action={addBill} submit="Save" className="grid gap-3 sm:grid-cols-2"><BillFields b={b} partners={partners ?? []} projects={projects ?? []} /></ActionForm>
+                                  <form action={deleteBill} className="mt-6 border-t border-line pt-5">
+                                    <input type="hidden" name="id" value={b.id} />
+                                    <ConfirmSubmit variant="danger" message={`Delete "${b.description}"? This can't be undone.`}>Delete</ConfirmSubmit>
+                                  </form>
+                                </Drawer>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -141,18 +162,8 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
             })()}
           </Card>
           <Card>
-            <CardHeader title="Add a bill" sub="Rent and salaries can repeat: when one is paid, the next is added." />
-            <ActionForm action={addBill} submit="Add bill" className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2"><Field label="What it's for"><Input name="description" required placeholder="Office rent, Embassy House" /></Field></div>
-              <Field label="Type"><Select name="category" defaultValue="rent">{Object.entries(BILL_CATEGORY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
-              <Field label="Paid to"><Input name="payee" list="payees" placeholder="Landlord, staff member, KRA…" /></Field>
-              <datalist id="payees">{(people ?? []).map((p) => <option key={p.full_name} value={p.full_name} />)}</datalist>
-              <Field label="Amount (KES)"><Input name="amount_kes" type="number" min="1" step="any" required /></Field>
-              <Field label="Due"><Input name="due_date" type="date" /></Field>
-              <Field label="Repeats"><Select name="repeats" defaultValue="once"><option value="once">Once</option><option value="monthly">Every month</option><option value="yearly">Every year</option></Select></Field>
-              <Field label="Partner (if any)"><Select name="partner_id" defaultValue=""><option value="">None</option>{partners?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
-              <div className="sm:col-span-2"><Field label="Project (if any)"><Select name="project_id" defaultValue=""><option value="">None</option>{projects?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field></div>
-            </ActionForm>
+            <CardHeader title="Add a bill or expense" sub="Anything we pay: BRS and KRA fees, event tickets, travel, rent, salaries. Tick Already paid for money already spent." />
+            <ActionForm action={addBill} submit="Save" className="grid gap-3 sm:grid-cols-2"><BillFields partners={partners ?? []} projects={projects ?? []} /></ActionForm>
           </Card>
         </div>
       ) : (

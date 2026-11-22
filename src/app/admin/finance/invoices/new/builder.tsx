@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { createInvoice } from "@/actions/admin";
+import { createInvoice, updateInvoice } from "@/actions/admin";
 import { FormMessage, Submit } from "@/components/forms";
 import { Field, Input, Select, Textarea } from "@/components/ui";
 import { InvoiceSheet, type SheetIssuer } from "@/components/invoice-sheet";
@@ -16,17 +16,19 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (from: string, n: number) => iso(new Date(new Date(from).getTime() + n * 864e5));
 const chip = (on: boolean) => cn("rounded-full px-3 py-1.5 text-xs font-medium transition", on ? "bg-navy-900 text-white" : "bg-sunken text-ink/70 hover:text-ink");
 
-export function InvoiceBuilder({ clients, projects, past, issuer, defaultClient }: { clients: Client[]; projects: Project[]; past: Past[]; issuer: SheetIssuer; defaultClient?: string }) {
-  const [state, act] = useActionState(createInvoice, undefined);
-  const [clientId, setClientId] = useState(defaultClient ?? "");
+export type InvoiceInitial = { id: string; number: string; client_id: string; project_id: string | null; issue: string; due: string; vat: number; notes: string; lines: { description: string; quantity: number; unit_price_kes: number }[] };
+
+export function InvoiceBuilder({ clients, projects, past, issuer, defaultClient, initial }: { clients: Client[]; projects: Project[]; past: Past[]; issuer: SheetIssuer; defaultClient?: string; initial?: InvoiceInitial }) {
+  const [state, act] = useActionState(initial ? updateInvoice : createInvoice, undefined);
+  const [clientId, setClientId] = useState(initial?.client_id ?? defaultClient ?? "");
   const [newClient, setNewClient] = useState({ name: "", email: "", country: "Kenya" });
-  const [projectId, setProjectId] = useState("");
-  const [issue, setIssue] = useState(iso(new Date()));
-  const [terms, setTerms] = useState(14);
-  const [due, setDue] = useState(addDays(iso(new Date()), 14));
-  const [vat, setVat] = useState("16");
-  const [notes, setNotes] = useState("");
-  const [lines, setLines] = useState<Line[]>([{ description: "", quantity: "1", unit_price_kes: "" }]);
+  const [projectId, setProjectId] = useState(initial?.project_id ?? "");
+  const [issue, setIssue] = useState(initial?.issue ?? iso(new Date()));
+  const [terms, setTerms] = useState(initial ? -1 : 14);
+  const [due, setDue] = useState(initial?.due ?? addDays(iso(new Date()), 14));
+  const [vat, setVat] = useState(String(initial?.vat ?? 16));
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [lines, setLines] = useState<Line[]>(initial?.lines.length ? initial.lines.map((l) => ({ description: l.description, quantity: String(l.quantity), unit_price_kes: String(l.unit_price_kes) })) : [{ description: "", quantity: "1", unit_price_kes: "" }]);
 
   const isNew = clientId === "new";
   const client = isNew ? (newClient.name ? { name: newClient.name, email: newClient.email, country: newClient.country } : null) : clients.find((c) => c.id === clientId) ?? null;
@@ -52,6 +54,7 @@ export function InvoiceBuilder({ clients, projects, past, issuer, defaultClient 
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <form action={act} className="card space-y-7">
         <input type="hidden" name="items" value={items} />
+        {initial ? <input type="hidden" name="id" value={initial.id} /> : null}
         <input type="hidden" name="due_date" value={due} />
 
         <section className="space-y-3">
@@ -122,13 +125,13 @@ export function InvoiceBuilder({ clients, projects, past, issuer, defaultClient 
 
         <FormMessage state={state} />
         <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">Total <span className="num font-semibold text-ink">{kes(total)}</span> · saved as a draft, send it next.</p>
-          <Submit pending="Creating…">Create invoice</Submit>
+          <p className="text-sm text-muted">Total <span className="num font-semibold text-ink">{kes(total)}</span>{initial ? "" : " · saved as a draft, send it next."}</p>
+          <Submit pending={initial ? "Saving…" : "Creating…"}>{initial ? "Save changes" : "Create invoice"}</Submit>
         </div>
       </form>
 
       <div className="xl:sticky xl:top-6 xl:self-start">
-        <InvoiceSheet draft issuer={issuer} number={null} issue={issue} due={due} client={client} lines={parsed} vatRate={Number(vat) || 0} notes={notes} />
+        <InvoiceSheet draft issuer={issuer} number={initial?.number ?? null} issue={issue} due={due} client={client} lines={parsed} vatRate={Number(vat) || 0} notes={notes} />
         {!issuer.bank.account_no && !issuer.paybill.number ? (
           <p className="mt-3 text-sm text-muted">Add your bank and Paybill details in <a href="/admin/company" className="text-navy-600 underline">Dhow profile</a> to show them on every invoice.</p>
         ) : null}

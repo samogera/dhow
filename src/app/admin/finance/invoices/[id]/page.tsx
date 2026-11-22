@@ -8,7 +8,7 @@ import { InvoiceSheet } from "@/components/invoice-sheet";
 import { ActionForm, ConfirmSubmit } from "@/components/forms";
 import { ButtonAnchor, Card, CardHeader, Field, Input, Select, StatusBadge } from "@/components/ui";
 import { day, kes } from "@/lib/format";
-import { cancelInvoice, recordPayment, sendInvoice } from "@/actions/admin";
+import { cancelInvoice, deleteInvoice, recordPayment, sendInvoice } from "@/actions/admin";
 import { paystackConfigured } from "@/lib/paystack";
 import { invoicePayUrl } from "@/lib/payments";
 
@@ -34,6 +34,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           <p className="mt-1 text-muted">{inv.client.name} · due {day(inv.due_date)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {live ? <ButtonAnchor variant="outline" href={`/admin/finance/invoices/${inv.id}/edit`}>Edit</ButtonAnchor> : null}
           <ButtonAnchor variant="outline" href={`/api/invoices/${inv.id}/pdf`} target="_blank" rel="noopener">Download PDF</ButtonAnchor>
           {live ? (
             <ActionForm action={sendInvoice} submit={inv.status === "draft" ? "Send to client" : "Send again"} className="flex items-center gap-2">
@@ -84,6 +85,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             ) : <p className="text-sm text-muted">No payments yet.</p>}
           </Card>
 
+          {inv.paid_kes === 0 ? (
+            <form action={deleteInvoice}>
+              <input type="hidden" name="id" value={inv.id} />
+              <ConfirmSubmit variant="danger" message={`Delete invoice ${inv.number} completely? Use this for invoices made by mistake.`}>Delete invoice</ConfirmSubmit>
+            </form>
+          ) : null}
           {live && inv.paid_kes === 0 ? (
             <form action={cancelInvoice}>
               <input type="hidden" name="id" value={inv.id} />

@@ -443,21 +443,88 @@ export async function cancelInvoice(fd: FormData) {
   revalidatePath("/admin/finance");
 }
 
-const BILL_CATEGORIES = ["rent", "salary", "registration", "licence", "tax", "utilities", "software", "marketing", "partner", "other"] as const;
+const BILL_CATEGORIES = ["rent", "salary", "registration", "licence", "tax", "utilities", "software", "marketing", "event", "travel", "office", "bank", "partner", "other"] as const;
 const BillIn = z.object({
+  id: optUuid,
+  paid_now: z.enum(["on"]).optional().transform((v) => v === "on"),
   description: z.string().trim().min(2, "Say what the bill is for").max(300), partner_id: optUuid, project_id: optUuid,
   amount_kes: z.coerce.number().positive("Enter the amount"), due_date: date,
   category: z.enum(BILL_CATEGORIES).default("other"), payee: text(160), repeats: z.enum(["once", "monthly", "yearly"]).default("once"), notes: text(1000),
 });
+/** Adds a bill or expense, or saves changes to one. "Already paid" records it as spent today. */
 export async function addBill(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["finance"]);
   if (!s) return DENIED;
   const p = BillIn.safeParse(form(fd));
   if (!p.success) return first(p.error);
-  const { error } = await s.supabase.from("bills").insert(p.data);
+  const { id, paid_now, ...row } = p.data;
+  const today = new Date().toISOString().slice(0, 10);
+  const paid = paid_now ? { paid_kes: row.amount_kes, paid_on: row.due_date ?? today } : {};
+  if (id) {
+    const { data: cur } = await s.supabase.from("bills").select("paid_kes").eq("id", id).single();
+    const { error } = await s.supabase.from("bills").update({ ...row, ...(paid_now ? paid : { paid_kes: Math.min(Number(cur?.paid_kes ?? 0), row.amount_kes) }) }).eq("id", id);
+    if (error) return { error: error.message };
+    revalidatePath("/admin/finance");
+    return { ok: "Saved." };
+  }
+  const { error } = await s.supabase.from("bills").insert({ ...row, ...paid });
   if (error) return { error: error.message };
   revalidatePath("/admin/finance");
-  return { ok: "Bill added." };
+  return { ok: paid_now ? "Expense recorded." : "Bill added." };
+}
+
+export async function deleteBill(fd: FormData) {
+  const s = await staffOrNull(["finance"]);
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  await s.supabase.from("bills").delete().eq("id", id.data);
+  revalidatePath("/admin/finance");
+}
+
+/** Saves changes to an invoice: client, dates, VAT, note and all its lines. */
+export async function updateInvoice(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull(["finance"]);
+  if (!s) return DENIED;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return { error: "Bad request." };
+  const p = InvoiceIn.safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  if (p.data.due_date < p.data.issue_date) return { error: "The due date is before the issue date." };
+  const { data: cur } = await s.supabase.from("invoices").select("status").eq("id", id.data).single();
+  if (!cur) return { error: "Invoice not found." };
+  if (cur.status === "cancelled") return { error: "This invoice is cancelled." };
+  const { items, new_client_name, new_client_email, new_client_country, client_id, ...head } = p.data;
+  let clientId = client_id;
+  if (client_id === "new") {
+    if (!new_client_name || new_client_name.length < 2) return { error: "Enter the new client's name." };
+    const { data: c, error: ce } = await s.supabase.from("clients").insert({ name: new_client_name, email: new_client_email || null, country: new_client_country || "Kenya", stage: "active" }).select("id").single();
+    if (ce || !c) return { error: ce?.message ?? "Could not add the client." };
+    clientId = c.id;
+  } else if (!uuid.safeParse(client_id).success) return { error: "Choose a client." };
+  const { error } = await s.supabase.from("invoices").update({ ...head, client_id: clientId }).eq("id", id.data);
+  if (error) return { error: error.message };
+  await s.supabase.from("invoice_items").delete().eq("invoice_id", id.data);
+  const { error: e2 } = await s.supabase.from("invoice_items").insert(items.map((it, i) => ({ ...it, invoice_id: id.data, sort: i })));
+  if (e2) return { error: e2.message };
+  await createAdminClient().rpc("recalc_invoice", { p_invoice: id.data });
+  revalidatePath("/admin/finance");
+  revalidatePath(`/admin/finance/invoices/${id.data}`);
+  redirect(`/admin/finance/invoices/${id.data}`);
+}
+
+/** Removes an invoice made by mistake. One that has payments recorded can only be cancelled. */
+export async function deleteInvoice(fd: FormData) {
+  const s = await staffOrNull(["finance"]);
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const { data: inv } = await s.supabase.from("invoices").select("paid_kes").eq("id", id.data).single();
+  if (!inv || Number(inv.paid_kes) > 0) return;
+  await s.supabase.from("invoice_items").delete().eq("invoice_id", id.data);
+  await s.supabase.from("invoices").delete().eq("id", id.data);
+  revalidatePath("/admin/finance");
+  redirect("/admin/finance");
 }
 
 export async function payBill(fd: FormData) {
@@ -468,7 +535,7 @@ export async function payBill(fd: FormData) {
   const { data: b } = await s.supabase.from("bills").select("*").eq("id", p.data.id).single();
   if (!b) return;
   const paid = Math.min(Number(b.amount_kes), Number(b.paid_kes) + p.data.amount_kes);
-  await s.supabase.from("bills").update({ paid_kes: paid }).eq("id", p.data.id);
+  await s.supabase.from("bills").update({ paid_kes: paid, ...(paid >= Number(b.amount_kes) ? { paid_on: new Date().toISOString().slice(0, 10) } : {}) }).eq("id", p.data.id);
   // Rent, salaries and other repeating bills: once paid, the next one is added automatically.
   if (paid >= Number(b.amount_kes) && b.repeats !== "once" && b.due_date) {
     const d = new Date(b.due_date);

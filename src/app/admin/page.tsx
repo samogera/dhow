@@ -57,7 +57,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Stat highlight icon={Scale} label="Net position" value={kes(net)} note="After what we owe and are owed" />
         <Stat icon={HandCoins} href="/admin/finance" label="Owed to us" value={kes(p.owed_by_clients_kes)} note="Unpaid client invoices" />
-        <Stat icon={Wallet} href="/admin/finance" label="Owed by us" value={kes(p.owed_to_partners_kes)} note="Partner and vendor bills" />
+        <Stat icon={Wallet} href="/admin/finance" label="Bills to pay" value={kes(p.owed_to_partners_kes)} note="Expenses not yet paid" />
         <Stat icon={Target} href="/admin/leads" label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />
       </div>
 

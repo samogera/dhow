@@ -252,7 +252,7 @@ Roles are enforced by the database itself, not only by the menu, so hiding a lin
     body: `
 - **Net position** = (money received + money clients owe us) − (money paid out + money we owe partners).
 - **Owed to us**: unpaid balances on sent, part-paid and overdue invoices.
-- **Owed by us**: unpaid partner and vendor bills.
+- **Bills to pay**: expenses we haven't paid yet (rent, fees, salaries, partner bills).
 - **Open pipeline**: the estimated value of leads that are still open.
 
 Below that you'll find monthly income, your calendar for the week, your open tasks and verifications waiting for review. Finance figures show as zero for reviewers.

@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { deleteMyAccount, deleteMyCompany, inviteMember, saveEmailChoices, saveInterests, updateOrganization, updateProfile } from "@/actions/member";
+import { deleteMyAccount, deleteMyCompany, inviteMember, saveEmailChoices, saveInterests, saveListing, updateOrganization, updateProfile } from "@/actions/member";
 import { saveCompanyProfile } from "@/actions/profiles";
 import { ImageInput, SocialFields } from "@/components/profile-bits";
 import { FormMessage, Submit } from "@/components/forms";
@@ -166,6 +166,30 @@ export function EmailChoicesForm({ prefs }: { prefs: Record<string, boolean> }) 
       <p className="px-1 pb-2 text-xs text-faint">Sign-in, security and legal emails are always sent.</p>
       <FormMessage state={state} />
       <Submit variant="outline">Save email choices</Submit>
+    </form>
+  );
+}
+
+export function ListingForm({ org, disabled }: { org: Organization & { listed?: boolean; listed_contact?: boolean }; disabled: boolean }) {
+  const [state, action] = useActionState(saveListing, undefined);
+  const row = "flex cursor-pointer items-start gap-3 rounded-2xl px-1 py-3 hover:bg-sunken/50";
+  const toggle = "relative mt-0.5 h-6 w-10 shrink-0 rounded-full bg-line transition peer-checked:bg-green after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-4";
+  return (
+    <form action={action}>
+      <fieldset disabled={disabled} className="space-y-1">
+        <label className={row}>
+          <input type="checkbox" name="listed" defaultChecked={org.listed} className="peer sr-only" />
+          <span aria-hidden className={toggle} />
+          <span><span className="block text-sm font-medium">Show my company to other members</span><span className="block text-sm text-muted">Your logo, name, sector, tagline and website. Only verified companies appear.</span></span>
+        </label>
+        <label className={row}>
+          <input type="checkbox" name="listed_contact" defaultChecked={org.listed_contact} className="peer sr-only" />
+          <span aria-hidden className={toggle} />
+          <span><span className="block text-sm font-medium">Also show our business email and phone</span><span className="block text-sm text-muted">So members can contact you directly. Off by default.</span></span>
+        </label>
+        <FormMessage state={state} />
+        {!disabled ? <div className="pt-2"><Submit variant="outline">Save</Submit></div> : <p className="text-sm text-muted">Only owners and admins can change this.</p>}
+      </fieldset>
     </form>
   );
 }

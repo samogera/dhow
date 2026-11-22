@@ -5,6 +5,18 @@ const PROTECTED = ["/app", "/admin", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const path = request.nextUrl.pathname;
+  const isProtected = PROTECTED.some((p) => path === p || path.startsWith(p + "/"));
+
+  // No sign-in cookie: nothing to refresh, so skip the round trip to the auth server (faster public pages).
+  const hasSession = request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+  if (!hasSession) {
+    if (!isProtected) return response;
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,8 +38,7 @@ export async function middleware(request: NextRequest) {
   // Refreshes the session cookie. Must run before any redirect decision.
   const { data: { user } } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
-  if (!user && PROTECTED.some((p) => path === p || path.startsWith(p + "/"))) {
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);

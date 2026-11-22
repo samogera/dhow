@@ -92,7 +92,8 @@ export function MemberTabBar() {
   const more = [
     { href: "/app/verification", label: "Verification", sub: "Get or renew your Dhow Verified badge", icon: BadgeCheck },
     { href: "/app/documents", label: "Documents", sub: "Your company files", icon: FileText },
-    { href: "/app/settings", label: "Settings", sub: "Company profile, logo, team", icon: Settings },
+    { href: "/app/directory", label: "Directory", sub: "Verified member companies", icon: UsersRound },
+    { href: "/app/settings", label: "Settings", sub: "Company, documents, verification, emails", icon: Settings },
     { href: "/help", label: "Help Centre", sub: "Guides for every page", icon: LifeBuoy },
   ];
   return (

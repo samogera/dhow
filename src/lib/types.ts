@@ -38,6 +38,8 @@ export interface Organization {
   team_size?: string | null;
   socials?: Record<string, string> | null;
   interest_kinds?: string[];
+  listed?: boolean;
+  listed_contact?: boolean;
   interest_sectors?: string[];
 }
 

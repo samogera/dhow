@@ -85,3 +85,7 @@ select 'Referral commission: Kivu project', id, 45000, 15000, current_date + 10 
 update dhow_profile set legal_name = 'Dhow Partners Limited', trading_name = 'Dhow Partners', address = 'Nairobi, Kenya',
   bank_name = 'Sample Bank', bank_account_name = 'Dhow Partners Limited', bank_account_no = '00000000000000',
   paybill = '000000', paybill_account = '00000000000000', invoice_terms = 'Please quote the invoice number when you pay.' where id = 1;
+
+-- Directory: a few verified companies that chose to be listed (screenshots only)
+update organizations set listed = true, listed_contact = true, tagline = 'Solar for homes and farms across Western Kenya', email = 'hello@acaciasolar.test', phone = '+254 700 000 001' where id = 'a0000000-0000-4000-8000-000000000001';
+update organizations set listed = true, verification_status = 'verified', verified_until = now() + interval '200 days', tagline = 'Cold-chain logistics for fresh produce' where id in (select id from organizations where id <> 'a0000000-0000-4000-8000-000000000001' limit 2);

@@ -56,6 +56,8 @@ async function shotInner(page, path, name, { full = true } = {}) {
   await shot(page, "/app/applications", "15-member-applications");
   await shot(page, "/app/events", "15b-member-events");
   await shot(page, "/app/settings", "16-member-settings");
+  await shot(page, "/app/settings/account", "16b-member-account");
+  await shot(page, "/app/directory", "16c-member-directory");
   await ctx.close();
 }
 

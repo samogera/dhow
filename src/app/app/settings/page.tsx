@@ -6,7 +6,7 @@ import { ConfirmSubmit } from "@/components/forms";
 import { kes, label } from "@/lib/format";
 import { PLAN_LABEL, PLAN_PRICE_KES } from "@/lib/types";
 import { removeMember } from "@/actions/member";
-import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InterestsForm, InviteForm } from "./forms";
+import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InterestsForm, InviteForm, ListingForm } from "./forms";
 import { SettingsTabs } from "@/components/settings-tabs";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -35,10 +35,16 @@ export default async function Settings() {
       <PageHeader title="Settings" sub={`${m.org.name} · your role: ${label(m.role)}`} />
       <SettingsTabs />
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card id="interests" className="scroll-mt-24">
-          <CardHeader title="What should we look for?" sub="We use this to put the best-fitting opportunities first and in your weekly email." />
-          <InterestsForm org={m.org} disabled={!admin} />
-        </Card>
+        <div className="space-y-4">
+          <Card id="interests" className="scroll-mt-24">
+            <CardHeader title="What should we look for?" sub="We use this to put the best-fitting opportunities first and in your weekly email." />
+            <InterestsForm org={m.org} disabled={!admin} />
+          </Card>
+          <Card id="directory" className="scroll-mt-24">
+            <CardHeader title="Member directory" sub="You choose whether other members can find you." />
+            <ListingForm org={m.org} disabled={!admin} />
+          </Card>
+        </div>
         <div className="space-y-4">
           <Card>
             <CardHeader title="Company details" sub={m.org.verification_status === "verified" ? "Registration details are locked while you're verified." : "Registration details are only needed to get verified."} />

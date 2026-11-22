@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { ORG_COOKIE, isOrgAdmin, memberOrNull, requireUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -45,6 +46,19 @@ export async function createOrganization(_: ActionState, fd: FormData): Promise<
   if (error || !org) return { error: "Could not create the company. Try again." };
   await db.from("memberships").insert({ org_id: org.id, user_id: s.user.id, role: "owner" });
   (await cookies()).set(ORG_COOKIE, org.id, { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
+  const email = s.user.email;
+  if (email) {
+    const first = (s.profile?.full_name ?? "").split(" ")[0];
+    const base = appUrl();
+    after(() => sendEmail({ template: "welcome", to: email, subject: `Welcome to Dhow Partners${first ? `, ${first}` : ""}`,
+      html: emailLayout(`Welcome to Dhow, ${first || "and thank you for joining"}`, [
+        `${p.data.name} now has its own Dhow workspace. Here's how to get the most from it:`,
+        "1. Tell us what you're looking for: your sector and the kinds of opportunity you want. We'll put the best fits first and email you new ones each Monday.",
+        "2. Upload your company documents and get Dhow Verified, so partners and buyers know your records check out.",
+        "3. Explore open opportunities: grants, programmes, tenders and events open to companies in Kenya, checked by our team.",
+        "Questions, or want help setting up? Just reply to this email. A real person at Dhow will answer.",
+      ], { label: "Open your workspace", href: `${base}/app` }) }).catch(() => undefined));
+  }
   redirect("/app");
 }
 
@@ -244,4 +258,14 @@ export async function saveEmailChoices(_: ActionState, fd: FormData): Promise<Ac
   await createAdminClient().from("profiles").update({ email_prefs: prefs }).eq("id", m.user.id);
   revalidatePath("/app/settings/account");
   return { ok: "Email choices saved." };
+}
+
+/** Opt in or out of the member directory, and whether to show business email and phone there. */
+export async function saveListing(_: ActionState, fd: FormData): Promise<ActionState> {
+  const m = await memberOrNull();
+  if (!m || !isOrgAdmin(m.role)) return { error: "Only owners and admins can change this." };
+  const listed = fd.get("listed") === "on";
+  await createAdminClient().from("organizations").update({ listed, listed_contact: listed && fd.get("listed_contact") === "on" }).eq("id", m.org.id);
+  revalidatePath("/app", "layout");
+  return { ok: listed ? (m.org.verification_status === "verified" ? "You're listed in the member directory." : "Saved. You'll appear in the directory once you're verified.") : "You're not listed in the directory." };
 }

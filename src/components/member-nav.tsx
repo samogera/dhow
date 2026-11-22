@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, CalendarDays, LayoutDashboard, Send, Settings } from "lucide-react";
+import { Briefcase, CalendarDays, LayoutDashboard, Send, Settings, UsersRound } from "lucide-react";
 import { cn } from "@/lib/format";
 
 const items = [
@@ -9,6 +9,7 @@ const items = [
   { href: "/app/opportunities", label: "Opportunities", icon: Briefcase, tone: "text-amber-700" },
   { href: "/app/events", label: "Events", icon: CalendarDays, tone: "text-mint-600" },
   { href: "/app/applications", label: "Applications", icon: Send, tone: "text-navy-500" },
+  { href: "/app/directory", label: "Directory", icon: UsersRound, tone: "text-green" },
   { href: "/app/settings", label: "Settings", icon: Settings, tone: "text-ink/60", also: ["/app/documents", "/app/verification"] },
 ];
 

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Anchor, BarChart3, Building2, CalendarDays, FolderKanban, Handshake, LayoutDashboard, LifeBuoy, ShieldCheck, Sparkles, Target, UserCog, UsersRound, Wallet,
 } from "lucide-react";

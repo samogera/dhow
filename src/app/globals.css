@@ -10,7 +10,7 @@
   --color-line: #e2e7ec;
   --color-ink: #0d1c29;
   --color-muted: #5d6b78;
-  --color-faint: #98a3ad;
+  --color-faint: #626e7a; /* 4.6:1 on the canvas, so small print still passes AA */
 
   /* Brand navy #00395F is navy-900; #02223A (app icon) is navy-950. */
   --color-navy-50: #edf3f8;

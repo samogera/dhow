@@ -11,9 +11,9 @@ export function Logo({ href = "/", light = false, variant = "full", size = "md",
   return (
     <Link href={href} className={cn("inline-flex shrink-0 items-center", className)} aria-label="Dhow Partners home">
       {variant === "icon" ? (
-        <Image src={`/brand/icon-${tone}.png`} alt="Dhow Partners" width={182} height={160} className="h-8 w-auto" priority />
+        <Image src={`/brand/icon-${tone}.png`} alt="Dhow Partners" width={182} height={160} className="h-8 w-auto" sizes="40px" priority />
       ) : (
-        <Image src={`/brand/wordmark-${tone}.png`} alt="Dhow Partners" width={916} height={96} className={size === "sm" ? "h-[18px] w-auto" : size === "lg" ? "h-7 w-auto sm:h-8" : "h-[22px] w-auto sm:h-6"} priority />
+        <Image src={`/brand/wordmark-${tone}.png`} alt="Dhow Partners" width={916} height={96} sizes={size === "lg" ? "(min-width: 640px) 310px, 270px" : size === "sm" ? "175px" : "(min-width: 640px) 230px, 210px"} className={size === "sm" ? "h-[18px] w-auto" : size === "lg" ? "h-7 w-auto sm:h-8" : "h-[22px] w-auto sm:h-6"} priority />
       )}
     </Link>
   );

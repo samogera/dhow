@@ -8,6 +8,8 @@ import { cn } from "@/lib/format";
  */
 export function LogoImg({ src, className }: { src: string; className?: string }) {
   const [dark, setDark] = useState(false);
+  // Checking colours needs CORS; if the host refuses it, load the logo plainly instead of showing nothing.
+  const [cors, setCors] = useState(true);
   function check(img: HTMLImageElement) {
     try {
       const n = 48;
@@ -33,7 +35,7 @@ export function LogoImg({ src, className }: { src: string; className?: string })
   }
   return (
     <span className={cn("grid size-full place-items-center transition-colors", dark ? "bg-navy-900" : "bg-white")}>
-      <img src={src} alt="" crossOrigin="anonymous" onLoad={(e) => check(e.currentTarget)} className={cn("size-full object-contain", className)} />
+      <img src={src} alt="" loading="lazy" decoding="async" crossOrigin={cors ? "anonymous" : undefined} onError={() => cors && setCors(false)} onLoad={(e) => cors && check(e.currentTarget)} className={cn("size-full object-contain", className)} />
     </span>
   );
 }

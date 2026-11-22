@@ -91,5 +91,8 @@ export const memberAppOpen = () => process.env.MEMBER_APP_OPEN === "1";
 export async function guardMemberSide() {
   if (memberAppOpen()) return;
   const s = await getSession();
-  redirect(s?.profile?.staff_role ? "/admin" : "/closed");
+  // Before launch, Dhow staff and anyone listed in MEMBER_TESTERS (comma-separated emails) can try the member side.
+  const testers = (process.env.MEMBER_TESTERS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (s?.profile?.staff_role || (s?.user.email && testers.includes(s.user.email.toLowerCase()))) return;
+  redirect("/closed");
 }

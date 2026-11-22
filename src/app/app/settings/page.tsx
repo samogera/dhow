@@ -8,7 +8,7 @@ import { label } from "@/lib/format";
 import { TIERS, tierOf } from "@/lib/plans";
 import { removeMember } from "@/actions/member";
 import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InterestsForm, InviteForm, ListingForm } from "./forms";
-import { SettingsTabs } from "@/components/settings-tabs";
+import { SettingsShell } from "@/components/settings-tabs";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -34,7 +34,7 @@ export default async function Settings() {
   return (
     <>
       <PageHeader title="Settings" sub={`${m.org.name} · your role: ${label(m.role)}`} />
-      <SettingsTabs />
+      <SettingsShell>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <Card id="interests" className="scroll-mt-24">
@@ -106,6 +106,7 @@ export default async function Settings() {
         </Card>
       ) : null}
 
+      </SettingsShell>
     </>
   );
 }

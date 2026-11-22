@@ -90,13 +90,10 @@ export function MemberTabBar({ investors = false, work = false }: { investors?: 
     return () => { document.body.style.overflow = ""; };
   }, [open]);
   const more = [
-    { href: "/app/verification", label: "Verification", sub: "Get or renew your Dhow Verified badge", icon: BadgeCheck },
-    { href: "/app/documents", label: "Documents", sub: "Your company files", icon: FileText },
-    { href: "/app/directory", label: "Directory", sub: "Verified member companies", icon: Building2 },
+    { href: "/app/events", label: "Events", sub: "Member and open events", icon: CalendarDays },
     ...(work ? [{ href: "/app/work", label: "Our work", sub: "Your projects, invoices and progress", icon: Briefcase }] : []),
     ...(investors ? [{ href: "/app/investors", label: "Investors", sub: "Introductions to vetted investors", icon: Landmark }] : []),
-    { href: "/app/plans", label: "Plan", sub: "Free, Startup, Growth or Enterprise", icon: Crown },
-    { href: "/app/settings", label: "Settings", sub: "Company, documents, verification, emails", icon: Settings },
+    { href: "/app/settings", label: "Settings", sub: "Company, documents, verification, plan", icon: Settings },
     { href: "/help", label: "Help Centre", sub: "Guides for every page", icon: LifeBuoy },
   ];
   return (
@@ -104,8 +101,8 @@ export function MemberTabBar({ investors = false, work = false }: { investors?: 
       <TabBar onMore={() => setOpen((o) => !o)} moreOpen={open || more.some((m) => path.startsWith(m.href))} tabs={[
         { href: "/app", label: "Home", icon: House, exact: true },
         { href: "/app/opportunities", label: "Explore", icon: Compass },
-        { href: "/app/events", label: "Events", icon: CalendarDays },
         { href: "/app/applications", label: "Applied", icon: FileCheck2 },
+        { href: "/app/directory", label: "Directory", icon: Building2 },
       ]} />
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More">

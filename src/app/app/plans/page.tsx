@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { confirmPaystack } from "@/lib/payments";
 import { Meter, PageHeader } from "@/components/ui";
-import { SettingsTabs } from "@/components/settings-tabs";
+import { SettingsShell } from "@/components/settings-tabs";
 import { TIERS, tierOf } from "@/lib/plans";
 import { bytes, cn, day } from "@/lib/format";
 import { PlanPicker } from "./picker";
@@ -31,7 +31,7 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
   return (
     <>
       <PageHeader title="Settings" />
-      <SettingsTabs />
+      <SettingsShell>
 
       {paid ? (
         <p className={cn("mb-4 rounded-2xl px-5 py-4 text-sm", paid.state === "paid" ? "bg-good/10 text-good" : paid.state === "failed" ? "bg-bad/10 text-bad" : "bg-warn/10 text-warn")}>
@@ -83,6 +83,7 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
         <p className="mt-1 text-sm text-muted">Pay by M-Pesa or card, monthly or yearly. No auto-renewal: we remind you before it ends.</p>
       </div>
       <PlanPicker current={current} canPay={isOrgAdmin(role)} until={org.plan_until ?? null} off={off} cancelled={Boolean(org.plan_cancelled_at)} />
+      </SettingsShell>
     </>
   );
 }

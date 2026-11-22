@@ -1,14 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings2, Briefcase, Building2, CalendarDays, Compass, FileCheck2, House, Landmark } from "lucide-react";
+import { Settings2, Briefcase, Building2, Compass, FileCheck2, House, Landmark } from "lucide-react";
 import { cn } from "@/lib/format";
 
 const items = [
   { href: "/app", label: "Home", icon: House },
   { href: "/app/work", label: "Our work", icon: Briefcase, need: "work" },
-  { href: "/app/opportunities", label: "Opportunities", icon: Compass },
-  { href: "/app/events", label: "Events", icon: CalendarDays },
+  { href: "/app/opportunities", label: "Opportunities", icon: Compass, also: ["/app/events"] },
   { href: "/app/applications", label: "My applications", icon: FileCheck2 },
   { href: "/app/investors", label: "Investors", icon: Landmark, need: "investors" },
   { href: "/app/directory", label: "Directory", icon: Building2 },
@@ -41,5 +40,19 @@ export function SettingsLink() {
       className={cn("hidden size-10 place-items-center rounded-full transition lg:grid", on ? "bg-navy-900 text-white" : "text-ink/60 hover:bg-white hover:text-ink")}>
       <Settings2 className="size-[18px]" strokeWidth={1.75} />
     </Link>
+  );
+}
+
+/** Opportunities and Events, one section with two tabs. */
+export function OpportunityTabs() {
+  const path = usePathname();
+  const tabs = [{ href: "/app/opportunities", label: "Opportunities" }, { href: "/app/events", label: "Events" }];
+  return (
+    <div role="tablist" className="mb-6 inline-flex rounded-full bg-white p-1 ring-1 ring-line">
+      {tabs.map((t) => {
+        const on = path.startsWith(t.href);
+        return <Link key={t.href} href={t.href} role="tab" aria-selected={on} className={cn("rounded-full px-5 py-2 text-sm transition", on ? "bg-navy-900 font-medium text-white" : "text-ink/70 hover:text-ink")}>{t.label}</Link>;
+      })}
+    </div>
   );
 }

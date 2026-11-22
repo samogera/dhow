@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SettingsTabs } from "@/components/settings-tabs";
+import { SettingsShell } from "@/components/settings-tabs";
 import { BadgeCheck, Check, CreditCard, FileUp, ShieldCheck, Zap } from "lucide-react";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { Card, CardHeader, PageHeader, StatusBadge, Table } from "@/components/ui";
@@ -34,7 +34,7 @@ export default async function Verification({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader title="Settings" />
-      <SettingsTabs />
+      <SettingsShell>
 
       {paid ? (
         <p className={`mb-4 rounded-2xl px-5 py-4 text-sm ${paid.state === "paid" ? "bg-good/10 text-good" : paid.state === "failed" ? "bg-bad/10 text-bad" : "bg-warn/10 text-warn"}`}>
@@ -122,6 +122,7 @@ export default async function Verification({ searchParams }: { searchParams: Pro
           &ldquo;Dhow Verified&rdquo; means the company&apos;s registration records matched on the date checked. It is not a guarantee of performance. {label(org.verification_status)} status shown above.
         </p>
       </Card>
+      </SettingsShell>
     </>
   );
 }

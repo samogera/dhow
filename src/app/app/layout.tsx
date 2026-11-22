@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { guardMemberSide, requireMember } from "@/lib/auth";
 import { atLeast } from "@/lib/plans";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Logo } from "@/components/logo";
 import { MemberNav } from "@/components/member-nav";
 import { MemberTabBar } from "@/components/mobile-nav";
@@ -14,6 +15,9 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   await guardMemberSide();
   const m = await requireMember();
+  // "Our work" shows for anyone Dhow has linked as a client, whatever their plan.
+  const { data: linked } = await createAdminClient().from("clients").select("id").eq("org_id", m.org.id).limit(1);
+  const work = Boolean(linked?.length) || atLeast(m.org, "enterprise");
   return (
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
       <header className="relative z-30 flex items-center justify-between gap-3 rounded-[1.75rem] border border-white/80 bg-white/70 py-2 pr-2 pl-4 shadow-[0_12px_40px_-24px_rgba(13,28,41,0.25)] backdrop-blur-xl sm:rounded-full sm:pl-5">
@@ -29,14 +33,14 @@ export default async function MemberLayout({ children }: { children: React.React
             </form>
           ) : null}
         </div>
-        <div className="hidden min-w-0 lg:block"><MemberNav investors={atLeast(m.org, "premium")} work={atLeast(m.org, "enterprise")} /></div>
+        <div className="hidden min-w-0 lg:block"><MemberNav investors={atLeast(m.org, "premium")} work={work} /></div>
         <div className="flex items-center gap-1.5">
         <SettingsLink />
         <UserMenu name={m.profile?.full_name ?? ""} email={m.user.email ?? ""} staff={Boolean(m.profile?.staff_role)} settingsHref="/app/settings" />
         </div>
       </header>
       <main className="pt-8 pb-32 sm:pt-10 lg:pb-16">{children}</main>
-      <MemberTabBar investors={atLeast(m.org, "premium")} work={atLeast(m.org, "enterprise")} />
+      <MemberTabBar investors={atLeast(m.org, "premium")} work={work} />
     </div>
   );
 }

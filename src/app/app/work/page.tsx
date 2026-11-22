@@ -12,7 +12,9 @@ export const metadata: Metadata = { title: "Our work" };
 /** Enterprise members see the projects, tasks, invoices and payments Dhow runs for them. */
 export default async function OurWork() {
   const { org } = await requireMember();
-  if (!atLeast(org, "enterprise")) {
+  const db = createAdminClient();
+  const { data: client } = await db.from("clients").select("id, portal_token").eq("org_id", org.id).order("created_at").limit(1).maybeSingle();
+  if (!client && !atLeast(org, "enterprise")) {
     return (
       <>
         <PageHeader title="Our work" />
@@ -24,8 +26,6 @@ export default async function OurWork() {
       </>
     );
   }
-  const db = createAdminClient();
-  const { data: client } = await db.from("clients").select("id, portal_token").eq("org_id", org.id).order("created_at").limit(1).maybeSingle();
   const { data: links } = client ? await db.from("client_partners").select("service, partners(name, logo_url, review_token)").eq("client_id", client.id) : { data: null };
   const partners = (links ?? []) as unknown as { service: string | null; partners: { name: string; logo_url: string | null; review_token: string | null } | null }[];
   const { data: reviewed } = client ? await db.from("client_reviews").select("id").eq("client_id", client.id).limit(1) : { data: null };

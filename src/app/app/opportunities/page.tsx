@@ -8,6 +8,7 @@ import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, label } from "@/lib/format";
 import { rankForCompany } from "@/lib/matching";
 import { SlidersHorizontal } from "lucide-react";
+import { OpportunityTabs } from "@/components/member-nav";
 
 export const metadata: Metadata = { title: "Open opportunities" };
 const KINDS = ["all", "grant", "program", "event", "tender", "rfp"] as const;
@@ -49,6 +50,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
           <input name="q" defaultValue={term} placeholder="Search opportunities" aria-label="Search opportunities" className="field rounded-full py-2.5 pl-11" />
         </form>
       </PageHeader>
+      <OpportunityTabs />
       <Tabs current={qs({ sector: undefined, q: undefined })} items={KINDS.map((x) => ({ href: `/app/opportunities${x === "all" ? "" : `?kind=${x}`}`, label: plural(x) }))} />
       {sectors.length > 1 ? (
         <div className="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardHeader, PageHeader } from "@/components/ui";
-import { SettingsTabs } from "@/components/settings-tabs";
+import { SettingsShell } from "@/components/settings-tabs";
 import { DeleteAccountForm, EmailChoicesForm, ProfileForm } from "../forms";
 
 export const metadata: Metadata = { title: "You and your emails" };
@@ -13,7 +13,7 @@ export default async function Account() {
   return (
     <>
       <PageHeader title="Settings" sub={`Signed in as ${m.user.email}`} />
-      <SettingsTabs />
+      <SettingsShell>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Emails we send you" sub={`To ${m.user.email}. Turn off anything you don't want.`} />
@@ -28,6 +28,7 @@ export default async function Account() {
         <CardHeader title="Delete my account" sub="Remove your login and personal details from Dhow. Companies you alone own are deleted too." />
         <DeleteAccountForm />
       </Card>
+      </SettingsShell>
     </>
   );
 }

@@ -8,6 +8,7 @@ import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { Poster } from "@/components/poster";
 import { credit } from "@/lib/opportunity-display";
 import { splitTitle } from "@/lib/opportunity-parse";
+import { OpportunityTabs } from "@/components/member-nav";
 
 export const metadata: Metadata = { title: "Events" };
 
@@ -48,6 +49,7 @@ export default async function Events() {
   return (
     <>
       <PageHeader title="Events" sub="Member events for Dhow members, and open events worth your time, picked by the Dhow team." />
+      <OpportunityTabs />
       {!events.length ? (
         <Empty title="No upcoming events" sub="The Dhow team adds events here as they are announced." />
       ) : (

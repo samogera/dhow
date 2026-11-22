@@ -52,3 +52,19 @@ export async function setRequestStatus(fd: FormData) {
   await s.supabase.from("member_requests").update({ status: p.data.status, ...(p.data.staff_note !== null ? { staff_note: p.data.staff_note } : {}) }).eq("id", p.data.id);
   revalidatePath("/admin/requests");
 }
+
+export async function saveDiscounts(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull(["admin", "finance"]);
+  if (!s) return { error: "Only admins and finance can change discounts." };
+  const pct = (v: FormDataEntryValue | null) => Math.min(100, Math.max(0, Number(v) || 0));
+  for (const tier of ["free", "basic", "premium", "enterprise"]) {
+    const { error } = await s.supabase.from("plan_discounts").upsert({
+      tier, events_pct: pct(fd.get(`${tier}_events`)), services_pct: pct(fd.get(`${tier}_services`)),
+      note: String(fd.get(`${tier}_note`) ?? "").trim().slice(0, 200) || null, updated_at: new Date().toISOString(),
+    });
+    if (error) return { error: "Couldn't save the discounts. Try again." };
+  }
+  revalidatePath("/admin/discounts");
+  revalidatePath("/app/plans");
+  return { ok: "Discounts saved." };
+}

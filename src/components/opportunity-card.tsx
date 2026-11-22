@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BadgeCheck, CalendarDays, Check, MapPin, Star } from "lucide-react";
+import { BadgeCheck, CalendarDays, Check, Lock, MapPin, Star } from "lucide-react";
 import { Poster } from "@/components/poster";
 import { cn, day, daysUntil } from "@/lib/format";
 import { credit, eventDates, kindLabel } from "@/lib/opportunity-display";
@@ -9,11 +9,11 @@ import { splitTitle } from "@/lib/opportunity-parse";
 export type CardOpp = {
   id: string; kind: string; title: string; summary: string; source: string | null; url: string | null; apply_url: string | null;
   imported_at: string | null; location: string | null; deadline: string | null; requires_verified: boolean; image_url: string | null;
-  benefits: string[]; featured: boolean; starts_on: string | null; ends_on: string | null; published?: boolean;
+  benefits: string[]; featured: boolean; starts_on: string | null; ends_on: string | null; published?: boolean; audience?: string | null;
 };
 
 /** A gallery card: poster, kind, a clear headline, who it's for, the highlight, and where it came from. */
-export function OpportunityCard({ o, href, status, footer, locked, reason }: { o: CardOpp; href: string; status?: ReactNode; footer?: ReactNode; locked?: boolean; reason?: string | null }) {
+export function OpportunityCard({ o, href, status, footer, locked, reason, planLocked }: { o: CardOpp; href: string; status?: ReactNode; footer?: ReactNode; locked?: boolean; reason?: string | null; planLocked?: boolean }) {
   const t = splitTitle(o.title);
   const left = o.deadline ? daysUntil(o.deadline) : null;
   const ev = eventDates(o);
@@ -27,6 +27,11 @@ export function OpportunityCard({ o, href, status, footer, locked, reason }: { o
           <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
             <div className="flex flex-wrap gap-1.5">
               <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-navy-900 shadow-sm">{kindLabel(o.kind)}</span>
+              {o.audience && o.audience !== "all" ? (
+                <span className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm", planLocked ? "bg-navy-900 text-white" : "bg-mint-100 text-green")}>
+                  {planLocked ? <Lock className="size-3" /> : null}{o.audience === "premium" ? "Growth" : "Members"}
+                </span>
+              ) : null}
               {o.featured ? <span className="flex items-center gap-1 rounded-full bg-amber px-2.5 py-1 text-[11px] font-semibold text-navy-950 shadow-sm"><Star className="size-3 fill-current" />Recommended</span> : null}
             </div>
             {status ?? (left !== null && left >= 0 ? (

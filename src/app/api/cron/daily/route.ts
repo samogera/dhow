@@ -4,6 +4,7 @@ import { dailyMaintenance, deadlineReminders, invoiceReminders, membershipRemind
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
 import { sendMorningAlerts, sendWeeklyOpportunities } from "@/lib/notify";
+import { membershipApplicationEmails } from "@/lib/membership-intake";
 
 export const maxDuration = 60;
 
@@ -23,6 +24,7 @@ export async function GET(req: Request) {
   await deadlineReminders().catch(() => undefined);
   const invoiceReminderEmails = await invoiceReminders().catch(() => 0);
   await membershipReminders().catch(() => 0);
+  await membershipApplicationEmails().catch(() => 0);
   const alertEmails = await sendMorningAlerts().catch(() => 0);
   const isMonday = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "Africa/Nairobi" }).format(new Date()) === "Mon";
   if (isMonday) await sendWeeklyOpportunities().catch(() => 0);

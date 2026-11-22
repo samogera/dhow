@@ -6,7 +6,8 @@ import { ArrowLeft, ArrowUpRight, BadgeCheck, CalendarDays, Check, Clock, Gift, 
 import { Markdown } from "@/components/markdown";
 import { Poster } from "@/components/poster";
 import { requireMember } from "@/lib/auth";
-import { atLeast } from "@/lib/plans";
+import { AUDIENCE, TIERS, atLeast, tierOf } from "@/lib/plans";
+import { loadDiscounts } from "@/lib/discounts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RequestButton } from "@/components/request-button";
 import { StageSelect } from "@/app/app/applications/stage";
@@ -40,7 +41,9 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
   const closed = left !== null && left < 0;
   const { data: rep } = await createAdminClient().from("member_requests").select("id").eq("org_id", org.id).eq("kind", "event_representation").eq("target_id", id).in("status", ["new", "in_progress"]).maybeSingle();
   const repAsked = Boolean(rep);
-  const membersOnly = Boolean(o.members_only) && !atLeast(org, "basic");
+  const myDiscount = o.kind === "event" ? (await loadDiscounts())[tierOf(org)].events_pct : 0;
+  const aud = AUDIENCE[(o.audience as string) ?? "all"] ?? AUDIENCE.all;
+  const membersOnly = !atLeast(org, aud.need);
   const blocked = o.requires_verified && org.verification_status !== "verified";
   const official = officialLink(o);
   const from = credit(o);
@@ -148,7 +151,7 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
               <p className="text-sm text-muted">This one has closed. New opportunities are added every day.</p>
             ) : membersOnly ? (
               <div className="space-y-3">
-                <p className="text-sm">This is for paying members, from the Basic plan.</p>
+                <p className="text-sm">{aud.need === "premium" ? "This one is for Growth and Enterprise members." : "This one is for members, from the Startup plan."}</p>
                 <ButtonLink href="/app/plans" variant="accent" className="w-full">See plans</ButtonLink>
               </div>
             ) : blocked ? (
@@ -161,10 +164,11 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
           {isEvent && !closed ? (
             <Card className="space-y-3">
               <p className="font-semibold">Can&apos;t make it, or want a stand?</p>
-              <p className="text-sm text-muted">Dhow can represent your company here: share your materials, meet people for you and report back.</p>
+              <p className="text-sm text-muted">Dhow can represent your company here: share your materials, meet people for you and report back. There&apos;s a fee, discounted for members.</p>
+              {myDiscount ? <p className="rounded-xl bg-mint-100/70 px-3 py-2 text-xs font-medium text-green">Your {TIERS[tierOf(org)].name} discount: {myDiscount}% off</p> : null}
               {atLeast(org, "basic")
                 ? <RequestButton kind="event_representation" targetId={o.id} label="Ask Dhow to represent us" placeholder="What should we bring, and who should we meet? (optional)" done={repAsked} />
-                : <ButtonLink href="/app/plans" variant="outline" className="w-full">Available from Basic</ButtonLink>}
+                : <ButtonLink href="/app/plans" variant="outline" className="w-full">Available from Startup</ButtonLink>}
             </Card>
           ) : null}
         </div>

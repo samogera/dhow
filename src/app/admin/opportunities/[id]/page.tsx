@@ -14,7 +14,7 @@ import { saveOpportunity, setApplicationStatus } from "@/actions/admin";
 export const metadata: Metadata = { title: "Edit opportunity" };
 
 type Opp = CardOpp & {
-  body: string; about: string; dhow_note: string; eligibility: string[]; sectors: string[]; venue: string | null; members_only?: boolean;
+  body: string; about: string; dhow_note: string; eligibility: string[]; sectors: string[]; venue: string | null; audience?: string | null;
 };
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
@@ -93,7 +93,7 @@ export default async function EditOpportunity({ params, searchParams }: { params
                   <label className="flex items-center gap-2"><input type="checkbox" name="published" defaultChecked={o?.published ?? true} className="size-4 accent-navy-900" />Published</label>
                   <label className="flex items-center gap-2"><input type="checkbox" name="featured" defaultChecked={o?.featured ?? false} className="size-4 accent-navy-900" />Recommended by Dhow</label>
                   <label className="flex items-center gap-2"><input type="checkbox" name="requires_verified" defaultChecked={o?.requires_verified ?? false} className="size-4 accent-navy-900" />Verified companies only</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" name="members_only" defaultChecked={o?.members_only ?? false} className="size-4 accent-navy-900" />Paying members only (Basic and up)</label>
+                  <label className="flex items-center gap-2">Who can see it <select name="audience" defaultValue={o?.audience ?? "all"} className="rounded-lg border border-line bg-white px-2 py-1"><option value="all">Everyone</option><option value="members">Members (Startup and up)</option><option value="premium">Growth and Enterprise</option></select></label>
                 </div>
               </Wide>
             </Section>

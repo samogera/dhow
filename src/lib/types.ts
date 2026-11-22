@@ -29,6 +29,7 @@ export interface Organization {
   storage_reserved_bytes: number;
   plan_period?: "monthly" | "yearly" | null;
   plan_until?: string | null;
+  plan_cancelled_at?: string | null;
   created_at: string;
   logo_url?: string | null;
   tagline?: string | null;
@@ -58,9 +59,9 @@ export type DocKind = keyof typeof DOC_KINDS;
 
 export const PLAN_LABEL: Record<PlanTier, string> = {
   free: "Free",
-  starter: "Basic (Starter)",
-  growth: "Premium (Growth)",
-  market_entry: "Enterprise (Market Entry)",
+  starter: "Startup",
+  growth: "Growth",
+  market_entry: "Enterprise",
 };
 
 export const PLAN_PRICE_KES: Record<PlanTier, number | null> = {

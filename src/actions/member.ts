@@ -13,6 +13,7 @@ import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import type { ActionState } from "@/components/forms";
 import { appUrl } from "@/lib/app-url";
 import { TIERS, tierOf } from "@/lib/plans";
+import { accountDeleted, planCancelled } from "@/lib/member-emails";
 
 const app = () => appUrl()!;
 const optional = z.string().trim().max(200).optional().transform((v) => v || null);
@@ -49,6 +50,8 @@ export async function createOrganization(_: ActionState, fd: FormData): Promise<
   (await cookies()).set(ORG_COOKIE, org.id, { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
   const email = s.user.email;
   if (email) {
+    // Accepted membership applicants who open their workspace count as joined.
+    await db.from("membership_applications").update({ status: "joined" }).ilike("email", email).eq("status", "accepted");
     const first = (s.profile?.full_name ?? "").split(" ")[0];
     const base = appUrl();
     after(() => sendEmail({ template: "welcome", to: email, subject: `Welcome to Dhow Partners${first ? `, ${first}` : ""}`,
@@ -200,6 +203,22 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
   return { ok: p.data.stage === "submitted" ? "Added as submitted. We'll keep you posted by email." : `Added to My applications as ${p.data.stage}.` };
 }
 
+/** Stop a paid plan renewing. It keeps running to its end date, then the company moves to Free. */
+export async function cancelPlan(fd: FormData) {
+  const m = await memberOrNull();
+  if (!m || !isOrgAdmin(m.role)) return;
+  const undo = fd.get("undo") === "1";
+  const tier = TIERS[tierOf(m.org)];
+  if (tierOf(m.org) === "free") return;
+  const db = createAdminClient();
+  await db.from("organizations").update({ plan_cancelled_at: undo ? null : new Date().toISOString() }).eq("id", m.org.id);
+  if (!undo) {
+    if (m.user.email) await planCancelled(m.user.email, m.profile?.full_name ?? null, tier.name, m.org.plan_until ?? null).catch(() => null);
+    await notifyStaff(["admin"], `${m.org.name} cancelled ${tier.name}`, [`${m.org.name} cancelled their ${tier.name} plan${m.org.plan_until ? `. It ends on ${m.org.plan_until}` : ""}.`, "Worth a call to ask why."]).catch(() => null);
+  }
+  revalidatePath("/app/plans");
+}
+
 export async function setApplicationStage(fd: FormData) {
   const m = await memberOrNull();
   if (!m) return;
@@ -238,6 +257,7 @@ export async function deleteMyAccount(_: ActionState, fd: FormData): Promise<Act
   }
   const { error } = await db.auth.admin.deleteUser(s.user.id);
   if (error) return { error: "Could not delete your account. Contact hello@dhowpartners.com." };
+  if (s.user.email) await accountDeleted(s.user.email, s.profile?.full_name ?? null).catch(() => null);
   await s.supabase.auth.signOut().catch(() => null);
   (await cookies()).delete(ORG_COOKIE);
   redirect("/login?deleted=1");

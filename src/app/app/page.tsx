@@ -7,8 +7,9 @@ import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, day } from "@/lib/format";
 import { rankForCompany } from "@/lib/matching";
 import { HelpForm } from "@/components/help-form";
+import { AUDIENCE, atLeast } from "@/lib/plans";
 
-const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, sectors";
+const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, sectors, audience";
 
 function greeting() {
   const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: "Africa/Nairobi" }).format(new Date()));
@@ -183,7 +184,7 @@ export default async function Dashboard() {
         </div>
         {picked.length ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {picked.map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && !verified} />)}
+            {picked.map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && !verified} planLocked={!atLeast(org, AUDIENCE[o.audience ?? "all"]?.need ?? "free")} />)}
           </div>
         ) : (
           <Card className="text-center">

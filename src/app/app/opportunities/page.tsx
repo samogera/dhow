@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { requireMember } from "@/lib/auth";
+import { AUDIENCE, atLeast } from "@/lib/plans";
 import { Empty, PageHeader, Tabs } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, label } from "@/lib/format";
@@ -19,7 +20,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
   const term = (sp.q ?? "").replace(/[%_,()]/g, "").slice(0, 60);
   let q = supabase
     .from("opportunities")
-    .select("id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, sectors, featured, starts_on, ends_on")
+    .select("id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, sectors, featured, starts_on, ends_on, audience")
     .eq("published", true)
     .or(`deadline.is.null,deadline.gte.${new Date().toISOString().slice(0, 10)}`)
     .order("featured", { ascending: false })
@@ -70,7 +71,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
       {opps.length ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {opps.map((o) => (
-            <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && org.verification_status !== "verified"} />
+            <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && org.verification_status !== "verified"} planLocked={!atLeast(org, AUDIENCE[o.audience ?? "all"]?.need ?? "free")} />
           ))}
         </div>
       ) : <Empty title={term || sp.sector ? "No matches" : "Nothing open in this category"} sub={term || sp.sector ? "Try another word or clear the filter." : "New opportunities are added every day."} />}

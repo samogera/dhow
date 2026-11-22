@@ -2,7 +2,8 @@
   "git": {
     "deploymentEnabled": {
       "ci-results": false,
-      "screenshots": false
+      "screenshots": false,
+      "test": false
     }
   },
   "crons": [

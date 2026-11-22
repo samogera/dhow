@@ -5,7 +5,7 @@ import { TIERS, TIER_ORDER, type Period, type Tier } from "@/lib/plans";
 import { applyForEnterprise } from "@/actions/help";
 import { cn, kes } from "@/lib/format";
 
-export function PlanPicker({ current, canPay, until }: { current: Tier; canPay: boolean; until: string | null }) {
+export function PlanPicker({ current, canPay, until, off, cancelled }: { current: Tier; canPay: boolean; until: string | null; off: Record<string, { events: number; services: number }>; cancelled: boolean }) {
   const [period, setPeriod] = useState<Period>("monthly");
   const [busy, setBusy] = useState<Tier | null>(null);
   const [msg, setMsg] = useState<{ ok?: string; error?: string }>({});
@@ -85,6 +85,11 @@ export function PlanPicker({ current, canPay, until }: { current: Tier; canPay: 
                 ) : price === 0 ? <span className="text-3xl font-semibold tracking-tight">Free</span>
                   : <span className="text-2xl font-semibold tracking-tight">Custom quote</span>}
               </p>
+              {off[t] && (off[t].events || off[t].services) ? (
+                <p className="mt-4 rounded-xl bg-mint-100/70 px-3 py-2 text-xs text-green">
+                  {[off[t].events ? `${off[t].events}% off event representation` : null, off[t].services ? `${off[t].services}% off Dhow services` : null].filter(Boolean).join(" · ")}
+                </p>
+              ) : null}
               <ul className="mt-5 flex-1 space-y-2.5 text-sm">
                 {tier.perks.map((p) => (
                   <li key={p} className="flex gap-2.5"><Check className="mt-0.5 size-4 shrink-0 text-green" strokeWidth={2.25} />{p}</li>

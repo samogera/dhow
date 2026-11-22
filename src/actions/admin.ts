@@ -599,7 +599,7 @@ const OppIn = z.object({
   dhow_note: z.string().trim().max(600).default(""),
   starts_on: date, ends_on: date, venue: text(160),
   requires_verified: z.enum(["on"]).optional().transform((v) => v === "on"),
-  members_only: z.enum(["on"]).optional().transform((v) => v === "on"),
+  audience: z.enum(["all", "members", "premium"]).default("all"),
   published: z.enum(["on"]).optional().transform((v) => v === "on"),
   featured: z.enum(["on"]).optional().transform((v) => v === "on"),
 });

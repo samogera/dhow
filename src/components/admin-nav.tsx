@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Anchor, Bell, FolderKanban, Handshake, Inbox, LifeBuoy, Lightbulb, UserCog, Wallet,
+  Anchor, Bell, ClipboardList, FolderKanban, Handshake, Inbox, LifeBuoy, Lightbulb, Percent, UserCog, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/format";
 
@@ -27,7 +27,9 @@ const groups: { title: string; tone: keyof typeof TONES; items: Item[] }[] = [
     { href: "/admin/reviews", label: "Verification", img: "verified" },
     { href: "/admin/members", label: "Companies", img: "companies" },
     { href: "/admin/opportunities", label: "Opportunities", img: "opportunities" },
+    { href: "/admin/applications", label: "Membership applications", icon: ClipboardList },
     { href: "/admin/requests", label: "Member requests", icon: Inbox },
+    { href: "/admin/discounts", label: "Plan discounts", icon: Percent },
     { href: "/admin/investors", label: "Investors", icon: Handshake },
   ] },
   { title: "Clients and work", tone: "amber", items: [

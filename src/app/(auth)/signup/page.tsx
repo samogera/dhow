@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Check, Mail, MailCheck, User } from "lucide-react";
 import { signUp } from "@/actions/auth";
 import { FormMessage, Submit } from "@/components/forms";
@@ -12,6 +12,11 @@ const GAINS = ["Opportunities picked for companies in Kenya", "Trusted partner f
 export default function SignUp() {
   const [state, action] = useActionState(signUp, undefined);
   const [email, setEmail] = useState("");
+  // Coming from the "next steps" email: the address is filled in already.
+  useEffect(() => {
+    const e = new URLSearchParams(window.location.search).get("email");
+    if (e) setEmail(e.slice(0, 200));
+  }, []);
 
   if (state?.ok) {
     return (

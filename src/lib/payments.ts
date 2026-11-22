@@ -7,6 +7,7 @@ import { notifyStaff } from "@/lib/notify";
 import { kes } from "@/lib/format";
 import { safeEqual } from "@/lib/crypto";
 import { appUrl } from "@/lib/app-url";
+import { paymentReceipt } from "@/lib/member-emails";
 
 // Paystack references: "DV-<payment id>" for verification fees, "DM-<tier><period>-<payment id>" for membership,
 // "INV-<invoice id>-<time>" for client invoices.
@@ -43,7 +44,12 @@ async function confirmVerificationFee(reference: string, tx: Awaited<ReturnType<
     const { data: updated } = await db.from("payments")
       .update({ status: "paid", mpesa_receipt: receipt, paid_at: tx.paid_at ?? new Date().toISOString(), result_desc: `${channelLabel(tx.channel)} via Paystack`, raw: tx })
       .eq("id", pay.id).eq("status", "pending").select("id");
-    if (updated?.length) await queueVerificationPaid(pay.id);
+    if (updated?.length) {
+      await queueVerificationPaid(pay.id);
+      const { data: row } = await db.from("payments").select("created_by").eq("id", pay.id).single();
+      const payer = row?.created_by ? (await db.auth.admin.getUserById(row.created_by)).data.user : null;
+      if (payer?.email) await paymentReceipt(payer.email, null, "Dhow verification", pay.amount_kes, receipt).catch(() => undefined);
+    }
     return { state: "paid", message: "Payment received. We're checking your company's registration now.", receipt };
   }
   if (["failed", "abandoned", "reversed"].includes(tx.status)) {
@@ -82,8 +88,13 @@ async function confirmMembership(reference: string, tx: Awaited<ReturnType<typeo
     const from = new Date(`${org?.plan === plan && org?.plan_until && org.plan_until > today ? org.plan_until : today}T00:00:00Z`);
     if (period === "yearly") from.setUTCFullYear(from.getUTCFullYear() + 1);
     else from.setUTCMonth(from.getUTCMonth() + 1);
-    await db.from("organizations").update({ plan, plan_period: period, plan_until: from.toISOString().slice(0, 10) }).eq("id", pay.org_id);
-    const name = plan === "starter" ? "Basic" : "Premium";
+    const until = from.toISOString().slice(0, 10);
+    await db.from("organizations").update({ plan, plan_period: period, plan_until: until, plan_cancelled_at: null }).eq("id", pay.org_id);
+    const name = plan === "starter" ? "Startup" : "Growth";
+    const { data: payRow } = await db.from("payments").select("created_by").eq("id", pay.id).single();
+    const payer = payRow?.created_by ? (await db.auth.admin.getUserById(payRow.created_by)).data.user : null;
+    const { data: prof } = payRow?.created_by ? await db.from("profiles").select("full_name").eq("id", payRow.created_by).maybeSingle() : { data: null };
+    if (payer?.email) await paymentReceipt(payer.email, prof?.full_name ?? null, `Dhow ${name} membership (${period})`, pay.amount_kes, receipt, until).catch(() => undefined);
     await notifyStaff(["finance", "admin"], `${org?.name ?? "A member"} paid for ${name}`, [`${kes(pay.amount_kes)} for ${name} (${period}) by ${channelLabel(tx.channel)} through Paystack.`, `Reference: ${receipt}`],
       { label: "Open members", href: `${appUrl()}/admin/members` }).catch(() => undefined);
   }

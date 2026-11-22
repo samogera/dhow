@@ -29,8 +29,8 @@ export default async function Investors() {
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-3xl bg-navy-900 px-6 py-5 text-white">
           <Lock className="size-5 shrink-0 text-mint-100" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">Investor introductions come with Premium</p>
-            <p className="text-sm text-white/70">Premium (Growth) includes introductions to vetted investors and an investor-readiness review.</p>
+            <p className="font-semibold">Investor introductions come with Growth</p>
+            <p className="text-sm text-white/70">Growth includes introductions to vetted investors and an investor-readiness review.</p>
           </div>
           <Link href="/app/plans" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-navy-900 hover:bg-mint-100">See plans</Link>
         </div>
@@ -60,7 +60,7 @@ export default async function Investors() {
                 {unlocked ? (
                   <RequestButton kind="investor_intro" targetId={i.id} label="Ask for an introduction" placeholder="What are you raising, and for what? (optional)" done={asked.has(i.id)} />
                 ) : (
-                  <Link href="/app/plans" className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-medium text-muted hover:text-ink"><Lock className="size-3.5" />Premium members</Link>
+                  <Link href="/app/plans" className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-medium text-muted hover:text-ink"><Lock className="size-3.5" />Growth members</Link>
                 )}
                 {i.website ? <a href={i.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1 text-xs text-muted hover:text-ink">Website <ArrowUpRight className="size-3" /></a> : null}
               </div>

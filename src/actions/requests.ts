@@ -30,7 +30,7 @@ export async function makeRequest(_: RequestState, fd: FormData): Promise<Reques
   const p = Input.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Something's missing. Refresh and try again." };
   const k = KINDS[p.data.kind];
-  if (!atLeast(m.org, k.need)) return { error: `This needs the ${k.need === "premium" ? "Premium" : "Basic"} plan or higher.` };
+  if (!atLeast(m.org, k.need)) return { error: `This needs the ${k.need === "premium" ? "Growth" : "Startup"} plan or higher.` };
   if (!(await rateLimit("requests", 10, 600))) return { error: "Too many requests. Try again in a few minutes." };
 
   const db = createAdminClient();

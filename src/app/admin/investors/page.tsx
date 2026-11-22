@@ -35,7 +35,7 @@ export default async function Investors() {
   const list = (data ?? []) as Inv[];
   return (
     <>
-      <PageHeader title="Investors" sub="Vetted investors Premium and Enterprise members can ask to be introduced to.">
+      <PageHeader title="Investors" sub="Vetted investors Growth and Enterprise members can ask to be introduced to.">
         <Drawer label="Add investor" title="Add an investor" sub="Members see the name, type, focus and ticket size. Introductions go through you.">
           <InvestorForm />
         </Drawer>

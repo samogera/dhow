@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, Briefcase, CalendarDays, FileText, LayoutGrid, LifeBuoy, Megaphone, Menu, Receipt, Send, Settings, UsersRound, X,
+  BadgeCheck, Briefcase, Building2, CalendarDays, Compass, Crown, FileCheck2, House, FileText, LayoutGrid, LifeBuoy, Menu, Receipt, Settings, UsersRound, X,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { AdminNav } from "@/components/admin-nav";
@@ -92,17 +92,18 @@ export function MemberTabBar() {
   const more = [
     { href: "/app/verification", label: "Verification", sub: "Get or renew your Dhow Verified badge", icon: BadgeCheck },
     { href: "/app/documents", label: "Documents", sub: "Your company files", icon: FileText },
-    { href: "/app/directory", label: "Directory", sub: "Verified member companies", icon: UsersRound },
+    { href: "/app/directory", label: "Directory", sub: "Verified member companies", icon: Building2 },
+    { href: "/app/plans", label: "Plan", sub: "Free, Basic, Premium or Business", icon: Crown },
     { href: "/app/settings", label: "Settings", sub: "Company, documents, verification, emails", icon: Settings },
     { href: "/help", label: "Help Centre", sub: "Guides for every page", icon: LifeBuoy },
   ];
   return (
     <>
       <TabBar onMore={() => setOpen((o) => !o)} moreOpen={open || more.some((m) => path.startsWith(m.href))} tabs={[
-        { href: "/app", label: "Home", icon: LayoutGrid, exact: true },
-        { href: "/app/opportunities", label: "Explore", icon: Megaphone },
+        { href: "/app", label: "Home", icon: House, exact: true },
+        { href: "/app/opportunities", label: "Explore", icon: Compass },
         { href: "/app/events", label: "Events", icon: CalendarDays },
-        { href: "/app/applications", label: "Applied", icon: Send },
+        { href: "/app/applications", label: "Applied", icon: FileCheck2 },
       ]} />
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More">

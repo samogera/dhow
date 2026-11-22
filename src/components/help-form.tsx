@@ -30,83 +30,67 @@ export function HelpForm({ side, name, email, phone, token, title = "How can we 
 
   if (state.ok) {
     return (
-      <div className="py-8 text-center">
-        <p className="text-xl font-semibold tracking-tight">Thank you. We&apos;re on it.</p>
+      <div className="py-4 text-center">
+        <p className="text-lg font-semibold tracking-tight">Thank you. We&apos;re on it.</p>
         <p className="mx-auto mt-2 max-w-sm text-sm text-muted">Someone from the Dhow team will reach out within one working day.</p>
       </div>
     );
   }
 
+  const chip = "rounded-xl border px-3 py-1.5 text-[13px] transition";
+  const primary = "shrink-0 rounded-xl bg-navy-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-30";
   return (
-    <div>
-      <div className="flex items-center gap-1.5" aria-hidden>
-        <span className="h-1 w-8 rounded-full bg-navy-900" />
-        <span className={cn("h-1 w-8 rounded-full transition-colors", step === 2 ? "bg-navy-900" : "bg-line")} />
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
+      <div>
+        <div className="flex items-center gap-1" aria-hidden>
+          <span className="h-[3px] w-6 rounded-full bg-navy-900" />
+          <span className={cn("h-[3px] w-6 rounded-full transition-colors", step === 2 ? "bg-navy-900" : "bg-line")} />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold tracking-tight">{step === 1 ? title : "Where can we reach you?"}</h2>
+        <p className="mt-1 line-clamp-3 text-sm text-muted">{step === 1 ? sub ?? "Choose one. We'll reach out within one working day." : `About: ${what}`}</p>
+        {links?.length ? (
+          <p className="mt-4 text-xs text-muted">
+            Prefer to talk?{" "}
+            {links.map((l, i) => (
+              <span key={l.href}>{i ? " · " : ""}<a href={l.href} target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline decoration-line underline-offset-4 hover:decoration-ink">{l.label}</a></span>
+            ))}
+          </p>
+        ) : null}
       </div>
-      <h2 className="mt-5 text-2xl font-semibold tracking-tight">{step === 1 ? title : "Where can we reach you?"}</h2>
-      <p className="mt-1.5 line-clamp-2 text-sm text-muted">{step === 1 ? sub ?? "Choose one. We'll reach out within one working day." : `About: ${what}`}</p>
 
       {step === 1 ? (
-        <div className="mt-6">
-          <div className="flex flex-wrap gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap gap-1.5">
             {TOPICS[side].map((t) => (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={topic === t}
-                onClick={() => setTopic(t)}
-                className={cn(
-                  "rounded-full border px-4 py-2 text-sm transition",
-                  topic === t ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink hover:border-navy-300",
-                )}
-              >
+              <button key={t} type="button" aria-pressed={topic === t} onClick={() => setTopic(t)}
+                className={cn(chip, topic === t ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink/80 hover:border-navy-300 hover:text-ink")}>
                 {t}
               </button>
             ))}
           </div>
           {topic === OTHER ? (
-            <textarea
-              autoFocus
-              value={other}
-              onChange={(e) => setOther(e.target.value)}
-              maxLength={300}
-              rows={3}
-              placeholder="Tell us what you need, in a sentence or two"
-              aria-label="What you need"
-              className="field mt-4 min-h-0 resize-none"
-            />
+            <textarea autoFocus value={other} onChange={(e) => setOther(e.target.value)} maxLength={300} rows={2}
+              placeholder="Tell us what you need, in a sentence or two" aria-label="What you need" className="field mt-3 min-h-0 resize-none" />
           ) : null}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-            {links?.length ? (
-              <p className="text-sm text-muted">
-                Prefer to talk?{" "}
-                {links.map((l, i) => (
-                  <span key={l.href}>{i ? " · " : ""}<a href={l.href} target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline decoration-line underline-offset-4 hover:decoration-ink">{l.label}</a></span>
-                ))}
-              </p>
-            ) : <span />}
-            <button type="button" disabled={!ready} onClick={() => setStep(2)} className="ml-auto shrink-0 rounded-full bg-navy-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-30">
-              Continue
-            </button>
+          <div className="mt-4 flex justify-end">
+            <button type="button" disabled={!ready} onClick={() => setStep(2)} className={primary}>Continue</button>
           </div>
         </div>
       ) : (
-        <form action={action} className="mt-6 space-y-3">
+        <form action={action} className="min-w-0 space-y-2.5">
           <input type="hidden" name="topic" value={topic ?? ""} />
           {topic === OTHER ? <input type="hidden" name="note" value={other.trim()} /> : null}
           {token ? <input type="hidden" name="token" value={token} /> : null}
-          <input name="name" defaultValue={name ?? ""} required autoComplete="name" placeholder="Your name" aria-label="Your name" className="field" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <input name="name" defaultValue={name ?? ""} required autoComplete="name" placeholder="Your name" aria-label="Your name" className="field" />
             <input name="email" type="email" defaultValue={email ?? ""} autoComplete="email" placeholder="Email" aria-label="Email" className="field" />
             <input name="phone" type="tel" defaultValue={phone ?? ""} autoComplete="tel" placeholder="Phone (optional)" aria-label="Phone" className="field" />
           </div>
-          {topic !== OTHER ? <textarea name="note" rows={2} maxLength={1000} placeholder="Anything else we should know? (optional)" aria-label="Note" className="field min-h-0 resize-none" /> : null}
+          {topic !== OTHER ? <input name="note" maxLength={1000} placeholder="Anything else we should know? (optional)" aria-label="Note" className="field" /> : null}
           {state.error ? <p className="text-sm text-bad">{state.error}</p> : null}
-          <div className="flex items-center justify-between gap-4 pt-3">
+          <div className="flex items-center justify-end gap-4 pt-1.5">
             <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-muted hover:text-ink">Back</button>
-            <button type="submit" disabled={busy} className="rounded-full bg-navy-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:opacity-60">
-              {busy ? "Sending…" : "Send"}
-            </button>
+            <button type="submit" disabled={busy} className={primary}>{busy ? "Sending…" : "Send"}</button>
           </div>
         </form>
       )}

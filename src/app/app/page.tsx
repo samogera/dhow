@@ -195,7 +195,7 @@ export default async function Dashboard() {
       </section>
 
       {/* Talk to Dhow */}
-      <Card className="mx-auto w-full max-w-3xl p-7 sm:p-10">
+      <Card>
         <HelpForm
           side="member"
           name={profile?.full_name}

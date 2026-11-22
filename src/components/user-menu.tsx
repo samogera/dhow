@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LifeBuoy, LogOut, Settings, Shield } from "lucide-react";
+import { Crown, LifeBuoy, LogOut, Settings, Shield } from "lucide-react";
 import { signOut } from "@/actions/auth";
 
 export function UserMenu({ name, email, staff, helpHref = "/help", settingsHref }: { name: string; email: string; staff: boolean; helpHref?: string; settingsHref?: string }) {
@@ -22,6 +22,11 @@ export function UserMenu({ name, email, staff, helpHref = "/help", settingsHref 
         {settingsHref ? (
           <Link href={settingsHref} className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">
             <Settings className="size-4" /> Company and account settings
+          </Link>
+        ) : null}
+        {settingsHref === "/app/settings" ? (
+          <Link href="/app/plans" className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">
+            <Crown className="size-4" /> Membership plan
           </Link>
         ) : null}
         <Link href={helpHref} className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">

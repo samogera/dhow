@@ -6,7 +6,7 @@ import { day } from "@/lib/format";
 import { withdrawApplication } from "@/actions/member";
 import { ConfirmSubmit } from "@/components/forms";
 
-export const metadata: Metadata = { title: "Applications" };
+export const metadata: Metadata = { title: "My applications" };
 
 export default async function Applications() {
   const { org, supabase } = await requireMember();
@@ -19,7 +19,7 @@ export default async function Applications() {
 
   return (
     <>
-      <PageHeader title="Applications" sub="Every opportunity you've applied to and where it stands.">
+      <PageHeader title="My applications" sub="Every opportunity you've applied to and where it stands.">
         <ButtonLink href="/app/opportunities" variant="outline">Browse opportunities</ButtonLink>
       </PageHeader>
       <Card>

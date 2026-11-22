@@ -1,16 +1,16 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, CalendarDays, LayoutDashboard, Send, Settings, UsersRound } from "lucide-react";
+import { Building2, CalendarDays, Compass, FileCheck2, House, Settings2 } from "lucide-react";
 import { cn } from "@/lib/format";
 
 const items = [
-  { href: "/app", label: "Home", icon: LayoutDashboard, tone: "text-navy-700" },
-  { href: "/app/opportunities", label: "Opportunities", icon: Briefcase, tone: "text-amber-700" },
-  { href: "/app/events", label: "Events", icon: CalendarDays, tone: "text-mint-600" },
-  { href: "/app/applications", label: "Applications", icon: Send, tone: "text-navy-500" },
-  { href: "/app/directory", label: "Directory", icon: UsersRound, tone: "text-green" },
-  { href: "/app/settings", label: "Settings", icon: Settings, tone: "text-ink/60", also: ["/app/documents", "/app/verification"] },
+  { href: "/app", label: "Home", icon: House },
+  { href: "/app/opportunities", label: "Opportunities", icon: Compass },
+  { href: "/app/events", label: "Events", icon: CalendarDays },
+  { href: "/app/applications", label: "My applications", icon: FileCheck2 },
+  { href: "/app/directory", label: "Directory", icon: Building2 },
+  { href: "/app/settings", label: "Settings", icon: Settings2, also: ["/app/documents", "/app/verification", "/app/plans"] },
 ];
 
 export function MemberNav() {
@@ -22,7 +22,7 @@ export function MemberNav() {
         return (
           <Link key={i.href} href={i.href} aria-current={on ? "page" : undefined} title={i.label} aria-label={i.label}
             className={cn("flex items-center gap-2 rounded-full px-3.5 py-2 text-sm whitespace-nowrap transition", on ? "bg-navy-900 font-medium text-white shadow-sm" : "text-ink/75 hover:bg-white")}>
-            <i.icon className={cn("size-4", on ? "text-white" : i.tone)} />
+            <i.icon className={cn("size-[17px]", on ? "text-white" : "text-ink/55")} strokeWidth={1.75} aria-hidden />
             <span>{i.label}</span>
           </Link>
         );

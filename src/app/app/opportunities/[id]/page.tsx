@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowUpRight, BadgeCheck, CalendarDays, Check, Clock, Gift, 
 import { Markdown } from "@/components/markdown";
 import { Poster } from "@/components/poster";
 import { requireMember } from "@/lib/auth";
+import { tierOf } from "@/lib/plans";
 import { ButtonLink, Card, StatusBadge } from "@/components/ui";
 import { cn, day, daysUntil } from "@/lib/format";
 import { credit, defaultWhy, eventDates, hostOf, kindLabel, officialLink } from "@/lib/opportunity-display";
@@ -34,6 +35,7 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
   const t = splitTitle(o.title);
   const left = o.deadline ? daysUntil(o.deadline) : null;
   const closed = left !== null && left < 0;
+  const membersOnly = Boolean(o.members_only) && !["premium", "business"].includes(tierOf(org));
   const blocked = o.requires_verified && org.verification_status !== "verified";
   const official = officialLink(o);
   const from = credit(o);
@@ -46,7 +48,7 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
   const isEvent = o.kind === "event";
   const go = official ?? (from.href && !from.byDhow ? from.href : null);
 
-  const applyButton = go && !closed ? (
+  const applyButton = go && !closed && !membersOnly ? (
     <a href={go} target="_blank" rel="noopener noreferrer"
       className="flex w-full items-center justify-center gap-2 rounded-full bg-navy-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-navy-700">
       {official ? (isEvent ? "Register on the official site" : "Apply on the official site") : "How to apply (original post)"} <ArrowUpRight className="size-4" />
@@ -137,6 +139,11 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
               </div>
             ) : closed ? (
               <p className="text-sm text-muted">This one has closed. New opportunities are added every day.</p>
+            ) : membersOnly ? (
+              <div className="space-y-3">
+                <p className="text-sm">This is a member event for Premium and Business members.</p>
+                <ButtonLink href="/app/plans" variant="accent" className="w-full">See plans</ButtonLink>
+              </div>
             ) : blocked ? (
               <div className="space-y-3">
                 <p className="text-sm">This opportunity is open to Dhow Verified companies.</p>

@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BadgeCheck, Building2, FileText, UserRound } from "lucide-react";
+import { BadgeCheck, Building2, Crown, FileText, UserRound } from "lucide-react";
 import { cn } from "@/lib/format";
 
 const TABS = [
   { href: "/app/settings", label: "Company", icon: Building2 },
   { href: "/app/documents", label: "Documents", icon: FileText },
   { href: "/app/verification", label: "Verification", icon: BadgeCheck },
+  { href: "/app/plans", label: "Plan", icon: Crown },
   { href: "/app/settings/account", label: "You & emails", icon: UserRound },
 ];
 

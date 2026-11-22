@@ -12,6 +12,7 @@ import { deleteObject } from "@/lib/r2";
 import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import type { ActionState } from "@/components/forms";
 import { appUrl } from "@/lib/app-url";
+import { TIERS, tierOf } from "@/lib/plans";
 
 const app = () => appUrl()!;
 const optional = z.string().trim().max(200).optional().transform((v) => v || null);
@@ -175,6 +176,12 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
   if (!m) return { error: "Sign in first." };
   const p = z.object({ opportunity_id: z.string().uuid(), note: z.string().trim().max(2000).optional() }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Something's missing." };
+  const tier = TIERS[tierOf(m.org)];
+  if (tier.applications !== null) {
+    const monthStart = `${new Date().toISOString().slice(0, 7)}-01T00:00:00Z`;
+    const { count } = await m.supabase.from("applications").select("id", { count: "exact", head: true }).eq("org_id", m.org.id).gte("created_at", monthStart);
+    if ((count ?? 0) >= tier.applications) return { error: `Your ${tier.name} plan includes ${tier.applications} applications a month. Upgrade to apply for more.` };
+  }
   // RLS (can_apply) enforces published, open and verified-only rules.
   const { error } = await m.supabase.from("applications").insert({
     org_id: m.org.id, opportunity_id: p.data.opportunity_id, note: p.data.note ?? null,

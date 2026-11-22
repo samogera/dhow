@@ -27,6 +27,8 @@ export interface Organization {
   verified_until: string | null;
   storage_used_bytes: number;
   storage_reserved_bytes: number;
+  plan_period?: "monthly" | "yearly" | null;
+  plan_until?: string | null;
   created_at: string;
   logo_url?: string | null;
   tagline?: string | null;
@@ -56,16 +58,16 @@ export type DocKind = keyof typeof DOC_KINDS;
 
 export const PLAN_LABEL: Record<PlanTier, string> = {
   free: "Free",
-  starter: "Starter",
-  growth: "Growth",
-  market_entry: "Market Entry",
+  starter: "Basic",
+  growth: "Premium",
+  market_entry: "Business",
 };
 
 export const PLAN_PRICE_KES: Record<PlanTier, number | null> = {
   free: 0,
-  starter: 1000,
+  starter: 0,
   growth: 5000,
-  market_entry: null,
+  market_entry: 15000,
 };
 
 export function storageCapBytes(plan: PlanTier, status: VerificationState): number {

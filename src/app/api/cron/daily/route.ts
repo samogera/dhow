@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { classifyOpportunities, enrichImported, importAllSources, retireExpired } from "@/lib/opportunity-import";
-import { dailyMaintenance, deadlineReminders, invoiceReminders } from "@/lib/workflows";
+import { dailyMaintenance, deadlineReminders, invoiceReminders, membershipReminders } from "@/lib/workflows";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
 import { sendMorningAlerts, sendWeeklyOpportunities } from "@/lib/notify";
@@ -22,6 +22,7 @@ export async function GET(req: Request) {
   await dailyMaintenance().catch(() => undefined);
   await deadlineReminders().catch(() => undefined);
   const invoiceReminderEmails = await invoiceReminders().catch(() => 0);
+  await membershipReminders().catch(() => 0);
   const alertEmails = await sendMorningAlerts().catch(() => 0);
   const isMonday = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "Africa/Nairobi" }).format(new Date()) === "Mon";
   if (isMonday) await sendWeeklyOpportunities().catch(() => 0);

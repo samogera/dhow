@@ -121,6 +121,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
               <Field label="Address" hint="Website home page, feed URL, or https://api.grants.gov/?keyword=Africa"><Input name="url" type="url" required placeholder="https://" /></Field>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="auto_publish" className="accent-navy-900" /> Publish automatically (skip review)</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_verified" className="accent-navy-900" /> Verified companies only</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="members_only" className="accent-navy-900" /> Paying members only (Premium, Business)</label>
             </ActionForm>
           </Card>
         </div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { SettingsTabs } from "@/components/settings-tabs";
 import { Download, FileText, Trash2 } from "lucide-react";
@@ -5,7 +6,8 @@ import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { Card, CardHeader, Empty, Meter, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { ConfirmSubmit } from "@/components/forms";
 import { bytes, day } from "@/lib/format";
-import { DOC_KINDS, storageCapBytes } from "@/lib/types";
+import { DOC_KINDS } from "@/lib/types";
+import { TIERS, tierOf } from "@/lib/plans";
 import { deleteDocument } from "@/actions/member";
 import { Uploader } from "./uploader";
 
@@ -19,7 +21,8 @@ export default async function Documents() {
     .eq("org_id", org.id)
     .neq("status", "pending_upload")
     .order("created_at", { ascending: false });
-  const cap = storageCapBytes(org.plan, org.verification_status);
+  const tier = TIERS[tierOf(org)];
+  const cap = tier.storage;
   const canEdit = isOrgAdmin(role);
 
   return (
@@ -36,7 +39,7 @@ export default async function Documents() {
             <p className="label">Storage</p>
             <p className="num mt-2 text-2xl font-semibold">{bytes(org.storage_used_bytes)} <span className="text-base font-normal text-muted">of {bytes(cap)}</span></p>
             <div className="mt-3"><Meter value={org.storage_used_bytes} max={cap} label="Storage used" /></div>
-            <p className="mt-3 text-xs text-muted">Verified companies get 500 MB. Paid plans get more.</p>
+            <p className="mt-3 text-xs text-muted">{docs?.length ?? 0} of {tier.documents} documents on your {tier.name} plan. <Link href="/app/plans" className="font-medium text-navy-600 hover:text-navy-900">Need more?</Link></p>
           </Card>
         </div>
         <Card>

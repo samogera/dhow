@@ -89,7 +89,7 @@ export async function setOrgPlan(fd: FormData) {
   if (!s) return;
   const p = z.object({ org_id: uuid, plan: z.enum(["free", "starter", "growth", "market_entry"]) }).safeParse(form(fd));
   if (!p.success) return;
-  await createAdminClient().from("organizations").update({ plan: p.data.plan }).eq("id", p.data.org_id);
+  await createAdminClient().from("organizations").update({ plan: p.data.plan, plan_until: null, plan_period: null }).eq("id", p.data.org_id);
   revalidatePath("/admin/members");
 }
 
@@ -589,6 +589,7 @@ const OppIn = z.object({
   dhow_note: z.string().trim().max(600).default(""),
   starts_on: date, ends_on: date, venue: text(160),
   requires_verified: z.enum(["on"]).optional().transform((v) => v === "on"),
+  members_only: z.enum(["on"]).optional().transform((v) => v === "on"),
   published: z.enum(["on"]).optional().transform((v) => v === "on"),
   featured: z.enum(["on"]).optional().transform((v) => v === "on"),
 });

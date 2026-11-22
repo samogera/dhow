@@ -8,15 +8,17 @@ import { kes } from "@/lib/format";
 import { safeEqual } from "@/lib/crypto";
 import { appUrl } from "@/lib/app-url";
 
-// Paystack references: "DV-<payment id>" for verification fees, "INV-<invoice id>-<time>" for client invoices.
+// Paystack references: "DV-<payment id>" for verification fees, "DM-<tier><period>-<payment id>" for membership,
+// "INV-<invoice id>-<time>" for client invoices.
 
 export type ConfirmResult = { state: "paid" | "pending" | "failed" | "unknown"; message: string; receipt?: string };
 
 /** Confirms a Paystack payment with Paystack itself and records it. Safe to call many times (return page, webhook, nightly job). */
 export async function confirmPaystack(reference: string): Promise<ConfirmResult> {
-  if (!/^(DV|INV)-[A-Za-z0-9-]{8,80}$/.test(reference)) return { state: "unknown", message: "Unknown payment reference." };
+  if (!/^(DV|DM|INV)-[A-Za-z0-9-]{8,80}$/.test(reference)) return { state: "unknown", message: "Unknown payment reference." };
   const tx = await verifyTransaction(reference).catch(() => null);
   if (!tx) return { state: "pending", message: "We couldn't reach Paystack just now. Your payment will show here shortly." };
+  if (reference.startsWith("DM-")) return confirmMembership(reference, tx);
   return reference.startsWith("DV-") ? confirmVerificationFee(reference, tx) : confirmInvoicePayment(reference, tx);
 }
 
@@ -49,6 +51,43 @@ async function confirmVerificationFee(reference: string, tx: Awaited<ReturnType<
     return { state: "failed", message: tx.status === "abandoned" ? "The payment was cancelled." : `Payment failed: ${tx.gateway_response ?? "please try again"}.` };
   }
   return { state: "pending", message: "Your payment is still processing. This page will update when it's confirmed." };
+}
+
+async function confirmMembership(reference: string, tx: Awaited<ReturnType<typeof verifyTransaction>>): Promise<ConfirmResult> {
+  const db = createAdminClient();
+  const { data: pay } = await db.from("payments").select("id, org_id, amount_kes, status, mpesa_receipt").eq("checkout_request_id", reference).maybeSingle();
+  if (!pay) return { state: "unknown", message: "We couldn't find that payment." };
+  if (pay.status === "paid") return { state: "paid", message: "Payment received. Your plan is active.", receipt: pay.mpesa_receipt ?? undefined };
+  if (pay.status !== "pending") return { state: "failed", message: "This payment didn't go through. Please try again." };
+  if (["failed", "abandoned", "reversed"].includes(tx.status)) {
+    await db.from("payments").update({ status: tx.status === "abandoned" ? "cancelled" : "failed", result_desc: tx.gateway_response ?? tx.status, raw: tx }).eq("id", pay.id).eq("status", "pending");
+    return { state: "failed", message: tx.status === "abandoned" ? "The payment was cancelled." : `Payment failed: ${tx.gateway_response ?? "please try again"}.` };
+  }
+  if (tx.status !== "success") return { state: "pending", message: "Your payment is still processing. This page will update when it's confirmed." };
+  if (tx.currency !== "KES" || tx.amount < pay.amount_kes * 100) {
+    await db.from("payments").update({ status: "failed", result_desc: `Amount mismatch: ${tx.amount / 100} ${tx.currency}`, raw: tx }).eq("id", pay.id).eq("status", "pending");
+    return { state: "failed", message: "The amount paid didn't match. Please contact us." };
+  }
+  const receipt = `PSK-${tx.id}`;
+  const { data: updated } = await db.from("payments")
+    .update({ status: "paid", mpesa_receipt: receipt, paid_at: tx.paid_at ?? new Date().toISOString(), raw: tx })
+    .eq("id", pay.id).eq("status", "pending").select("id");
+  if (updated?.length) {
+    const code = reference.slice(3, 5);
+    const plan = code[0] === "b" ? "market_entry" : "growth";
+    const period = code[1] === "y" ? "yearly" : "monthly";
+    const { data: org } = await db.from("organizations").select("name, plan, plan_until").eq("id", pay.org_id).single();
+    // Renewing the same plan early adds time on top; otherwise the new plan starts today.
+    const today = new Date().toISOString().slice(0, 10);
+    const from = new Date(`${org?.plan === plan && org?.plan_until && org.plan_until > today ? org.plan_until : today}T00:00:00Z`);
+    if (period === "yearly") from.setUTCFullYear(from.getUTCFullYear() + 1);
+    else from.setUTCMonth(from.getUTCMonth() + 1);
+    await db.from("organizations").update({ plan, plan_period: period, plan_until: from.toISOString().slice(0, 10) }).eq("id", pay.org_id);
+    const name = plan === "market_entry" ? "Business" : "Premium";
+    await notifyStaff(["finance", "admin"], `${org?.name ?? "A member"} paid for ${name}`, [`${kes(pay.amount_kes)} for ${name} (${period}) by ${channelLabel(tx.channel)} through Paystack.`, `Reference: ${receipt}`],
+      { label: "Open members", href: `${appUrl()}/admin/members` }).catch(() => undefined);
+  }
+  return { state: "paid", message: "Payment received. Your plan is active.", receipt };
 }
 
 async function confirmInvoicePayment(reference: string, tx: Awaited<ReturnType<typeof verifyTransaction>>): Promise<ConfirmResult> {

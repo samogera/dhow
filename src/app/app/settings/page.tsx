@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge, Card, CardHeader, PageHeader, Table } from "@/components/ui";
 import { ConfirmSubmit } from "@/components/forms";
-import { kes, label } from "@/lib/format";
-import { PLAN_LABEL, PLAN_PRICE_KES } from "@/lib/types";
+import { label } from "@/lib/format";
+import { TIERS, tierOf } from "@/lib/plans";
 import { removeMember } from "@/actions/member";
 import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InterestsForm, InviteForm, ListingForm } from "./forms";
 import { SettingsTabs } from "@/components/settings-tabs";
@@ -54,10 +55,10 @@ export default async function Settings() {
             <CardHeader title="Plan" />
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-2xl font-semibold">{PLAN_LABEL[m.org.plan]}</p>
-                <p className="text-sm text-muted">{PLAN_PRICE_KES[m.org.plan] ? `${kes(PLAN_PRICE_KES[m.org.plan])} per month` : "No monthly fee"}</p>
+                <p className="text-2xl font-semibold">{TIERS[tierOf(m.org)].name}</p>
+                <p className="text-sm text-muted">{TIERS[tierOf(m.org)].tagline}</p>
               </div>
-              <a href="mailto:hello@dhowpartners.com?subject=Membership%20plan" className="text-sm font-medium text-navy-600">Change plan</a>
+              <Link href="/app/plans" className="text-sm font-medium text-navy-600 hover:text-navy-900">See plans</Link>
             </div>
           </Card>
         </div>

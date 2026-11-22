@@ -14,7 +14,7 @@ export interface AnalyticsSummary {
   notApplied: { name: string; joined: string; verification: string }[];
 }
 
-const PLAN: Record<string, string> = { free: "Free", starter: "Starter", growth: "Growth", market_entry: "Market Entry" };
+const PLAN: Record<string, string> = { free: "Free", starter: "Basic", growth: "Premium", market_entry: "Business" };
 const VER: Record<string, string> = { verified: "Verified", pending: "In review", unverified: "Not verified", rejected: "Rejected", expired: "Expired" };
 const cap = (s: string) => s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 const kind = (k: string) => (k === "rfp" ? "RFP" : k === "program" ? "Programme" : cap(k));

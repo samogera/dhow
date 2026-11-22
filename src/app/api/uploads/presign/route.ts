@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ALLOWED_MIME, MAX_FILE_BYTES, presignUpload } from "@/lib/r2";
 import { rateLimit } from "@/lib/rate-limit";
 import { DOC_KINDS } from "@/lib/types";
+import { TIERS, tierOf } from "@/lib/plans";
 
 const Body = z.object({
   kind: z.enum(Object.keys(DOC_KINDS) as [keyof typeof DOC_KINDS, ...(keyof typeof DOC_KINDS)[]]),
@@ -26,8 +27,14 @@ export async function POST(req: Request) {
   const { kind, fileName, mimeType, size } = parsed.data;
   const db = createAdminClient();
 
+  const tier = TIERS[tierOf(m.org)];
+  const { count } = await db.from("documents").select("id", { count: "exact", head: true }).eq("org_id", m.org.id).neq("status", "rejected");
+  if ((count ?? 0) >= tier.documents) {
+    return NextResponse.json({ error: `Your ${tier.name} plan holds ${tier.documents} documents. Delete one or upgrade your plan.` }, { status: 413 });
+  }
+
   const { data: ok } = await db.rpc("reserve_storage", { p_org: m.org.id, p_bytes: size });
-  if (!ok) return NextResponse.json({ error: "Your storage is full. Delete old files or upgrade your plan." }, { status: 413 });
+  if (!ok) return NextResponse.json({ error: `Your ${tier.name} plan has ${Math.round(tier.storage / 1048576)} MB of space and it is full. Delete old files or upgrade your plan.` }, { status: 413 });
 
   const safe = fileName.replace(/[^\w.\- ]/g, "_").slice(-120);
   const key = `orgs/${m.org.id}/${randomUUID()}/${safe}`;

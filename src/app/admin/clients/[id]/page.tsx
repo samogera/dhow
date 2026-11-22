@@ -14,6 +14,7 @@ import { makeClientLink } from "@/actions/profiles";
 import { CopyField } from "@/components/copy-field";
 import { appUrl } from "@/lib/app-url";
 import { Star } from "lucide-react";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -158,13 +159,14 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <div className="space-y-4">
           <Card>
             <CardHeader title="Member account" sub="Link their Dhow member company. On Enterprise they see this work under Our work, after signing in." />
-            <form action={linkClientOrg} className="flex gap-2">
+            <form action={linkClientOrg} className="flex flex-wrap gap-2">
               <input type="hidden" name="id" value={client.id} />
               <select name="org_id" defaultValue={(c as { org_id?: string | null }).org_id ?? ""} aria-label="Member company" className="field flex-1 py-2 text-sm">
                 <option value="">Not linked</option>
                 {(orgs ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
-              <button className="rounded-xl bg-navy-900 px-4 text-sm font-medium text-white">Save</button>
+              <SubmitButton className="rounded-xl bg-navy-900 px-4 text-sm font-medium text-white">Save</SubmitButton>
+              <label className="flex w-full items-center gap-2 text-sm text-muted"><input type="checkbox" name="enterprise" defaultChecked className="size-4 accent-navy-900" />Also move them to Enterprise</label>
             </form>
           </Card>
           <Card className="border-mint/40 bg-mint-100/50">
@@ -174,11 +176,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 <CopyField value={`${appUrl()}/client/${token}`} share={`Hello from Dhow Partners. Follow your project, invoices and payments here:`} />
                 <div className="mt-2 flex gap-4 text-xs">
                   <a href={`/client/${token}`} target="_blank" className="font-medium text-navy-600">Open it ↗</a>
-                  <form action={makeClientLink}><input type="hidden" name="id" value={client.id} /><input type="hidden" name="reset" value="1" /><button className="text-muted underline">New link (old one stops working)</button></form>
+                  <form action={makeClientLink}><input type="hidden" name="id" value={client.id} /><input type="hidden" name="reset" value="1" /><SubmitButton className="text-muted underline">New link (old one stops working)</SubmitButton></form>
                 </div>
               </>
             ) : (
-              <form action={makeClientLink}><input type="hidden" name="id" value={client.id} /><button className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Create client page</button></form>
+              <form action={makeClientLink}><input type="hidden" name="id" value={client.id} /><SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Create client page</SubmitButton></form>
             )}
             {reviews?.length ? (
               <ul className="mt-5 space-y-2 border-t border-mint/40 pt-4">
@@ -207,8 +209,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                       </div>
                       <form action={updateClientPartner} className="flex gap-1">
                         <input type="hidden" name="id" value={l.id} />
-                        <button name="action" value={l.status === "done" ? "active" : "done"} className="rounded-full px-2.5 py-1 text-xs text-navy-600 hover:bg-white">{l.status === "done" ? "Reopen" : "Done"}</button>
-                        <button name="action" value="remove" aria-label="Remove" className="rounded-full px-2 py-1 text-xs text-muted hover:text-bad">✕</button>
+                        <SubmitButton name="action" value={l.status === "done" ? "active" : "done"} className="rounded-full px-2.5 py-1 text-xs text-navy-600 hover:bg-white">{l.status === "done" ? "Reopen" : "Done"}</SubmitButton>
+                        <SubmitButton name="action" value="remove" aria-label="Remove" className="rounded-full px-2 py-1 text-xs text-muted hover:text-bad">✕</SubmitButton>
                       </form>
                     </li>
                   );

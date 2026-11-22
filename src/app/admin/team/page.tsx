@@ -9,6 +9,7 @@ import { Badge, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Table
 import { Drawer } from "@/components/drawer";
 import { Avatar, ImageInput } from "@/components/profile-bits";
 import { Mail, Phone } from "lucide-react";
+import { SubmitButton } from "@/components/submit-button";
 
 type Person = { id: string; full_name: string; title: string | null; department: string | null; email: string | null; phone: string | null; photo_url: string | null; bio: string | null; linkedin: string | null; started_on: string | null; active: boolean };
 
@@ -88,7 +89,7 @@ export default async function Team() {
                 <Drawer label="Edit" title={`Edit ${p.full_name}`} variant="outline" plus={false}>
                   <ActionForm action={savePerson} submit="Save" className="grid gap-3 sm:grid-cols-2"><PersonFields p={p} /></ActionForm>
                 </Drawer>
-                <form action={deletePerson} className="ml-auto"><input type="hidden" name="id" value={p.id} /><button className="rounded-full px-3 py-2 text-xs text-muted hover:bg-bad/10 hover:text-bad">Remove</button></form>
+                <form action={deletePerson} className="ml-auto"><input type="hidden" name="id" value={p.id} /><SubmitButton className="rounded-full px-3 py-2 text-xs text-muted hover:bg-bad/10 hover:text-bad">Remove</SubmitButton></form>
               </div>
             </article>
           ))}

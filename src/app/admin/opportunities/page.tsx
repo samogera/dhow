@@ -7,6 +7,7 @@ import { ButtonLink, Card, CardHeader, Empty, Field, Input, PageHeader, Select, 
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, day } from "@/lib/format";
 import { deleteOpportunity, importOpportunitiesNow, publishOpportunity, restoreOpportunity, saveSource, toggleFeatured, toggleSource } from "@/actions/admin";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Opportunities" };
 
@@ -21,7 +22,7 @@ function Actions({ o, review }: { o: Opp; review?: boolean }) {
     return (
       <>
         <form action={restoreOpportunity}><input type="hidden" name="id" value={o.id} />
-          <button className={cn(pill, "border border-line hover:bg-sunken")}>It is open to Kenya: move to review</button>
+          <SubmitButton className={cn(pill, "border border-line hover:bg-sunken")}>It is open to Kenya: move to review</SubmitButton>
         </form>
         <Link href={`/admin/opportunities/${o.id}`} className={cn(pill, "text-muted hover:text-ink")}>Look</Link>
       </>
@@ -31,17 +32,17 @@ function Actions({ o, review }: { o: Opp; review?: boolean }) {
     <>
       <form action={publishOpportunity}>
         <input type="hidden" name="id" value={o.id} /><input type="hidden" name="publish" value={o.published ? "0" : "1"} />
-        <button className={cn(pill, o.published ? "bg-sunken text-ink/70 hover:text-ink" : "bg-navy-900 text-white hover:bg-navy-700")}>{o.published ? "Unpublish" : "Publish"}</button>
+        <SubmitButton className={cn(pill, o.published ? "bg-sunken text-ink/70 hover:text-ink" : "bg-navy-900 text-white hover:bg-navy-700")}>{o.published ? "Unpublish" : "Publish"}</SubmitButton>
       </form>
       <Link href={`/admin/opportunities/${o.id}`} className={cn(pill, "border border-line hover:bg-sunken")}>Edit</Link>
       <form action={toggleFeatured}>
         <input type="hidden" name="id" value={o.id} /><input type="hidden" name="value" value={o.featured ? "0" : "1"} />
-        <button title="Recommended by Dhow" aria-label={o.featured ? "Remove recommendation" : "Recommend"} className={cn(pill, "flex items-center gap-1", o.featured ? "bg-amber-100 text-amber-700" : "text-muted hover:text-ink")}>
+        <SubmitButton title="Recommended by Dhow" aria-label={o.featured ? "Remove recommendation" : "Recommend"} className={cn(pill, "flex items-center gap-1", o.featured ? "bg-amber-100 text-amber-700" : "text-muted hover:text-ink")}>
           <Star className={cn("size-3.5", o.featured && "fill-current")} />{o.featured ? "Recommended" : "Recommend"}
-        </button>
+        </SubmitButton>
       </form>
       <form action={deleteOpportunity} className="ml-auto"><input type="hidden" name="id" value={o.id} />
-        <button className={cn(pill, "text-muted hover:bg-bad/10 hover:text-bad")}>{review ? "Skip" : "Remove"}</button>
+        <SubmitButton className={cn(pill, "text-muted hover:bg-bad/10 hover:text-bad")}>{review ? "Skip" : "Remove"}</SubmitButton>
       </form>
     </>
   );

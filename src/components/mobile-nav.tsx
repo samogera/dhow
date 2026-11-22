@@ -81,7 +81,7 @@ export function AdminMobileNav({ role, account, counts }: { role: "employee" | "
 }
 
 /** Member app on phones: four main tabs and a "More" sheet for the rest. */
-export function MemberTabBar() {
+export function MemberTabBar({ investors = false, work = false }: { investors?: boolean; work?: boolean }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -93,8 +93,8 @@ export function MemberTabBar() {
     { href: "/app/verification", label: "Verification", sub: "Get or renew your Dhow Verified badge", icon: BadgeCheck },
     { href: "/app/documents", label: "Documents", sub: "Your company files", icon: FileText },
     { href: "/app/directory", label: "Directory", sub: "Verified member companies", icon: Building2 },
-    { href: "/app/work", label: "Our work", sub: "Projects, tasks and invoices (Enterprise)", icon: Briefcase },
-    { href: "/app/investors", label: "Investors", sub: "Introductions to vetted investors", icon: Landmark },
+    ...(work ? [{ href: "/app/work", label: "Our work", sub: "Your projects, invoices and progress", icon: Briefcase }] : []),
+    ...(investors ? [{ href: "/app/investors", label: "Investors", sub: "Introductions to vetted investors", icon: Landmark }] : []),
     { href: "/app/plans", label: "Plan", sub: "Free, Startup, Growth or Enterprise", icon: Crown },
     { href: "/app/settings", label: "Settings", sub: "Company, documents, verification, emails", icon: Settings },
     { href: "/help", label: "Help Centre", sub: "Guides for every page", icon: LifeBuoy },

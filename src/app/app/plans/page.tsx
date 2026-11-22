@@ -9,6 +9,7 @@ import { PlanPicker } from "./picker";
 import { cancelPlan } from "@/actions/member";
 import { ConfirmSubmit } from "@/components/forms";
 import { loadDiscounts } from "@/lib/discounts";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Membership plans" };
 
@@ -52,7 +53,7 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
             <form action={cancelPlan}>
               {org.plan_cancelled_at ? <input type="hidden" name="undo" value="1" /> : null}
               {org.plan_cancelled_at
-                ? <button className="rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Keep my plan</button>
+                ? <SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Keep my plan</SubmitButton>
                 : <ConfirmSubmit variant="ghost" className="px-3 py-1.5 text-sm text-muted" message={`Cancel ${tier.name}? You keep it until ${day(org.plan_until)}, then move to Free.`}>Cancel plan</ConfirmSubmit>}
             </form>
           ) : null}

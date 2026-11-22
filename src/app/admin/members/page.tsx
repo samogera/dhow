@@ -7,6 +7,7 @@ import { Avatar } from "@/components/profile-bits";
 import { day } from "@/lib/format";
 import { PLAN_LABEL, type PlanTier } from "@/lib/types";
 import { setOrgPlan } from "@/actions/admin";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Companies" };
 
@@ -86,7 +87,7 @@ export default async function Members({ searchParams }: { searchParams: Promise<
                       <select name="plan" defaultValue={o.plan} aria-label="Plan" className="rounded-full bg-sunken px-3 py-1.5 text-xs">
                         {(Object.keys(PLAN_LABEL) as PlanTier[]).map((p) => <option key={p} value={p}>{PLAN_LABEL[p]}</option>)}
                       </select>
-                      <button className="text-xs text-navy-600 underline">Set</button>
+                      <SubmitButton className="text-xs text-navy-600 underline">Set</SubmitButton>
                     </form>
                   ) : PLAN_LABEL[o.plan as PlanTier]}
                 </td>

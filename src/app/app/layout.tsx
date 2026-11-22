@@ -5,7 +5,9 @@ import { Logo } from "@/components/logo";
 import { MemberNav } from "@/components/member-nav";
 import { MemberTabBar } from "@/components/mobile-nav";
 import { UserMenu } from "@/components/user-menu";
+import { SettingsLink } from "@/components/member-nav";
 import { switchOrganization } from "@/actions/member";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -23,15 +25,18 @@ export default async function MemberLayout({ children }: { children: React.React
                 className="max-w-36 rounded-full bg-sunken px-3 py-1.5 text-sm sm:max-w-none">
                 {m.orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
-              <button className="ml-1 text-xs text-muted underline">Switch</button>
+              <SubmitButton className="ml-1 text-xs text-muted underline">Switch</SubmitButton>
             </form>
           ) : null}
         </div>
-        <div className="hidden min-w-0 lg:block"><MemberNav enterprise={atLeast(m.org, "enterprise")} /></div>
+        <div className="hidden min-w-0 lg:block"><MemberNav investors={atLeast(m.org, "premium")} work={atLeast(m.org, "enterprise")} /></div>
+        <div className="flex items-center gap-1.5">
+        <SettingsLink />
         <UserMenu name={m.profile?.full_name ?? ""} email={m.user.email ?? ""} staff={Boolean(m.profile?.staff_role)} settingsHref="/app/settings" />
+        </div>
       </header>
       <main className="pt-8 pb-32 sm:pt-10 lg:pb-16">{children}</main>
-      <MemberTabBar />
+      <MemberTabBar investors={atLeast(m.org, "premium")} work={atLeast(m.org, "enterprise")} />
     </div>
   );
 }

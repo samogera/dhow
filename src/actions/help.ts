@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { z } from "zod";
 import { memberOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { emailLayout, sendEmail } from "@/lib/notify";
+import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import { rateLimit } from "@/lib/rate-limit";
 import { appUrl } from "@/lib/app-url";
 
@@ -65,6 +65,8 @@ export async function askForHelp(_: HelpState, fd: FormData): Promise<HelpState>
       "It's also in Leads. Reply to this email to answer them directly.",
     ], { label: "Open leads", href: `${appUrl()}/admin/leads` }),
   }));
+  after(() => notifyStaff(["admin"], `${company ?? v.name} needs a hand: ${v.topic}`, [`${v.name} (${v.email ?? v.phone ?? "-"}) asked for help from the ${from.toLowerCase()}.`, ...(v.note ? [`"${v.note}"`] : []), "It's in Leads and Alerts."],
+    { label: "Open leads", href: `${appUrl()}/admin/leads` }).catch(() => null));
   return { ok: true };
 }
 

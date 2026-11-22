@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, BadgeCheck, CalendarClock, CheckSquare, FileWarning, Receipt, Target, Wallet } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CalendarClock, CheckSquare, ClipboardList, FileWarning, Inbox, Receipt, Target, Wallet } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { loadAlerts, type Alert } from "@/lib/alerts";
 import { Empty, PageHeader } from "@/components/ui";
@@ -8,8 +8,8 @@ import { cn } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Alerts" };
 
-const ICON: Record<Alert["kind"], typeof AlertTriangle> = { licence: FileWarning, invoice: Receipt, bill: Wallet, task: CheckSquare, review: BadgeCheck, lead: Target };
-const KIND: Record<Alert["kind"], string> = { licence: "Licences and documents", invoice: "Money owed to us", bill: "Bills to pay", task: "Your tasks", review: "Waiting for review", lead: "Leads to follow up" };
+const ICON: Record<Alert["kind"], typeof AlertTriangle> = { licence: FileWarning, invoice: Receipt, bill: Wallet, task: CheckSquare, review: BadgeCheck, lead: Target, request: Inbox, application: ClipboardList };
+const KIND: Record<Alert["kind"], string> = { licence: "Licences and documents", invoice: "Money owed to us", bill: "Bills to pay", task: "Your tasks", review: "Waiting for review", lead: "Leads to follow up", request: "Members asking for help", application: "Membership applications" };
 
 export default async function Alerts() {
   const s = await requireStaff();

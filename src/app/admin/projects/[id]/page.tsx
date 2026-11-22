@@ -8,6 +8,7 @@ import { Drawer } from "@/components/drawer";
 import { Badge, Card, Field, Input, Select, Textarea } from "@/components/ui";
 import { cn, day, kes } from "@/lib/format";
 import { addTask, deleteTask, requestTaskReview, reviewTask, saveProject, setProjectStatus, setTaskStatus, toggleTask } from "@/actions/admin";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Project" };
 const STATUSES = ["todo", "in_progress", "review", "done"] as const;
@@ -104,9 +105,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                   <div className="flex items-start gap-3">
                     <form action={toggleTask}>
                       <input type="hidden" name="id" value={t.id} /><input type="hidden" name="done" value={isDone ? "0" : "1"} />
-                      <button aria-label={isDone ? "Mark not done" : "Mark done"} className="mt-0.5 text-navy-700 transition hover:scale-110">
+                      <SubmitButton aria-label={isDone ? "Mark not done" : "Mark done"} className="mt-0.5 text-navy-700 transition hover:scale-110">
                         {isDone ? <CheckCircle2 className="size-5 text-green" /> : <Circle className="size-5 text-faint" />}
-                      </button>
+                      </SubmitButton>
                     </form>
                     <div className="min-w-0 flex-1">
                       <p className={cn("font-medium", isDone && "text-muted line-through")}>{t.title}</p>
@@ -156,7 +157,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                         ) : t.status === "review" ? <span className="flex items-center gap-1 text-xs text-muted"><Eye className="size-3.5" />Only {name(t.reviewer)} can approve</span> : null}
                         {s.staffRole === "admin" ? (
                           <form action={deleteTask} className="ml-auto"><input type="hidden" name="id" value={t.id} />
-                            <button aria-label="Delete task" className="grid size-8 place-items-center rounded-full text-faint hover:bg-bad/10 hover:text-bad"><Trash2 className="size-4" /></button>
+                            <SubmitButton aria-label="Delete task" className="grid size-8 place-items-center rounded-full text-faint hover:bg-bad/10 hover:text-bad"><Trash2 className="size-4" /></SubmitButton>
                           </form>
                         ) : null}
                       </div>

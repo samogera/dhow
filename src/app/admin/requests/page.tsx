@@ -4,6 +4,7 @@ import { requireStaff } from "@/lib/auth";
 import { Card, Empty, PageHeader, StatusBadge } from "@/components/ui";
 import { setRequestStatus } from "@/actions/investors";
 import { cn, day } from "@/lib/format";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Member requests" };
 
@@ -48,7 +49,7 @@ export default async function Requests({ searchParams }: { searchParams: Promise
                   </select>
                 </div>
                 <input name="staff_note" defaultValue={r.staff_note ?? ""} placeholder="Note for the team" className="field py-1.5 text-sm" />
-                <button className="w-full rounded-lg bg-navy-900 px-3 py-1.5 text-sm font-medium text-white">Save</button>
+                <SubmitButton className="w-full rounded-lg bg-navy-900 px-3 py-1.5 text-sm font-medium text-white">Save</SubmitButton>
               </form>
             </Card>
           ))}

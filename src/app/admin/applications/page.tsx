@@ -6,6 +6,7 @@ import { Card, Empty, PageHeader } from "@/components/ui";
 import { sendApplicationEmailNow, setApplicationReview } from "@/actions/membership-applications";
 import { applicationsClose } from "@/lib/membership-intake";
 import { cn, day } from "@/lib/format";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Membership applications" };
 
@@ -76,15 +77,15 @@ export default async function Applications({ searchParams }: { searchParams: Pro
                     {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                   <textarea name="staff_note" rows={2} defaultValue={a.staff_note ?? ""} placeholder="Team note" className="field min-h-0 resize-none text-sm" />
-                  <button className="w-full rounded-xl bg-navy-900 px-3 py-2 text-sm font-medium text-white">Save</button>
+                  <SubmitButton className="w-full rounded-xl bg-navy-900 px-3 py-2 text-sm font-medium text-white">Save</SubmitButton>
                 </form>
                 {["accepted", "waitlisted", "declined"].includes(a.status) && !a.decision_sent_at ? (
                   <form action={sendApplicationEmailNow}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="which" value="decision" />
-                    <button className="w-full rounded-xl border border-line px-3 py-2 text-sm hover:bg-sunken">Send outcome email now</button></form>
+                    <SubmitButton className="w-full rounded-xl border border-line px-3 py-2 text-sm hover:bg-sunken">Send outcome email now</SubmitButton></form>
                 ) : null}
                 {a.status === "accepted" && a.decision_sent_at && !a.next_steps_sent_at ? (
                   <form action={sendApplicationEmailNow}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="which" value="next_steps" />
-                    <button className="w-full rounded-xl border border-line px-3 py-2 text-sm hover:bg-sunken">Send next steps now</button></form>
+                    <SubmitButton className="w-full rounded-xl border border-line px-3 py-2 text-sm hover:bg-sunken">Send next steps now</SubmitButton></form>
                 ) : null}
               </div>
             </Card>

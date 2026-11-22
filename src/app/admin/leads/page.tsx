@@ -6,6 +6,7 @@ import { Card, CardHeader, Field, Input, PageHeader, Select } from "@/components
 import { day, kes, label } from "@/lib/format";
 import { convertLead, importLeads, saveLead, setLeadStatus } from "@/actions/admin";
 import { Textarea } from "@/components/ui";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Leads" };
 const STAGES = ["new", "contacted", "call_booked", "plan_sent", "won", "lost"] as const;
@@ -85,11 +86,11 @@ export default async function Leads() {
                         <select name="status" defaultValue={l.status} className="rounded-full bg-sunken px-2 py-1 text-xs" aria-label="Stage">
                           {STAGES.map((st) => <option key={st} value={st}>{label(st)}</option>)}
                         </select>
-                        <button className="text-xs text-navy-600 underline">Move</button>
+                        <SubmitButton className="text-xs text-navy-600 underline">Move</SubmitButton>
                       </form>
                       <form action={convertLead}>
                         <input type="hidden" name="id" value={l.id} />
-                        <button className="rounded-full bg-mint px-2.5 py-1 text-xs font-medium">Won → client</button>
+                        <SubmitButton className="rounded-full bg-mint px-2.5 py-1 text-xs font-medium">Won → client</SubmitButton>
                       </form>
                     </div>
                   </article>

@@ -6,6 +6,7 @@ import { ColumnChart, Donut, RangeTabs } from "@/components/charts";
 import { ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { day, kes, time } from "@/lib/format";
 import { toggleTask } from "@/actions/admin";
+import { SubmitButton } from "@/components/submit-button";
 
 function greeting() {
   const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: "Africa/Nairobi" }).format(new Date()));
@@ -115,7 +116,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                 <li key={t.id} className="flex items-center gap-3 py-3">
                   <form action={toggleTask}>
                     <input type="hidden" name="id" value={t.id} /><input type="hidden" name="done" value="1" />
-                    <button aria-label={`Mark ${t.title} done`} className="text-faint hover:text-good"><Circle className="size-5" /></button>
+                    <SubmitButton aria-label={`Mark ${t.title} done`} className="text-faint hover:text-good"><Circle className="size-5" /></SubmitButton>
                   </form>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{t.title}</p>

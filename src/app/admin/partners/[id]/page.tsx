@@ -14,6 +14,7 @@ import { CopyField } from "@/components/copy-field";
 import { PARTNER_DOCS, REQUIRED_GROUPS } from "@/lib/partner-docs";
 import { appUrl } from "@/lib/app-url";
 import { cn, day } from "@/lib/format";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Partner" };
 
@@ -117,10 +118,10 @@ export default async function Partner({ params }: { params: Promise<{ id: string
               {partner.upload_token ? (
                 <>
                   <CopyField value={`${base}/partner/${partner.upload_token}`} share={`Hello from Dhow Partners. Please upload your company documents here:`} />
-                  <form action={makePartnerLink} className="mt-2"><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="upload" /><input type="hidden" name="reset" value="1" /><button className="text-xs text-muted underline">Make a new link (the old one stops working)</button></form>
+                  <form action={makePartnerLink} className="mt-2"><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="upload" /><input type="hidden" name="reset" value="1" /><SubmitButton className="text-xs text-muted underline">Make a new link (the old one stops working)</SubmitButton></form>
                 </>
               ) : (
-                <form action={makePartnerLink}><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="upload" /><button className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create upload link</button></form>
+                <form action={makePartnerLink}><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="upload" /><SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create upload link</SubmitButton></form>
               )}
             </div>
           </Card>}
@@ -158,7 +159,7 @@ export default async function Partner({ params }: { params: Promise<{ id: string
             {partner.review_token ? (
               <CopyField value={`${base}/review/${partner.review_token}`} share={`How did ${partner.name} do for you? Please leave a short review for Dhow Partners:`} />
             ) : (
-              <form action={makePartnerLink}><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="review" /><button className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create review link for clients</button></form>
+              <form action={makePartnerLink}><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="review" /><SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create review link for clients</SubmitButton></form>
             )}
           </Card>}
           {contacts?.length ? (

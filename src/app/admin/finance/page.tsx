@@ -12,6 +12,7 @@ import { Drawer } from "@/components/drawer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ShareCalculator } from "./calculator";
 import { BILL_CATEGORY_LABEL, BILL_TONE } from "@/lib/bills";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Finance" };
 
@@ -138,7 +139,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                                   <form action={payBill} className="flex gap-1">
                                     <input type="hidden" name="id" value={b.id} />
                                     <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-24 rounded-full bg-sunken px-3 py-2 text-xs" />
-                                    <button className="whitespace-nowrap rounded-full bg-green px-3.5 py-2 text-xs font-medium text-white">Mark paid</button>
+                                    <SubmitButton className="whitespace-nowrap rounded-full bg-green px-3.5 py-2 text-xs font-medium text-white">Mark paid</SubmitButton>
                                   </form>
                                 ) : null}
                                 <Drawer label="Edit" title="Edit bill or expense" variant="outline" plus={false}>
@@ -206,7 +207,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                               <form action={markInvoicePaid} className="flex items-center gap-1">
                                 <input type="hidden" name="id" value={i.id} />
                                 <select name="method" defaultValue="M-Pesa" aria-label="Paid by" className="rounded-full bg-sunken px-2 py-1 text-xs"><option>M-Pesa</option><option>I&amp;M Bank</option><option>Airtel Money</option><option>Cash</option></select>
-                                <button className="whitespace-nowrap rounded-full bg-green px-3 py-1 text-xs font-medium text-white">Mark paid</button>
+                                <SubmitButton className="whitespace-nowrap rounded-full bg-green px-3 py-1 text-xs font-medium text-white">Mark paid</SubmitButton>
                               </form>
                             ) : null}
                           </td>

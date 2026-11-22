@@ -13,6 +13,7 @@ import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import type { ActionState } from "@/components/forms";
 import { appUrl } from "@/lib/app-url";
 import { TIERS, tierOf } from "@/lib/plans";
+import { timer } from "@/lib/timing";
 import { accountDeleted, planCancelled } from "@/lib/member-emails";
 
 const app = () => appUrl()!;
@@ -175,7 +176,9 @@ export async function deleteDocument(fd: FormData) {
 }
 
 export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<ActionState> {
+  const tick = timer("apply");
   const m = await memberOrNull();
+  tick("session");
   if (!m) return { error: "Sign in first." };
   const p = z.object({ opportunity_id: z.string().uuid(), note: z.string().trim().max(2000).optional(), stage: z.enum(["interested", "started", "submitted"]).default("submitted") }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Something's missing." };
@@ -184,6 +187,7 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
     const { count } = await m.supabase.from("applications").select("id", { count: "exact", head: true }).eq("org_id", m.org.id).neq("status", "withdrawn");
     if ((count ?? 0) >= tier.tracked) return { error: `Your ${tier.name} plan tracks up to ${tier.tracked} applications. Remove one or upgrade to track more.` };
   }
+  tick("limit check");
   // RLS (can_apply) enforces published, open and verified-only rules.
   const { error } = await m.supabase.from("applications").insert({
     org_id: m.org.id, opportunity_id: p.data.opportunity_id, note: p.data.note ?? null,
@@ -199,6 +203,7 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
     }
     return { error: m.org.verification_status === "verified" ? "This opportunity is closed." : "This opportunity is for Dhow Verified companies only." };
   }
+  tick("insert");
   revalidatePath("/app/applications");
   return { ok: p.data.stage === "submitted" ? "Added as submitted. We'll keep you posted by email." : `Added to My applications as ${p.data.stage}.` };
 }

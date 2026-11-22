@@ -8,6 +8,7 @@ import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import { rateLimit } from "@/lib/rate-limit";
 import { appUrl } from "@/lib/app-url";
 import { atLeast, type Tier } from "@/lib/plans";
+import { timer } from "@/lib/timing";
 
 export type RequestState = { ok?: string; error?: string };
 
@@ -25,13 +26,16 @@ const Input = z.object({
 
 /** A member asks Dhow to introduce them to a member or investor, or to represent them at an event. */
 export async function makeRequest(_: RequestState, fd: FormData): Promise<RequestState> {
+  const tick = timer("makeRequest");
   const m = await memberOrNull();
+  tick("session");
   if (!m) return { error: "Sign in first." };
   const p = Input.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Something's missing. Refresh and try again." };
   const k = KINDS[p.data.kind];
   if (!atLeast(m.org, k.need)) return { error: `This needs the ${k.need === "premium" ? "Growth" : "Startup"} plan or higher.` };
   if (!(await rateLimit("requests", 10, 600))) return { error: "Too many requests. Try again in a few minutes." };
+  tick("rate limit");
 
   const db = createAdminClient();
   const table = p.data.kind === "member_intro" ? "organizations" : p.data.kind === "investor_intro" ? "investors" : "opportunities";
@@ -43,6 +47,7 @@ export async function makeRequest(_: RequestState, fd: FormData): Promise<Reques
   const { error } = await db.from("member_requests").insert({
     org_id: m.org.id, user_id: m.user.id, kind: p.data.kind, target_id: p.data.target_id, target_name: targetName, note: p.data.note,
   });
+  tick("insert");
   if (error) return { error: error.code === "23505" ? "You've already asked. We're on it." : "Couldn't send that. Try again." };
 
   const who = m.profile?.full_name || m.user.email || "A member";
@@ -61,5 +66,6 @@ export async function makeRequest(_: RequestState, fd: FormData): Promise<Reques
   after(() => notifyStaff(["admin"], `${m.org.name}: ${k.title.toLowerCase()}`, [`${who} at ${m.org.name} asked for ${k.title.toLowerCase()}: ${targetName}.`, ...(p.data.note ? [`"${p.data.note}"`] : [])],
     { label: "Open requests", href: `${appUrl()}/admin/requests` }).catch(() => null));
   revalidatePath("/app/investors");
+  tick("done");
   return { ok: k.done };
 }

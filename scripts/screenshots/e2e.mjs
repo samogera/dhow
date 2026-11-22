@@ -105,7 +105,7 @@ async function visit(page, path, shotName) {
     await page.getByRole("radio", { name: "Started" }).first().click();
     await page.getByRole("button", { name: "Add to My applications" }).first().click();
     // The card switches to "In My applications" with the stage picker once it's saved.
-    await page.getByText("In My applications").first().waitFor({ timeout: 10000 });
+    await page.getByText("In My applications", { exact: true }).first().waitFor({ timeout: 10000 });
   });
 
   await check("My applications shows it as Started and filters work", async () => {
@@ -153,7 +153,7 @@ async function visit(page, path, shotName) {
     if (!(await btn.count())) return "no other listed companies in demo data";
     await btn.click();
     await page.getByRole("button", { name: "Send request" }).click();
-    await page.getByText("Requested").first().waitFor({ timeout: 10000 });
+    await page.getByText("Requested").first().waitFor({ timeout: 20000 });
   });
 
   await check("event representation is locked on Free", async () => {

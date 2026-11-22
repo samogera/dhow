@@ -1,3 +1,4 @@
+import { LogoImg } from "@/components/logo-img";
 import { ArrowUpRight, Building2, Globe2 } from "lucide-react";
 import { Field, Input } from "@/components/ui";
 import { SOCIALS, type Socials } from "@/lib/socials";
@@ -39,7 +40,7 @@ export function Avatar({ src, name, size = "md", round }: { src?: string | null;
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
   return (
     <div className={cn("grid shrink-0 place-items-center overflow-hidden border border-line bg-white font-semibold text-navy-700", round ? "rounded-full" : "rounded-2xl", dims)}>
-      {src ? <img src={src} alt="" className={round ? "size-full object-cover" : "size-full object-contain p-1"} />
+      {src ? (round ? <img src={src} alt="" className="size-full object-cover" /> : <LogoImg src={src} className="p-1.5" />)
         : round ? <img src="/icons/person.png" alt="" className="size-full object-cover" />
         : initials || <Building2 className="size-1/2 text-faint" />}
     </div>
@@ -55,7 +56,7 @@ export function ImageInput({ current, name, label = "Logo", round }: { current?:
         <p className="text-sm font-medium">{label}</p>
         <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
           className="block w-full text-sm text-muted file:mr-3 file:rounded-full file:border-0 file:bg-navy-900 file:px-4 file:py-2 file:text-xs file:font-medium file:text-white hover:file:bg-navy-700" />
-        <p className="text-xs text-faint">PNG, JPG or WebP, up to 3 MB.{current ? "" : ""}</p>
+        <p className="text-xs text-faint">PNG, JPG or WebP, up to 3 MB.{round ? "" : " A see-through PNG works best; light logos get a dark background automatically."}</p>
         {current ? <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" name="remove_image" className="accent-navy-900" />Remove current {label.toLowerCase()}</label> : null}
       </div>
     </div>

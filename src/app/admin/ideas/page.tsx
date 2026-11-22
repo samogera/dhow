@@ -47,7 +47,7 @@ export default async function Ideas({ searchParams }: { searchParams: Promise<{ 
       {list.length ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {list.map((i) => {
-            const mine = i.votes.some((v) => v.user_id === s.user.id);
+            const mine = i.votes.some((v: Vote) => v.user_id === s.user.id);
             return (
               <article key={i.id} className="card flex flex-col gap-4">
                 <div className="flex items-start gap-3">
@@ -61,12 +61,12 @@ export default async function Ideas({ searchParams }: { searchParams: Promise<{ 
                     <div className="flex flex-wrap items-center gap-2"><span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", TONE[i.status])}>{STATUSES.find(([k]) => k === i.status)?.[1]}</span></div>
                     <h2 className="mt-1.5 text-[15px] font-semibold text-navy-900">{i.title}</h2>
                     {i.details ? <p className="mt-1 whitespace-pre-line text-sm text-ink/80">{i.details}</p> : null}
-                    <p className="mt-2 text-xs text-muted">{who(i.author)} · {day(i.created_at)}{i.votes.length ? ` · liked by ${i.votes.map((v) => who(v.user_id).split(" ")[0]).join(", ")}` : ""}</p>
+                    <p className="mt-2 text-xs text-muted">{who(i.author)} · {day(i.created_at)}{i.votes.length ? ` · liked by ${i.votes.map((v: Vote) => who(v.user_id).split(" ")[0]).join(", ")}` : ""}</p>
                   </div>
                 </div>
                 {i.comments.length ? (
                   <ul className="space-y-2 border-t border-line pt-3">
-                    {i.comments.map((c) => (
+                    {i.comments.map((c: Comment) => (
                       <li key={c.id} className="flex gap-2.5 text-sm">
                         <Avatar name={who(c.author)} size="sm" round />
                         <div className="min-w-0 rounded-2xl bg-sunken/70 px-3 py-2"><p className="text-xs font-semibold">{who(c.author)}</p><p className="whitespace-pre-line">{c.body}</p></div>

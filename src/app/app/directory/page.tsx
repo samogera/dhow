@@ -5,6 +5,7 @@ import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui";
 import { Avatar, SocialLinks } from "@/components/profile-bits";
+import { RequestButton } from "@/components/request-button";
 import { VerifiedTick } from "@/components/verified-tick";
 import { cn } from "@/lib/format";
 

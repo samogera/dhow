@@ -8,6 +8,7 @@ import { Poster } from "@/components/poster";
 import { requireMember } from "@/lib/auth";
 import { AUDIENCE, TIERS, atLeast, tierOf } from "@/lib/plans";
 import { loadDiscounts } from "@/lib/discounts";
+import { timer } from "@/lib/timing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RequestButton } from "@/components/request-button";
 import { StageSelect } from "@/app/app/applications/stage";
@@ -29,6 +30,7 @@ function Fact({ icon: Icon, label, children }: { icon: typeof Clock; label: stri
 }
 
 export default async function Opportunity({ params }: { params: Promise<{ id: string }> }) {
+  const tick = timer("opportunity page");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { org, supabase } = await requireMember();
@@ -63,6 +65,7 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
     </a>
   ) : null;
 
+  tick("ready");
   return (
     <div className="mx-auto max-w-6xl">
       <Link href={isEvent ? "/app/events" : "/app/opportunities"} className="mb-5 inline-flex items-center gap-2 text-sm text-muted hover:text-ink">

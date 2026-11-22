@@ -60,6 +60,7 @@ jobs:
           cp shots/*.png /tmp/pub/shots/ 2>/dev/null || echo "::error::no screenshots were taken"
           cp /tmp/out/shoot.txt /tmp/out/e2e.txt /tmp/pub/ 2>/dev/null || true
           grep "\[timing\]" /tmp/out/server.txt > /tmp/pub/timing.txt 2>/dev/null || true
+          tail -400 /tmp/out/server.txt > /tmp/pub/server.txt 2>/dev/null || true
           echo '{"git":{"deploymentEnabled":false}}' > /tmp/pub/vercel.json
           cp shots/*.pdf shots/*.xlsx /tmp/pub/shots/ 2>/dev/null || true
           grep -i -A12 "error" /tmp/out/server.txt | head -200 > /tmp/pub/server-errors.txt 2>/dev/null || true

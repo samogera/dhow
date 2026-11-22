@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { guardMemberSide, requireMember } from "@/lib/auth";
 import { TIERS, atLeast, tierOf } from "@/lib/plans";
+import { timer } from "@/lib/timing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Logo } from "@/components/logo";
 import { AccountMenu, MemberNav, MobileMenu } from "@/components/member-nav";
@@ -10,6 +11,7 @@ import { SubmitButton } from "@/components/submit-button";
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
+  const tick = timer("member layout");
   await guardMemberSide();
   const m = await requireMember();
   // "Our work" shows for anyone Dhow has linked as a client, whatever their plan.
@@ -20,6 +22,7 @@ export default async function MemberLayout({ children }: { children: React.React
   const name = m.profile?.full_name ?? "";
   const email = m.user.email ?? "";
   const staff = Boolean(m.profile?.staff_role);
+  tick("ready");
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-5">
       <header className="relative z-30 flex items-center justify-between gap-3 rounded-full border border-white/80 bg-white/80 py-2 pr-2 pl-5 shadow-[0_12px_40px_-24px_rgba(13,28,41,0.25)] backdrop-blur-xl">

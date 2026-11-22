@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/types";
 import { requireStaff } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ActionForm } from "@/components/forms";
@@ -32,9 +33,10 @@ function PersonFields({ p }: { p?: Person }) {
 export const metadata: Metadata = { title: "Team" };
 
 const ROLES = [
+  { value: "employee", label: "Employee", note: "Adds and updates clients, leads, projects and tasks. Can't delete, change the Dhow profile or see money. Finished tasks go to someone else to check." },
   { value: "reviewer", label: "Reviewer", note: "Reviews documents and verifications, runs clients, leads, partners and projects." },
   { value: "finance", label: "Finance", note: "Everything a reviewer can do, plus invoices, payments and bills." },
-  { value: "admin", label: "Admin", note: "Everything, plus plans and staff roles." },
+  { value: "admin", label: "Director / owner", note: "Everything: deleting, the Dhow profile, money, plans and staff roles." },
 ] as const;
 
 export default async function Team() {
@@ -101,7 +103,7 @@ export default async function Team() {
               <tr key={p.id}>
                 <td className="font-medium">{p.full_name || "—"}{p.id === s.user.id ? <span className="ml-2 text-xs text-muted">(you)</span> : null}</td>
                 <td className="text-muted">{email(p.id)}</td>
-                <td><Badge tone={p.staff_role === "admin" ? "mint" : "neutral"}>{p.staff_role}</Badge></td>
+                <td><Badge tone={p.staff_role === "admin" ? "mint" : "neutral"}>{STAFF_ROLE_LABEL[p.staff_role as StaffRole] ?? p.staff_role}</Badge></td>
               </tr>
             ))}
             {(invites ?? []).map((i) => (
@@ -122,7 +124,7 @@ export default async function Team() {
             <ActionForm action={setStaffRole} submit="Save role">
               <Field label="Email"><Input name="email" type="email" required /></Field>
               <Field label="Role">
-                <Select name="role" defaultValue="reviewer">
+                <Select name="role" defaultValue="employee">
                   {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   <option value="none">Remove staff access</option>
                 </Select>

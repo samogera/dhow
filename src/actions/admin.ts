@@ -123,6 +123,7 @@ const LeadIn = z.object({
   company: text(160), email: text(160), phone: text(40), source: text(60), next_step: text(300),
   next_step_date: date, est_value_kes: money,
   status: z.enum(["new", "contacted", "call_booked", "plan_sent", "won", "lost"]),
+  notes: text(4000), last_contact: date,
 });
 export async function saveLead(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
@@ -253,6 +254,12 @@ export async function toggleTask(fd: FormData) {
   if (!s) return;
   const p = z.object({ id: uuid, done: z.enum(["1", "0"]) }).safeParse(form(fd));
   if (!p.success) return;
+  if (p.data.done === "1" && s.staffRole === "employee") {
+    // An employee's finished work is checked by someone else before it counts as done.
+    const { data } = await s.supabase.from("tasks").update({ status: "review", review_state: "requested" }).eq("id", p.data.id).select("project_id").single();
+    revalidateWork(data?.project_id);
+    return;
+  }
   const { data } = await s.supabase.from("tasks").update(p.data.done === "1" ? { status: "done", done_at: new Date().toISOString() } : { status: "todo", done_at: null, review_state: null }).eq("id", p.data.id).select("project_id").single();
   revalidateWork(data?.project_id);
 }
@@ -262,7 +269,9 @@ export async function setTaskStatus(fd: FormData) {
   if (!s) return;
   const p = z.object({ id: uuid, status: z.enum(["todo", "in_progress", "review", "done"]) }).safeParse(form(fd));
   if (!p.success) return;
+  if (p.data.status === "done" && s.staffRole === "employee") p.data.status = "review";
   const patch: Record<string, unknown> = { status: p.data.status, done_at: p.data.status === "done" ? new Date().toISOString() : null };
+  if (p.data.status === "review") patch.review_state = "requested";
   if (p.data.status !== "review" && p.data.status !== "done") patch.review_state = null;
   const { data } = await s.supabase.from("tasks").update(patch).eq("id", p.data.id).select("project_id").single();
   revalidateWork(data?.project_id);
@@ -304,7 +313,7 @@ export async function reviewTask(_: ActionState, fd: FormData): Promise<ActionSt
 }
 
 export async function deleteTask(fd: FormData) {
-  const s = await staffOrNull();
+  const s = await staffOrNull(["admin"]);
   if (!s) return;
   const id = uuid.safeParse(fd.get("id"));
   if (!id.success) return;
@@ -434,7 +443,12 @@ export async function cancelInvoice(fd: FormData) {
   revalidatePath("/admin/finance");
 }
 
-const BillIn = z.object({ description: z.string().trim().min(2).max(300), partner_id: optUuid, project_id: optUuid, amount_kes: z.coerce.number().positive(), due_date: date });
+const BILL_CATEGORIES = ["rent", "salary", "registration", "licence", "tax", "utilities", "software", "marketing", "partner", "other"] as const;
+const BillIn = z.object({
+  description: z.string().trim().min(2, "Say what the bill is for").max(300), partner_id: optUuid, project_id: optUuid,
+  amount_kes: z.coerce.number().positive("Enter the amount"), due_date: date,
+  category: z.enum(BILL_CATEGORIES).default("other"), payee: text(160), repeats: z.enum(["once", "monthly", "yearly"]).default("once"), notes: text(1000),
+});
 export async function addBill(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["finance"]);
   if (!s) return DENIED;
@@ -451,9 +465,18 @@ export async function payBill(fd: FormData) {
   if (!s) return;
   const p = z.object({ id: uuid, amount_kes: z.coerce.number().positive() }).safeParse(form(fd));
   if (!p.success) return;
-  const { data: b } = await s.supabase.from("bills").select("paid_kes, amount_kes").eq("id", p.data.id).single();
+  const { data: b } = await s.supabase.from("bills").select("*").eq("id", p.data.id).single();
   if (!b) return;
-  await s.supabase.from("bills").update({ paid_kes: Math.min(Number(b.amount_kes), Number(b.paid_kes) + p.data.amount_kes) }).eq("id", p.data.id);
+  const paid = Math.min(Number(b.amount_kes), Number(b.paid_kes) + p.data.amount_kes);
+  await s.supabase.from("bills").update({ paid_kes: paid }).eq("id", p.data.id);
+  // Rent, salaries and other repeating bills: once paid, the next one is added automatically.
+  if (paid >= Number(b.amount_kes) && b.repeats !== "once" && b.due_date) {
+    const d = new Date(b.due_date);
+    if (b.repeats === "monthly") d.setMonth(d.getMonth() + 1); else d.setFullYear(d.getFullYear() + 1);
+    const next = d.toISOString().slice(0, 10);
+    const { data: exists } = await s.supabase.from("bills").select("id").eq("description", b.description).eq("due_date", next).maybeSingle();
+    if (!exists) await s.supabase.from("bills").insert({ description: b.description, partner_id: b.partner_id, project_id: b.project_id, amount_kes: b.amount_kes, due_date: next, category: b.category, payee: b.payee, repeats: b.repeats, notes: b.notes });
+  }
   revalidatePath("/admin/finance");
 }
 
@@ -520,7 +543,7 @@ export async function publishOpportunity(fd: FormData) {
 }
 
 export async function deleteOpportunity(fd: FormData) {
-  const s = await staffOrNull();
+  const s = await staffOrNull(["admin"]);
   if (!s) return;
   const id = uuid.safeParse(fd.get("id"));
   if (!id.success) return;
@@ -599,7 +622,7 @@ export async function setApplicationStatus(fd: FormData) {
 export async function setStaffRole(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["admin"]);
   if (!s) return DENIED;
-  const p = z.object({ email: z.string().trim().toLowerCase().email(), role: z.enum(["none", "reviewer", "finance", "admin"]) }).safeParse(form(fd));
+  const p = z.object({ email: z.string().trim().toLowerCase().email(), role: z.enum(["none", "employee", "reviewer", "finance", "admin"]) }).safeParse(form(fd));
   if (!p.success) return { error: "Enter a valid email." };
   const db = createAdminClient();
   const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -656,6 +679,7 @@ export async function updateClientPartner(fd: FormData) {
   if (!s) return;
   const p = z.object({ id: uuid, action: z.enum(["done", "active", "remove"]) }).safeParse(form(fd));
   if (!p.success) return;
+  if (p.data.action === "remove" && s.staffRole !== "admin") return;
   const q = p.data.action === "remove"
     ? s.supabase.from("client_partners").delete().eq("id", p.data.id).select("client_id").single()
     : s.supabase.from("client_partners").update({ status: p.data.action }).eq("id", p.data.id).select("client_id").single();
@@ -687,4 +711,54 @@ export async function deleteOrganization(fd: FormData) {
   await db.from("organizations").delete().eq("id", id.data);
   revalidatePath("/admin/members");
   redirect("/admin/members");
+}
+
+/** Splits one CSV line, honouring quotes. */
+function csvCells(line: string) {
+  const out: string[] = []; let cur = ""; let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q) { if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; } else if (ch === '"') q = false; else cur += ch; }
+    else if (ch === '"') q = true; else if (ch === "," || ch === "\t" || ch === ";") { out.push(cur.trim()); cur = ""; } else cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+/** Adds many people to Leads at once from a CSV file or pasted rows: name, company, email, phone, notes. */
+export async function importLeads(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const f = fd.get("file");
+  let text = String(fd.get("rows") ?? "");
+  if (f && typeof f === "object" && "size" in f && (f as File).size > 0) {
+    if ((f as File).size > 1024 * 1024) return { error: "Keep the file under 1 MB." };
+    text = await (f as File).text();
+  }
+  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return { error: "Upload a CSV file or paste the people, one per line." };
+  let cols = ["name", "company", "email", "phone", "notes"];
+  const head = csvCells(lines[0]).map((h) => h.toLowerCase());
+  if (head.some((h) => /name|company|email|phone|note/.test(h))) {
+    cols = head.map((h) => (/e-?mail/.test(h) ? "email" : /phone|mobile|tel|whatsapp/.test(h) ? "phone" : /company|organi[sz]ation|business|firm/.test(h) ? "company" : /note|comment|status|how/.test(h) ? "notes" : /need|interest|service/.test(h) ? "need" : /name|contact|person/.test(h) ? "name" : "skip"));
+    lines.shift();
+  }
+  const source = String(fd.get("source") ?? "List").slice(0, 60) || "List";
+  const rows = lines.slice(0, 500).map((l) => {
+    const c = csvCells(l); const r: Record<string, string> = {};
+    cols.forEach((k, i) => { if (k !== "skip" && c[i]) r[k] = c[i].slice(0, k === "notes" ? 2000 : 160); });
+    const who = r.name || r.company || r.email || r.phone;
+    if (!who) return null;
+    return {
+      name: (r.need || (r.name && r.company ? `${r.name}, ${r.company}` : who)).slice(0, 200),
+      company: r.company ?? null, email: r.email && /@/.test(r.email) ? r.email.toLowerCase() : null, phone: r.phone ?? null,
+      notes: [r.need && r.name ? `Contact: ${r.name}` : null, r.notes].filter(Boolean).join("\n") || null,
+      source, status: "new" as const, owner: s.user.id,
+    };
+  }).filter(Boolean) as Record<string, unknown>[];
+  if (!rows.length) return { error: "No people found. Each line needs at least a name, company, email or phone." };
+  const { error } = await s.supabase.from("leads").insert(rows);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/leads");
+  return { ok: `Added ${rows.length} ${rows.length === 1 ? "person" : "people"} to New.` };
 }

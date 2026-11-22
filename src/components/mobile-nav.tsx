@@ -39,7 +39,7 @@ function TabBar({ tabs, onMore, moreOpen }: { tabs: Tab[]; onMore?: () => void; 
 }
 
 /** Staff workspace on phones and tablets: top bar, bottom tabs, and a slide-up sheet with the full menu. */
-export function AdminMobileNav({ role, account, counts }: { role: "reviewer" | "finance" | "admin"; account: React.ReactNode; counts?: Record<string, number> }) {
+export function AdminMobileNav({ role, account, counts }: { role: "employee" | "reviewer" | "finance" | "admin"; account: React.ReactNode; counts?: Record<string, number> }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -52,7 +52,7 @@ export function AdminMobileNav({ role, account, counts }: { role: "reviewer" | "
     { href: "/admin", label: "Home", icon: LayoutGrid, exact: true },
     { href: "/admin/clients", label: "Clients", icon: UsersRound },
     { href: "/admin/projects", label: "Work", icon: Briefcase },
-    role === "reviewer" ? { href: "/admin/reviews", label: "Reviews", icon: BadgeCheck } : { href: "/admin/finance", label: "Money", icon: Receipt },
+    role === "admin" || role === "finance" ? { href: "/admin/finance", label: "Money", icon: Receipt } : { href: "/admin/leads", label: "Leads", icon: BadgeCheck },
   ];
 
   return (

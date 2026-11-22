@@ -9,19 +9,21 @@ import { Download, Landmark } from "lucide-react";
 import { Drawer } from "@/components/drawer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ShareCalculator } from "./calculator";
+import { BILL_CATEGORY_LABEL, BILL_TONE } from "@/lib/bills";
 
 export const metadata: Metadata = { title: "Finance" };
 
-export default async function Finance({ searchParams }: { searchParams: Promise<{ tab?: string; show?: string }> }) {
+export default async function Finance({ searchParams }: { searchParams: Promise<{ tab?: string; show?: string; cat?: string }> }) {
   const s = await requireStaff(["finance"]);
-  const { tab = "invoices", show = "all" } = await searchParams;
+  const { tab = "invoices", show = "all", cat } = await searchParams;
   const [{ data: pos }, { data: invoices }, { data: bills }, { data: partners }, { data: projects }] = await Promise.all([
     s.supabase.from("finance_position").select("*").single(),
     s.supabase.from("invoices").select("id, number, status, issue_date, due_date, total_kes, paid_kes, clients(name)").order("created_at", { ascending: false }).limit(200),
-    s.supabase.from("bills").select("id, description, amount_kes, paid_kes, due_date, status, partners(name)").order("due_date", { ascending: true, nullsFirst: false }),
+    s.supabase.from("bills").select("id, description, amount_kes, paid_kes, due_date, status, category, payee, repeats, partners(name)").order("due_date", { ascending: true, nullsFirst: false }),
     s.supabase.from("partners").select("id, name").order("name"),
     s.supabase.from("projects").select("id, name").neq("status", "done").order("name"),
   ]);
+  const { data: people } = tab === "bills" ? await s.supabase.from("team_people").select("full_name").eq("active", true) : { data: null };
   const { data: received } = tab === "calculator" ? await s.supabase.from("invoice_payments").select("amount_kes, paid_on") : { data: null };
   const now = new Date();
   const ym = now.toISOString().slice(0, 7), yr = now.toISOString().slice(0, 4);
@@ -79,52 +81,77 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
       </div>
 
       <div className="mt-8">
-        <Tabs current={`/admin/finance?tab=${tab}`} items={[{ href: "/admin/finance?tab=invoices", label: "Invoices" }, { href: "/admin/finance?tab=bills", label: "Partner bills" }, { href: "/admin/finance?tab=calculator", label: "Share calculator" }]} />
+        <Tabs current={`/admin/finance?tab=${tab}`} items={[{ href: "/admin/finance?tab=invoices", label: "Invoices" }, { href: "/admin/finance?tab=bills", label: "Bills and expenses" }, { href: "/admin/finance?tab=calculator", label: "Share calculator" }]} />
       </div>
 
       {tab === "calculator" ? (
         <ShareCalculator presets={presets} />
       ) : tab === "bills" ? (
-        <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <Card>
-            <CardHeader title="Partner bills" sub="What we owe partners and suppliers" />
-            {bills?.length ? (
-              <Table head={["Bill", "Partner", "Due", "Amount", "Paid", "Status", ""]}>
-                {bills.map((b) => {
-                  const left = Number(b.amount_kes) - Number(b.paid_kes);
-                  return (
-                    <tr key={b.id}>
-                      <td className="font-medium">{b.description}</td>
-                      <td className="text-muted">{(b.partners as unknown as { name: string } | null)?.name ?? "—"}</td>
-                      <td className={b.due_date && b.due_date < today && b.status !== "paid" ? "text-bad" : "text-muted"}>{b.due_date ? day(b.due_date) : "—"}</td>
-                      <td className="num">{kes(b.amount_kes)}</td>
-                      <td className="num text-muted">{kes(b.paid_kes)}</td>
-                      <td><StatusBadge status={b.status} /></td>
-                      <td>
-                        {left > 0 ? (
-                          <form action={payBill} className="flex gap-1">
-                            <input type="hidden" name="id" value={b.id} />
-                            <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-28 rounded-full bg-sunken px-3 py-1.5 text-xs" />
-                            <button className="rounded-full bg-navy-900 px-3 py-1.5 text-xs text-white">Pay</button>
-                          </form>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </Table>
-            ) : <Empty title="No bills yet" sub="Add what you owe partners to see a true net position." />}
+            {(() => {
+              const all = bills ?? [];
+              const unpaid = all.filter((b) => b.status !== "paid");
+              const due = unpaid.reduce((n, b) => n + Number(b.amount_kes) - Number(b.paid_kes), 0);
+              const cats = [...new Set(all.map((b) => b.category))];
+              const shown = all.filter((b) => !cat || b.category === cat);
+              return (
+                <>
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      <Link href="/admin/finance?tab=bills" className={`rounded-full px-3.5 py-1.5 text-xs font-medium ${!cat ? "bg-navy-900 text-white" : "bg-sunken text-ink/70"}`}>All</Link>
+                      {cats.map((c) => <Link key={c} href={`/admin/finance?tab=bills&cat=${c}`} className={`rounded-full px-3.5 py-1.5 text-xs font-medium ${cat === c ? "bg-navy-900 text-white" : "bg-sunken text-ink/70"}`}>{BILL_CATEGORY_LABEL[c] ?? c}</Link>)}
+                    </div>
+                    <p className="text-sm text-muted">Still to pay: <span className="num font-semibold text-ink">{kes(due)}</span></p>
+                  </div>
+                  {shown.length ? (
+                    <Table head={["Bill", "Due", "Amount", "Still to pay", ""]}>
+                      {shown.map((b) => {
+                        const left = Number(b.amount_kes) - Number(b.paid_kes);
+                        const late = b.due_date && b.due_date < today && left > 0;
+                        return (
+                          <tr key={b.id}>
+                            <td>
+                              <p className="font-medium">{b.description}</p>
+                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${BILL_TONE[b.category] ?? ""}`}>{BILL_CATEGORY_LABEL[b.category] ?? b.category}</span>
+                                {b.payee || (b.partners as unknown as { name: string } | null)?.name ? <span>{b.payee ?? (b.partners as unknown as { name: string }).name}</span> : null}
+                                {b.repeats !== "once" ? <span>· repeats {b.repeats}</span> : null}
+                              </p>
+                            </td>
+                            <td className={late ? "font-medium text-bad" : "text-muted"}>{b.due_date ? day(b.due_date) : "—"}</td>
+                            <td className="num">{kes(b.amount_kes)}</td>
+                            <td className="num">{left > 0 ? kes(left) : <StatusBadge status="paid" />}</td>
+                            <td>
+                              {left > 0 ? (
+                                <form action={payBill} className="flex gap-1">
+                                  <input type="hidden" name="id" value={b.id} />
+                                  <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-28 rounded-full bg-sunken px-3 py-1.5 text-xs" />
+                                  <button className="rounded-full bg-green px-3 py-1.5 text-xs font-medium text-white">Paid</button>
+                                </form>
+                              ) : null}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </Table>
+                  ) : <Empty title="No bills yet" sub="Add rent, salaries, registrations, licences and partner bills to see a true net position." />}
+                </>
+              );
+            })()}
           </Card>
           <Card>
-            <CardHeader title="Add a bill" />
-            <ActionForm action={addBill} submit="Add bill">
-              <Field label="Description"><Input name="description" required placeholder="Legal review — company registration" /></Field>
-              <Field label="Partner"><Select name="partner_id" defaultValue=""><option value="">None</option>{partners?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
-              <Field label="Project"><Select name="project_id" defaultValue=""><option value="">None</option>{projects?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Amount (KES)"><Input name="amount_kes" type="number" min="1" step="any" required /></Field>
-                <Field label="Due"><Input name="due_date" type="date" /></Field>
-              </div>
+            <CardHeader title="Add a bill" sub="Rent and salaries can repeat: when one is paid, the next is added." />
+            <ActionForm action={addBill} submit="Add bill" className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2"><Field label="What it's for"><Input name="description" required placeholder="Office rent, Embassy House" /></Field></div>
+              <Field label="Type"><Select name="category" defaultValue="rent">{Object.entries(BILL_CATEGORY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
+              <Field label="Paid to"><Input name="payee" list="payees" placeholder="Landlord, staff member, KRA…" /></Field>
+              <datalist id="payees">{(people ?? []).map((p) => <option key={p.full_name} value={p.full_name} />)}</datalist>
+              <Field label="Amount (KES)"><Input name="amount_kes" type="number" min="1" step="any" required /></Field>
+              <Field label="Due"><Input name="due_date" type="date" /></Field>
+              <Field label="Repeats"><Select name="repeats" defaultValue="once"><option value="once">Once</option><option value="monthly">Every month</option><option value="yearly">Every year</option></Select></Field>
+              <Field label="Partner (if any)"><Select name="partner_id" defaultValue=""><option value="">None</option>{partners?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
+              <div className="sm:col-span-2"><Field label="Project (if any)"><Select name="project_id" defaultValue=""><option value="">None</option>{projects?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field></div>
             </ActionForm>
           </Card>
         </div>

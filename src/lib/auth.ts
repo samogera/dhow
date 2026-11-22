@@ -83,3 +83,13 @@ export async function staffOrNull(roles?: StaffRole[]) {
   if (!s || !r || (roles && r !== "admin" && !roles.includes(r))) return null;
   return { ...s, staffRole: r };
 }
+
+/** Until launch, only the Dhow team uses the system. Set MEMBER_APP_OPEN=1 in Vercel to open the member side. */
+export const memberAppOpen = () => process.env.MEMBER_APP_OPEN === "1";
+
+/** Sends people away from the member side while it's closed: staff to their workspace, everyone else to the notice. */
+export async function guardMemberSide() {
+  if (memberAppOpen()) return;
+  const s = await getSession();
+  redirect(s?.profile?.staff_role ? "/admin" : "/closed");
+}

@@ -1,4 +1,4 @@
-import { requireMember } from "@/lib/auth";
+import { guardMemberSide, requireMember } from "@/lib/auth";
 import { Logo } from "@/components/logo";
 import { MemberNav } from "@/components/member-nav";
 import { MemberTabBar } from "@/components/mobile-nav";
@@ -6,6 +6,7 @@ import { UserMenu } from "@/components/user-menu";
 import { switchOrganization } from "@/actions/member";
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
+  await guardMemberSide();
   const m = await requireMember();
   return (
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">

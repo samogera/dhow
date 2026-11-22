@@ -126,7 +126,7 @@ export async function uploadInternalFile(_: ActionState, fd: FormData): Promise<
 }
 
 export async function deleteInternalFile(fd: FormData) {
-  const s = await staffOrNull();
+  const s = await staffOrNull(["admin"]);
   if (!s) return;
   const id = uuid.safeParse(fd.get("id"));
   if (!id.success) return;
@@ -161,7 +161,7 @@ export async function savePerson(_: ActionState, fd: FormData): Promise<ActionSt
 }
 
 export async function deletePerson(fd: FormData) {
-  const s = await staffOrNull();
+  const s = await staffOrNull(["admin"]);
   if (!s) return;
   const id = uuid.safeParse(fd.get("id"));
   if (!id.success) return;
@@ -286,4 +286,48 @@ export async function submitClientReview(_: ActionState, fd: FormData): Promise<
   if (error) return { error: "Could not save your review. Try again." };
   revalidatePath(`/admin/clients/${c.id}`);
   return { ok: "Thank you for your review." };
+}
+
+// ----------------------------------------------------------------- ideas
+const IdeaIn = z.object({ title: z.string().trim().min(3, "Give the idea a short title").max(200), details: text(4000) });
+export async function addIdea(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const p = IdeaIn.safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  const { error } = await s.supabase.from("ideas").insert({ ...p.data, author: s.user.id });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/ideas");
+  return { ok: "Idea shared with the team." };
+}
+
+export async function voteIdea(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const { data } = await s.supabase.from("idea_votes").select("idea_id").eq("idea_id", id.data).eq("user_id", s.user.id).maybeSingle();
+  if (data) await s.supabase.from("idea_votes").delete().eq("idea_id", id.data).eq("user_id", s.user.id);
+  else await s.supabase.from("idea_votes").insert({ idea_id: id.data, user_id: s.user.id });
+  revalidatePath("/admin/ideas");
+}
+
+export async function commentIdea(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const p = z.object({ idea_id: uuid, body: z.string().trim().min(1, "Write a comment").max(2000) }).safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  const { error } = await s.supabase.from("idea_comments").insert({ ...p.data, author: s.user.id });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/ideas");
+  return { ok: "Comment added." };
+}
+
+export async function setIdeaStatus(fd: FormData) {
+  const s = await staffOrNull(["admin"]);
+  if (!s) return;
+  const p = z.object({ id: uuid, status: z.enum(["new", "discussing", "doing", "done", "parked"]) }).safeParse(form(fd));
+  if (!p.success) return;
+  await s.supabase.from("ideas").update({ status: p.data.status }).eq("id", p.data.id);
+  revalidatePath("/admin/ideas");
 }

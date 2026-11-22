@@ -121,7 +121,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                       {t.notes ? <p className="mt-2 whitespace-pre-line text-sm text-ink/75">{t.notes}</p> : null}
 
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                        {!isDone ? STATUSES.filter((st) => st !== "review" && st !== t.status).map((st) => (
+                        {!isDone ? STATUSES.filter((st) => st !== "review" && st !== t.status).filter((st) => !(st === "done" && t.status === "review")).map((st) => (
                           <form key={st} action={setTaskStatus}>
                             <input type="hidden" name="id" value={t.id} /><input type="hidden" name="status" value={st} />
                             <button className="rounded-full bg-sunken px-3 py-1.5 text-xs font-medium text-ink/70 hover:text-ink">{st === "done" ? "Mark done" : STATUS_LABEL[st]}</button>
@@ -154,9 +154,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                             </div>
                           </Drawer>
                         ) : t.status === "review" ? <span className="flex items-center gap-1 text-xs text-muted"><Eye className="size-3.5" />Only {name(t.reviewer)} can approve</span> : null}
-                        <form action={deleteTask} className="ml-auto"><input type="hidden" name="id" value={t.id} />
-                          <button aria-label="Delete task" className="grid size-8 place-items-center rounded-full text-faint hover:bg-bad/10 hover:text-bad"><Trash2 className="size-4" /></button>
-                        </form>
+                        {s.staffRole === "admin" ? (
+                          <form action={deleteTask} className="ml-auto"><input type="hidden" name="id" value={t.id} />
+                            <button aria-label="Delete task" className="grid size-8 place-items-center rounded-full text-faint hover:bg-bad/10 hover:text-bad"><Trash2 className="size-4" /></button>
+                          </form>
+                        ) : null}
                       </div>
                     </div>
                   </div>

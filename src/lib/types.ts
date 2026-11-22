@@ -1,4 +1,5 @@
-export type StaffRole = "reviewer" | "finance" | "admin";
+export type StaffRole = "employee" | "reviewer" | "finance" | "admin";
+export const STAFF_ROLE_LABEL: Record<StaffRole, string> = { admin: "Director / owner", finance: "Finance", reviewer: "Reviewer", employee: "Employee" };
 export type OrgRole = "owner" | "admin" | "member";
 export type PlanTier = "free" | "starter" | "growth" | "market_entry";
 export type VerificationState = "unverified" | "pending" | "verified" | "rejected" | "expired";

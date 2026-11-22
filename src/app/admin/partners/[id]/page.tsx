@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { VerifiedTick } from "@/components/verified-tick";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Circle, Mail, MapPin, Phone, Star } from "lucide-react";
@@ -42,7 +43,7 @@ export default async function Partner({ params }: { params: Promise<{ id: string
           <Avatar src={partner.logo_url} name={partner.name} size="xl" />
           <div className="min-w-0 flex-1">
             <StatusBadge status={partner.status} />
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{partner.name}</h1>
+            <h1 className="mt-2 flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{partner.name}{partner.status === "approved" ? <VerifiedTick size={20} /> : null}</h1>
             <p className="mt-1 text-muted">{[partner.industry, partner.discipline, institution ? "Chamber or government" : `${partner.relationship} partner`].filter(Boolean).join(" · ")}</p>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               {partner.email ? <a href={`mailto:${partner.email}`} className="flex items-center gap-1.5 text-navy-600"><Mail className="size-4" />{partner.email}</a> : null}

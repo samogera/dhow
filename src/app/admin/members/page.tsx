@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { VerifiedTick } from "@/components/verified-tick";
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { Card, Empty, PageHeader, StatusBadge, Table, Tabs } from "@/components/ui";
@@ -69,7 +70,7 @@ export default async function Members({ searchParams }: { searchParams: Promise<
                 <td>
                   <Link href={`/admin/members/${o.id}`} className="flex items-center gap-3 hover:text-navy-700">
                     <Avatar src={o.logo_url} name={o.name} size="sm" />
-                    <div className="min-w-0"><p className="truncate font-medium">{o.name}</p><p className="truncate text-xs text-muted">{[o.sector, o.country].filter(Boolean).join(" · ")}</p></div>
+                    <div className="min-w-0"><p className="flex items-center gap-1.5 font-medium"><span className="truncate">{o.name}</span>{o.verification_status === "verified" ? <VerifiedTick label={false} /> : null}</p><p className="truncate text-xs text-muted">{[o.sector, o.country].filter(Boolean).join(" · ")}</p></div>
                   </Link>
                 </td>
                 <td className="text-muted">{day(o.created_at)}</td>

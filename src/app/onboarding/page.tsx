@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/lib/auth";
+import { guardMemberSide, requireUser } from "@/lib/auth";
 import { CenteredShell } from "@/components/centered-shell";
 import { OnboardingForm } from "./form";
 
 export const metadata: Metadata = { title: "Set up your company" };
 
 export default async function Onboarding() {
+  await guardMemberSide();
   const s = await requireUser();
   return (
     <CenteredShell wide logoHref="/app">

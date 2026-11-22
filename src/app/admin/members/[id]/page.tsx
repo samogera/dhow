@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { VerifiedTick } from "@/components/verified-tick";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
@@ -37,7 +38,7 @@ export default async function Member({ params }: { params: Promise<{ id: string 
           <Avatar src={o.logo_url} name={o.name} size="xl" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2"><StatusBadge status={o.verification_status} /><span className="rounded-full bg-sunken px-2.5 py-1 text-xs font-medium">{PLAN_LABEL[o.plan as PlanTier]}</span></div>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{o.name}</h1>
+            <h1 className="mt-3 flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{o.name}{o.verification_status === "verified" ? <VerifiedTick size={20} /> : null}</h1>
             {o.tagline ? <p className="mt-1 text-muted">{o.tagline}</p> : null}
             <p className="mt-3 text-sm text-ink/70">{[o.sector, o.country, o.founded_year ? `Founded ${o.founded_year}` : null, o.team_size ? `${o.team_size} people` : null].filter(Boolean).join(" · ")}</p>
             <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">

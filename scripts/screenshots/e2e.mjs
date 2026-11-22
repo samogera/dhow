@@ -117,7 +117,7 @@ async function visit(page, path, shotName) {
 
   await check("My applications shows it as Started and filters work", async () => {
     await go(page, `${BASE}/app/applications?show=started`);
-    await page.getByText("ICT equipment supply framework").first().waitFor({ timeout: 8000 });
+    await page.locator("table").getByText("ICT equipment supply framework").waitFor({ timeout: 8000 });
     await page.screenshot({ path: `${OUT}/e2e-22-applications-started.png`, fullPage: true });
   });
 
@@ -127,13 +127,13 @@ async function visit(page, path, shotName) {
     await row.locator('select[name="status"]').selectOption("submitted");
     await page.waitForTimeout(1500);
     await go(page, `${BASE}/app/applications?show=submitted`);
-    await page.getByText("ICT equipment supply framework").first().waitFor({ timeout: 8000 });
+    await page.locator("table").getByText("ICT equipment supply framework").waitFor({ timeout: 8000 });
   });
 
   await check("Free plan stops at 3 tracked applications", async () => {
     // Demo data has 2, plus the one above = 3. Removing and re-adding must still work.
     await go(page, `${BASE}/app/applications`);
-    const count = await page.locator("tbody tr").count();
+    const count = await page.locator("table tbody tr").count();
     if (count !== 3) throw new Error(`expected 3 rows, saw ${count}`);
   });
 

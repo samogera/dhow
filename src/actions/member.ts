@@ -206,13 +206,12 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
       // Removed earlier: bring it back with the new stage.
       const { data: back } = await m.supabase.from("applications").update({ status: p.data.stage, note: p.data.note ?? null })
         .eq("org_id", m.org.id).eq("opportunity_id", p.data.opportunity_id).eq("status", "withdrawn").select("id");
-      if (back?.length) { revalidatePath("/app", "layout"); return { ok: `Added to My applications as ${p.data.stage}.` }; }
+      if (back?.length) { return { ok: `Added to My applications as ${p.data.stage}.` }; }
       return { error: "It's already in My applications." };
     }
     return { error: m.org.verification_status === "verified" ? "This opportunity is closed." : "This opportunity is for Dhow Verified companies only." };
   }
   tick("insert");
-  revalidatePath("/app", "layout");
   return { ok: p.data.stage === "submitted" ? "Added as submitted. We'll keep you posted by email." : `Added to My applications as ${p.data.stage}.` };
 }
 
@@ -247,7 +246,6 @@ export async function withdrawApplication(fd: FormData) {
   const id = z.string().uuid().safeParse(fd.get("id"));
   if (!id.success) return;
   await m.supabase.from("applications").update({ status: "withdrawn" }).eq("id", id.data).eq("org_id", m.org.id);
-  revalidatePath("/app", "layout");
 }
 
 /** A member deletes their own login. Companies where they are the only owner are deleted with it, documents included. */

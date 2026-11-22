@@ -3,9 +3,7 @@ import Link from "next/link";
 import { requireMember } from "@/lib/auth";
 import { ButtonLink, Card, Empty, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { cn, day } from "@/lib/format";
-import { withdrawApplication } from "@/actions/member";
-import { ConfirmSubmit } from "@/components/forms";
-import { StageSelect } from "./stage";
+import { RemoveApplication, StageSelect } from "./stage";
 
 export const metadata: Metadata = { title: "My applications" };
 
@@ -54,10 +52,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
               <div className="mt-3 flex items-center justify-between gap-3">
                 {EDITABLE.includes(a.status) ? <StageSelect id={a.id} status={a.status === "draft" ? "interested" : a.status} /> : <StatusBadge status={a.status} />}
                 {EDITABLE.includes(a.status) ? (
-                  <form action={withdrawApplication}>
-                    <input type="hidden" name="id" value={a.id} />
-                    <ConfirmSubmit variant="ghost" className="px-3 py-1.5 text-xs" message="Remove this from My applications?">Remove</ConfirmSubmit>
-                  </form>
+                  <RemoveApplication id={a.id} />
                 ) : null}
               </div>
             </li>
@@ -75,10 +70,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
                 <td>{EDITABLE.includes(a.status) ? <StageSelect id={a.id} status={a.status === "draft" ? "interested" : a.status} /> : <StatusBadge status={a.status} />}</td>
                 <td className="text-right">
                   {EDITABLE.includes(a.status) ? (
-                    <form action={withdrawApplication}>
-                      <input type="hidden" name="id" value={a.id} />
-                      <ConfirmSubmit variant="ghost" className="px-3 py-1.5 text-xs" message="Remove this from My applications?">Remove</ConfirmSubmit>
-                    </form>
+                    <RemoveApplication id={a.id} />
                   ) : null}
                 </td>
               </tr>

@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { applyToOpportunity } from "@/actions/member";
 import { FormMessage, Submit } from "@/components/forms";
 import { cn } from "@/lib/format";
@@ -13,6 +14,9 @@ const STAGES = [
 export function ApplyForm({ opportunityId, external = false }: { opportunityId: string; external?: boolean }) {
   const [state, action] = useActionState(applyToOpportunity, undefined);
   const [stage, setStage] = useState<(typeof STAGES)[number]["value"]>("interested");
+  const router = useRouter();
+  // The save returns at once; the page then updates quietly in the background.
+  useEffect(() => { if (state?.ok) router.refresh(); }, [state, router]);
   if (state?.ok) return <FormMessage state={state} />;
   return (
     <form action={action} className="space-y-3">

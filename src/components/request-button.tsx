@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { makeRequest, type RequestState } from "@/actions/requests";
 import { cn } from "@/lib/format";
@@ -11,6 +12,8 @@ export function RequestButton({ kind, targetId, label, placeholder, done, classN
 }) {
   const [open, setOpen] = useState(false);
   const [state, action, busy] = useActionState<RequestState, FormData>(makeRequest, {});
+  const router = useRouter();
+  useEffect(() => { if (state.ok) router.refresh(); }, [state, router]);
   if (done || state.ok) {
     return <p className="flex items-center gap-1.5 text-sm text-green"><Check className="size-4" />{state.ok ?? "Requested. We're on it."}</p>;
   }

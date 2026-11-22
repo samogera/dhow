@@ -1,6 +1,5 @@
 "use server";
 import { after } from "next/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { memberOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -65,7 +64,6 @@ export async function makeRequest(_: RequestState, fd: FormData): Promise<Reques
   }));
   after(() => notifyStaff(["admin"], `${m.org.name}: ${k.title.toLowerCase()}`, [`${who} at ${m.org.name} asked for ${k.title.toLowerCase()}: ${targetName}.`, ...(p.data.note ? [`"${p.data.note}"`] : [])],
     { label: "Open requests", href: `${appUrl()}/admin/requests` }).catch(() => null));
-  revalidatePath("/app", "layout");
   tick("done");
   return { ok: k.done };
 }

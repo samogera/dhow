@@ -4,6 +4,9 @@ import { useEffect } from "react";
 /** Last-resort error screen, used when the main layout itself fails. Plain HTML so it can't fail too. */
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
+    if (/Server Action .* was not found|ChunkLoadError/i.test(error.message ?? "")) {
+      try { if (!sessionStorage.getItem("dhow-reloaded")) { sessionStorage.setItem("dhow-reloaded", "1"); location.reload(); return; } } catch { /* fall through */ }
+    }
     fetch("/api/client-error", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

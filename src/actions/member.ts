@@ -174,7 +174,7 @@ export async function deleteDocument(fd: FormData) {
 export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<ActionState> {
   const m = await memberOrNull();
   if (!m) return { error: "Sign in first." };
-  const p = z.object({ opportunity_id: z.string().uuid(), note: z.string().trim().max(2000).optional() }).safeParse(Object.fromEntries(fd));
+  const p = z.object({ opportunity_id: z.string().uuid(), note: z.string().trim().max(2000).optional(), stage: z.enum(["interested", "started", "submitted"]).default("submitted") }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Something's missing." };
   const tier = TIERS[tierOf(m.org)];
   if (tier.applications !== null) {
@@ -185,14 +185,29 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
   // RLS (can_apply) enforces published, open and verified-only rules.
   const { error } = await m.supabase.from("applications").insert({
     org_id: m.org.id, opportunity_id: p.data.opportunity_id, note: p.data.note ?? null,
-    status: "submitted", submitted_by: m.user.id, submitted_at: new Date().toISOString(),
+    status: p.data.stage, submitted_by: m.user.id, submitted_at: new Date().toISOString(),
   });
   if (error) {
-    if (error.code === "23505") return { error: "You've already applied." };
+    if (error.code === "23505") {
+      // Removed earlier: bring it back with the new stage.
+      const { data: back } = await m.supabase.from("applications").update({ status: p.data.stage, note: p.data.note ?? null })
+        .eq("org_id", m.org.id).eq("opportunity_id", p.data.opportunity_id).eq("status", "withdrawn").select("id");
+      if (back?.length) { revalidatePath("/app/applications"); return { ok: `Added to My applications as ${p.data.stage}.` }; }
+      return { error: "It's already in My applications." };
+    }
     return { error: m.org.verification_status === "verified" ? "This opportunity is closed." : "This opportunity is for Dhow Verified companies only." };
   }
   revalidatePath("/app/applications");
-  return { ok: "Application sent. We'll keep you posted by email." };
+  return { ok: p.data.stage === "submitted" ? "Added as submitted. We'll keep you posted by email." : `Added to My applications as ${p.data.stage}.` };
+}
+
+export async function setApplicationStage(fd: FormData) {
+  const m = await memberOrNull();
+  if (!m) return;
+  const p = z.object({ id: z.string().uuid(), status: z.enum(["interested", "started", "submitted"]) }).safeParse(Object.fromEntries(fd));
+  if (!p.success) return;
+  await m.supabase.from("applications").update({ status: p.data.status }).eq("id", p.data.id).eq("org_id", m.org.id);
+  revalidatePath("/app/applications");
 }
 
 export async function withdrawApplication(fd: FormData) {

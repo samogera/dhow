@@ -14,7 +14,7 @@ import { saveOpportunity, setApplicationStatus } from "@/actions/admin";
 export const metadata: Metadata = { title: "Edit opportunity" };
 
 type Opp = CardOpp & {
-  body: string; about: string; dhow_note: string; eligibility: string[]; sectors: string[]; venue: string | null;
+  body: string; about: string; dhow_note: string; eligibility: string[]; sectors: string[]; venue: string | null; members_only?: boolean;
 };
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {

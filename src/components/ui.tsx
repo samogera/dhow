@@ -82,7 +82,7 @@ export function Badge({ tone = "neutral", children, dot }: { tone?: Tone; childr
 
 const statusTone: Record<string, Tone> = {
   verified: "good", paid: "good", approved: "good", won: "good", done: "good", active: "good", completed: "good", uploaded: "info", submitted: "info",
-  pending: "warn", in_review: "warn", awaiting_payment: "warn", part_paid: "warn", sent: "info", shortlisted: "info", in_progress: "info", review: "warn", vetting: "warn", onboarding: "info", plan_sent: "info", call_booked: "info", contacted: "info",
+  pending: "warn", started: "warn", interested: "neutral", in_review: "warn", awaiting_payment: "warn", part_paid: "warn", sent: "info", shortlisted: "info", in_progress: "info", review: "warn", vetting: "warn", onboarding: "info", plan_sent: "info", call_booked: "info", contacted: "info",
   rejected: "bad", failed: "bad", overdue: "bad", lost: "bad", cancelled: "neutral", expired: "bad", unpaid: "warn",
 };
 export function StatusBadge({ status }: { status: string }) {

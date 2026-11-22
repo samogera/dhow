@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import { CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CenteredShell } from "@/components/centered-shell";
@@ -8,7 +9,7 @@ import { day, kes } from "@/lib/format";
 import { PayForm } from "./form";
 import { loadIssuer } from "@/lib/dhow-profile";
 
-export const metadata: Metadata = { title: "Pay invoice", robots: { index: false } };
+export const metadata: Metadata = shareMeta("Pay your invoice · Dhow Partners", "Pay your Dhow Partners invoice securely by M-Pesa or card.", "/pay");
 
 export default async function PayInvoice({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ t?: string; reference?: string }> }) {
   const { id } = await params;

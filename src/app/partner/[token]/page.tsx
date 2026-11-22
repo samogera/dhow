@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
 import { CenteredShell } from "@/components/centered-shell";
@@ -7,7 +8,12 @@ import { PARTNER_DOCS, REQUIRED_GROUPS } from "@/lib/partner-docs";
 import { cn, day } from "@/lib/format";
 import { FileUpload } from "@/components/file-upload";
 
-export const metadata: Metadata = { title: "Upload documents", robots: { index: false } };
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const { data: p } = /^[A-Za-z0-9_-]{24,64}$/.test(token) ? await createAdminClient().from("partners").select("name").eq("upload_token", token).maybeSingle() : { data: null };
+  return shareMeta(p ? `${p.name} · Partner documents for Dhow Partners` : "Partner documents · Dhow Partners",
+    "Upload your company documents securely for Dhow Partners. Only the Dhow Partners team can see them.", `/partner/${token}`);
+}
 
 export default async function PartnerUpload({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

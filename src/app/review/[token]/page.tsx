@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import { notFound } from "next/navigation";
 import { CenteredShell } from "@/components/centered-shell";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ReviewForm } from "./form";
 
-export const metadata: Metadata = { title: "Leave a review", robots: { index: false } };
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const { data: p } = /^[A-Za-z0-9_-]{24,64}$/.test(token) ? await createAdminClient().from("partners").select("name").eq("review_token", token).maybeSingle() : { data: null };
+  return shareMeta(p ? `Review ${p.name} · Dhow Partners` : "Leave a review · Dhow Partners",
+    "Tell Dhow Partners how the work went. It takes a minute.", `/review/${token}`);
+}
 
 export default async function Review({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

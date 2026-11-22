@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadIssuer } from "@/lib/dhow-profile";
@@ -6,7 +7,12 @@ import { ClientReviewForm } from "./review";
 import { ClientWork } from "@/components/client-work";
 import { HelpForm } from "@/components/help-form";
 
-export const metadata: Metadata = { title: "Your work with Dhow Partners", robots: { index: false } };
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const { data: c } = /^[A-Za-z0-9_-]{24,64}$/.test(token) ? await createAdminClient().from("clients").select("name").eq("portal_token", token).maybeSingle() : { data: null };
+  return shareMeta(c ? `${c.name} · Your work with Dhow Partners` : "Your work with Dhow Partners",
+    "Follow your project's progress, see and pay invoices, and talk to the Dhow Partners team. Private link, no login needed.", `/client/${token}`);
+}
 
 export default async function ClientPortal({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

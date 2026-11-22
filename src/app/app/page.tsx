@@ -7,6 +7,7 @@ import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, day } from "@/lib/format";
 import { rankForCompany } from "@/lib/matching";
 import { HelpForm } from "@/components/help-form";
+import { VerifiedTick } from "@/components/verified-tick";
 import { AUDIENCE, atLeast } from "@/lib/plans";
 
 const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, sectors, audience";
@@ -55,7 +56,13 @@ export default async function Dashboard() {
             <p className="text-sm text-white/70">{greeting()}{first ? `, ${first}` : ""}</p>
             <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight sm:text-[2rem]">
               {org.name}
-              {verified ? <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium"><BadgeCheck className="size-3.5 text-mint" />Dhow Verified</span> : null}
+              {verified ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-navy-900"><VerifiedTick label={false} size={16} />Dhow Verified</span>
+              ) : pending ? (
+                <Link href="/app/verification" className="inline-flex items-center gap-1.5 rounded-full bg-amber px-2.5 py-1 text-xs font-semibold text-navy-950"><span className="size-1.5 animate-pulse rounded-full bg-navy-950" />Verification in progress</Link>
+              ) : (
+                <Link href="/app/verification" className="inline-flex items-center gap-1.5 rounded-full bg-bad px-2.5 py-1 text-xs font-semibold text-white ring-2 ring-bad/30 transition hover:bg-bad/90"><ShieldAlert className="size-3.5" />Not verified · Get verified</Link>
+              )}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-white/75">
               {allDone ? "You're all set. New opportunities are added every week, checked by our team." : "A few quick steps and you'll get the most out of Dhow."}
@@ -115,9 +122,9 @@ export default async function Dashboard() {
 
         <aside className={cn("min-w-0 space-y-6", allDone && "lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:space-y-0")}>
           {/* Verification */}
-          <Card className={verified ? "bg-mint-100/70" : ""}>
+          <Card className={verified ? "bg-mint-100/70" : pending ? "" : "border border-bad/25 bg-bad/5"}>
             <div className="flex items-start gap-3">
-              <span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", verified ? "bg-green text-white" : pending ? "bg-amber-100 text-amber-700" : "bg-sunken text-navy-700")}>
+              <span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", verified ? "bg-green text-white" : pending ? "bg-amber-100 text-amber-700" : "bg-bad text-white")}>
                 {verified ? <BadgeCheck className="size-5" /> : <ShieldAlert className="size-5" />}
               </span>
               <div className="min-w-0">

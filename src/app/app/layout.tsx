@@ -27,7 +27,7 @@ export default async function MemberLayout({ children }: { children: React.React
           ) : null}
         </div>
         <div className="hidden min-w-0 lg:block"><MemberNav /></div>
-        <UserMenu name={m.profile?.full_name ?? ""} email={m.user.email ?? ""} staff={Boolean(m.profile?.staff_role)} />
+        <UserMenu name={m.profile?.full_name ?? ""} email={m.user.email ?? ""} staff={Boolean(m.profile?.staff_role)} settingsHref="/app/settings" />
       </header>
       <main className="pt-8 pb-32 sm:pt-10 lg:pb-16">{children}</main>
       <MemberTabBar />

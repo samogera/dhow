@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { LifeBuoy, LogOut, Shield } from "lucide-react";
+import { LifeBuoy, LogOut, Settings, Shield } from "lucide-react";
 import { signOut } from "@/actions/auth";
 
-export function UserMenu({ name, email, staff, helpHref = "/help" }: { name: string; email: string; staff: boolean; helpHref?: string }) {
+export function UserMenu({ name, email, staff, helpHref = "/help", settingsHref }: { name: string; email: string; staff: boolean; helpHref?: string; settingsHref?: string }) {
   const initials = (name || email).split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   return (
     <details className="group relative">
@@ -17,6 +17,11 @@ export function UserMenu({ name, email, staff, helpHref = "/help" }: { name: str
         {staff ? (
           <Link href="/admin" className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">
             <Shield className="size-4" /> Dhow workspace
+          </Link>
+        ) : null}
+        {settingsHref ? (
+          <Link href={settingsHref} className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">
+            <Settings className="size-4" /> Company and account settings
           </Link>
         ) : null}
         <Link href={helpHref} className="flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">

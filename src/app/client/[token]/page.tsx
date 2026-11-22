@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, Download, Mail, MessageCircle, Phone } from "lucide-react";
+import { CheckCircle2, Circle, Download } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadIssuer } from "@/lib/dhow-profile";
 import { paystackConfigured } from "@/lib/paystack";
@@ -119,15 +119,14 @@ export default async function ClientPortal({ params }: { params: Promise<{ token
         </section>
 
         <section className="card">
-          <HelpForm side="client" token={token} email={c.email} phone={c.phone} title="Need something from us?" sub="Pick one. We'll get back to you within one working day." />
-          {issuer.phone || issuer.email ? (
-            <div className="mt-6 flex flex-wrap gap-2 border-t border-line pt-5 text-sm">
-              <span className="mr-1 self-center text-muted">Or reach us directly:</span>
-              {issuer.phone ? <a href={`tel:${issuer.phone}`} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 hover:bg-sunken"><Phone className="size-4 text-navy-600" />Call</a> : null}
-              {issuer.phone ? <a href={`https://wa.me/${issuer.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 hover:bg-sunken"><MessageCircle className="size-4 text-green" />WhatsApp</a> : null}
-              {issuer.email ? <a href={`mailto:${issuer.email}`} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 hover:bg-sunken"><Mail className="size-4 text-navy-600" />Email</a> : null}
-            </div>
-          ) : null}
+          <HelpForm
+            side="client"
+            token={token}
+            email={c.email}
+            phone={c.phone}
+            title="Need something from us?"
+            links={issuer.phone ? [{ label: "WhatsApp", href: `https://wa.me/${issuer.phone.replace(/\D/g, "")}` }, { label: "Call", href: `tel:${issuer.phone}` }] : undefined}
+          />
         </section>
       </main>
     </div>

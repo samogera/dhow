@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Briefcase, Building2, CalendarDays, Check, FileText, MessageCircle, PhoneCall, Send, ShieldAlert } from "lucide-react";
+import { ArrowRight, BadgeCheck, Briefcase, Building2, CalendarDays, Check, FileText, Send, ShieldAlert } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardHeader, StatusBadge } from "@/components/ui";
@@ -195,21 +195,14 @@ export default async function Dashboard() {
       </section>
 
       {/* Talk to Dhow */}
-      <Card className="p-6 sm:p-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-start">
-          <div>
-            <p className="text-sm font-medium text-green">We&apos;re here</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Need a hand?</h2>
-            <p className="mt-2 text-sm text-muted">Pick what you need and leave your details. The Dhow team will reach out within one working day.</p>
-            {wa || dhow?.booking_link ? (
-              <div className="mt-5 flex flex-wrap gap-2 text-sm">
-                {dhow?.booking_link ? <a href={dhow.booking_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 font-medium hover:bg-sunken"><PhoneCall className="size-4" />Book a call</a> : null}
-                {wa ? <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 font-medium hover:bg-sunken"><MessageCircle className="size-4" />WhatsApp</a> : null}
-              </div>
-            ) : null}
-          </div>
-          <HelpForm side="member" title="What do you need help with?" name={profile?.full_name} email={user.email} phone={profile?.phone} />
-        </div>
+      <Card className="mx-auto w-full max-w-3xl p-7 sm:p-10">
+        <HelpForm
+          side="member"
+          name={profile?.full_name}
+          email={user.email}
+          phone={profile?.phone}
+          links={[...(dhow?.booking_link ? [{ label: "Book a call", href: dhow.booking_link }] : []), ...(wa ? [{ label: "WhatsApp", href: wa }] : [])]}
+        />
       </Card>
     </div>
   );

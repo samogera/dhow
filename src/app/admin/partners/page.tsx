@@ -8,7 +8,7 @@ import { Drawer } from "@/components/drawer";
 import { Empty, PageHeader, StatusBadge } from "@/components/ui";
 import { Avatar } from "@/components/profile-bits";
 import { CONTRACT_LABEL, CONTRACT_TONE, PartnerFields } from "@/components/partner-fields";
-import { missingDocs, PARTNER_DOCS } from "@/lib/partner-docs";
+import { missingDocs, REQUIRED_GROUPS } from "@/lib/partner-docs";
 import { cn } from "@/lib/format";
 import { savePartnerProfile } from "@/actions/profiles";
 
@@ -24,7 +24,7 @@ export default async function Partners({ searchParams }: { searchParams: Promise
   ]);
   const all = rows ?? [];
   const industries = [...new Set(all.map((p) => p.industry).filter(Boolean))].sort() as string[];
-  const required = PARTNER_DOCS.filter((d) => d.required).length;
+  const required = REQUIRED_GROUPS.length;
   const inst = (id: string) => all.find((p) => p.id === id)?.relationship === "institution";
   const info = (id: string) => {
     const fs = (files ?? []).filter((x) => x.owner_id === id);
@@ -89,7 +89,7 @@ export default async function Partners({ searchParams }: { searchParams: Promise
                   {p.relationship === "institution" ? <span className="text-muted">Chamber or government · no documents needed</span> : (
                     <>
                       <span className={cn("rounded-full px-2 py-0.5 font-medium", CONTRACT_TONE[p.contract_status ?? "none"])}>{CONTRACT_LABEL[p.contract_status ?? "none"]}</span>
-                      <span className={cn("flex items-center gap-1", i.missing ? "text-amber-700" : "text-green")}><FileCheck2 className="size-3.5" />{i.missing ? `${i.missing} of ${required} documents missing` : "Documents complete"}</span>
+                      <span className={cn("flex items-center gap-1", i.missing ? "text-amber-700" : "text-green")}><FileCheck2 className="size-3.5" />{i.missing ? `${i.missing} of ${required} must-have documents missing` : "Documents complete"}</span>
                     </>
                   )}
                   {i.rating ? <span className="flex items-center gap-1 text-ink/80"><Star className="size-3.5 fill-amber text-amber" />{i.rating.toFixed(1)} ({i.reviews})</span> : null}

@@ -11,7 +11,7 @@ import { InternalFiles } from "@/components/internal-files";
 import { CONTRACT_LABEL, CONTRACT_TONE, PartnerFields, type PartnerRow } from "@/components/partner-fields";
 import { makePartnerLink, savePartnerProfile } from "@/actions/profiles";
 import { CopyField } from "@/components/copy-field";
-import { PARTNER_DOCS } from "@/lib/partner-docs";
+import { PARTNER_DOCS, REQUIRED_GROUPS } from "@/lib/partner-docs";
 import { appUrl } from "@/lib/app-url";
 import { cn, day } from "@/lib/format";
 
@@ -84,14 +84,28 @@ export default async function Partner({ params }: { params: Promise<{ id: string
         </Card>
         <div className="space-y-4">
           {institution ? null : <Card>
-            <CardHeader title="Required documents" sub="Ticked when a current copy is on file" />
+            <CardHeader title="Documents" sub="Ticked when a current copy is on file" />
+            <p className="label mb-2">Must have</p>
+            <ul className="mb-5 space-y-2.5 text-sm">
+              {REQUIRED_GROUPS.map((g) => {
+                const f = g.keys.map((k) => have(k)).find(Boolean);
+                return (
+                  <li key={g.label} className="flex items-start gap-2.5">
+                    {f ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green" /> : <Circle className="mt-0.5 size-4 shrink-0 text-amber" />}
+                    <span className={cn("flex-1", !f && "text-ink/70")}>{g.label}</span>
+                    {f ? <span className="text-xs text-muted">{f.label}</span> : null}
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="label mb-2">Optional</p>
             <ul className="space-y-2.5 text-sm">
               {PARTNER_DOCS.map((d) => {
                 const f = have(d.key);
                 return (
                   <li key={d.key} className="flex items-start gap-2.5">
-                    {f ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green" /> : <Circle className={cn("mt-0.5 size-4 shrink-0", d.required ? "text-amber" : "text-faint")} />}
-                    <span className={cn("flex-1", !f && "text-ink/70")}>{d.label}{!d.required ? <span className="text-faint"> · optional</span> : null}</span>
+                    {f ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green" /> : <Circle className="mt-0.5 size-4 shrink-0 text-faint" />}
+                    <span className={cn("flex-1", !f && "text-ink/60")}>{d.label}</span>
                     {f?.expires_on ? <span className="text-xs text-muted">to {day(f.expires_on)}</span> : null}
                   </li>
                 );

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
 import { CenteredShell } from "@/components/centered-shell";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PARTNER_DOCS } from "@/lib/partner-docs";
+import { PARTNER_DOCS, REQUIRED_GROUPS } from "@/lib/partner-docs";
 import { cn, day } from "@/lib/format";
 import { FileUpload } from "@/components/file-upload";
 
@@ -26,13 +26,27 @@ export default async function PartnerUpload({ params }: { params: Promise<{ toke
       <h1 className="mt-2 text-center text-2xl font-semibold tracking-tight text-navy-900">{p.name}</h1>
       <p className="mt-2 text-center text-sm text-muted">Upload your company documents here. Only the Dhow Partners team can see them.</p>
 
-      <ul className="mt-8 space-y-2.5 text-sm">
-        {PARTNER_DOCS.map((d) => {
+      <p className="label mt-8 mb-2">We need</p>
+      <ul className="space-y-2.5 text-sm">
+        {REQUIRED_GROUPS.map((g) => {
+          const f = g.keys.map((k) => have(k)).find(Boolean);
+          return (
+            <li key={g.label} className="flex items-start gap-2.5">
+              {f ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green" /> : <Circle className="mt-0.5 size-4 shrink-0 text-amber" />}
+              <span className={cn("flex-1", f && "text-muted")}>{g.label}</span>
+              {f ? <span className="text-xs text-green">Received {day(f.created_at)}</span> : null}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="label mt-6 mb-2">If you have them</p>
+      <ul className="space-y-2.5 text-sm">
+        {PARTNER_DOCS.filter((d) => !REQUIRED_GROUPS.some((g) => (g.keys as readonly string[]).includes(d.key))).map((d) => {
           const f = have(d.key);
           return (
             <li key={d.key} className="flex items-start gap-2.5">
-              {f ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green" /> : <Circle className={cn("mt-0.5 size-4 shrink-0", d.required ? "text-amber" : "text-faint")} />}
-              <span className={cn("flex-1", f && "text-muted")}>{d.label}{!d.required ? <span className="text-faint"> · if you have one</span> : null}</span>
+              {f ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green" /> : <Circle className="mt-0.5 size-4 shrink-0 text-faint" />}
+              <span className={cn("flex-1", f && "text-muted")}>{d.label}</span>
               {f ? <span className="text-xs text-green">Received {day(f.created_at)}</span> : null}
             </li>
           );

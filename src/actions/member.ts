@@ -56,6 +56,9 @@ export async function updateOrganization(_: ActionState, fd: FormData): Promise<
   const { kra_pin, brs_number, postal_address, postal_code, ...rest } = p.data;
 
   const patch: Record<string, unknown> = { ...rest };
+  // Fields not on the submitted form are left as they are (sector is set under "What should we look for?").
+  if (!fd.has("sector")) delete patch.sector;
+  if (!fd.has("website")) delete patch.website;
   // Registration details lock once verified, so a badge can't be moved to another company.
   if (m.org.verification_status !== "verified") {
     patch.brs_number = brs_number;

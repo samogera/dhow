@@ -14,12 +14,9 @@ export function CompanyForm({ org, disabled }: { org: Organization; disabled: bo
     <form action={action} className="grid gap-4 sm:grid-cols-2">
       <fieldset disabled={disabled} className="contents">
         <div className="sm:col-span-2"><Field label="Company name"><Input name="name" defaultValue={org.name} required /></Field></div>
-        <Field label="Country">
+        <div className="sm:col-span-2"><Field label="Registered in">
           <Select name="country" defaultValue={org.country}>{COUNTRIES.map((c) => <option key={c}>{c}</option>)}</Select>
-        </Field>
-        <Field label="Sector">
-          <Select name="sector" defaultValue={org.sector ?? ""}><option value="">—</option>{SECTORS.map((s) => <option key={s}>{s}</option>)}</Select>
-        </Field>
+        </Field></div>
         <Field label="BRS registration number"><Input name="brs_number" defaultValue={org.brs_number ?? ""} readOnly={locked} /></Field>
         <Field label="Company KRA PIN" hint={org.kra_pin_last4 ? `Saved, ending ${org.kra_pin_last4}. Type to replace.` : "Stored encrypted"}>
           <Input name="kra_pin" placeholder={org.kra_pin_last4 ? `•••••••${org.kra_pin_last4}` : "P051234567X"} readOnly={locked} />

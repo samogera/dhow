@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 import { Check } from "lucide-react";
 import { makeRequest, type RequestState } from "@/actions/requests";
 import { cn } from "@/lib/format";
+import { SubmitButton } from "@/components/submit-button";
 
 /** "Ask Dhow to…" button that opens a short optional note, then sends the request. */
 export function RequestButton({ kind, targetId, label, placeholder, done, className }: {
@@ -29,7 +30,7 @@ export function RequestButton({ kind, targetId, label, placeholder, done, classN
       {state.error ? <p className="text-sm text-bad">{state.error}</p> : null}
       <div className="flex items-center justify-end gap-3">
         <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted hover:text-ink">Cancel</button>
-        <button type="submit" disabled={busy} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60">{busy ? "Sending…" : "Send request"}</button>
+        <SubmitButton type="submit" disabled={busy} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60">{busy ? "Sending…" : "Send request"}</SubmitButton>
       </div>
     </form>
   );

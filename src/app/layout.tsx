@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
 import { appUrl } from "@/lib/app-url";
+import { NavProgress } from "@/components/nav-progress";
 
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export const viewport: Viewport = { themeColor: "#f3f5f7", viewportFit: "cover",
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-dvh font-sans">{children}</body>
+      <body className="min-h-dvh font-sans"><NavProgress />{children}</body>
     </html>
   );
 }

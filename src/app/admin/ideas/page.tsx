@@ -7,6 +7,7 @@ import { Empty, Field, Input, PageHeader, Textarea } from "@/components/ui";
 import { Avatar } from "@/components/profile-bits";
 import { cn, day } from "@/lib/format";
 import { addIdea, commentIdea, setIdeaStatus, voteIdea } from "@/actions/profiles";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Ideas" };
 const STATUSES = [["new", "New"], ["discussing", "Discussing"], ["doing", "Doing it"], ["done", "Done"], ["parked", "Parked"]] as const;
@@ -53,9 +54,9 @@ export default async function Ideas({ searchParams }: { searchParams: Promise<{ 
                 <div className="flex items-start gap-3">
                   <form action={voteIdea}>
                     <input type="hidden" name="id" value={i.id} />
-                    <button aria-label={mine ? "Remove my vote" : "This makes sense"} className={cn("flex w-14 flex-col items-center rounded-2xl py-2 transition", mine ? "bg-navy-900 text-white" : "bg-sunken text-ink/70 hover:bg-navy-50")}>
+                    <SubmitButton aria-label={mine ? "Remove my vote" : "This makes sense"} className={cn("flex w-14 flex-col items-center rounded-2xl py-2 transition", mine ? "bg-navy-900 text-white" : "bg-sunken text-ink/70 hover:bg-navy-50")}>
                       <ThumbsUp className="size-4" /><span className="num mt-0.5 text-sm font-semibold">{i.votes.length}</span>
-                    </button>
+                    </SubmitButton>
                   </form>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2"><span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", TONE[i.status])}>{STATUSES.find(([k]) => k === i.status)?.[1]}</span></div>
@@ -85,7 +86,7 @@ export default async function Ideas({ searchParams }: { searchParams: Promise<{ 
                     <form action={setIdeaStatus} className="ml-auto flex items-center gap-1">
                       <input type="hidden" name="id" value={i.id} />
                       <select name="status" defaultValue={i.status} aria-label="Status" className="rounded-full bg-sunken px-3 py-1.5 text-xs">{STATUSES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-                      <button className="text-xs font-medium text-navy-600">Set</button>
+                      <SubmitButton className="text-xs font-medium text-navy-600">Set</SubmitButton>
                     </form>
                   ) : <span className="ml-auto flex items-center gap-1 text-xs text-muted"><MessageSquare className="size-3.5" />{i.comments.length}</span>}
                 </div>

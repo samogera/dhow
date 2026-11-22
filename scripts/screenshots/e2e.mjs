@@ -159,6 +159,13 @@ async function visit(page, path, shotName) {
     await page.getByText("Available from Startup").first().waitFor({ timeout: 8000 });
   });
 
+  await check("Free members don't see Investors or Our work in the menu", async () => {
+    await page.goto(`${BASE}/app`);
+    const nav = page.locator('nav[aria-label="Main"]');
+    if (await nav.getByText("Investors").count()) throw new Error("Investors shown on Free");
+    if (await nav.getByText("Our work").count()) throw new Error("Our work shown on Free");
+  });
+
   await check("investors are locked on Free", async () => {
     await page.goto(`${BASE}/app/investors`);
     await page.getByText("Investor introductions come with Growth").first().waitFor({ timeout: 8000 });
@@ -230,6 +237,20 @@ async function visit(page, path, shotName) {
     await page.getByText("Discounts saved").first().waitFor({ timeout: 8000 });
   });
 
+  await check("Alerts list new member requests and applications", async () => {
+    await page.goto(`${BASE}/admin/alerts`);
+    await page.getByText("Members asking for help").first().waitFor({ timeout: 8000 });
+    await page.screenshot({ path: `${OUT}/e2e-41-alerts.png`, fullPage: true });
+  });
+
+  await check("save buttons show progress then a tick", async () => {
+    await page.goto(`${BASE}/admin/requests`);
+    const btn = page.getByRole("button", { name: "Save" }).first();
+    if (!(await btn.count())) return "no requests to save";
+    await btn.click();
+    await page.locator('button[aria-busy="true"], button:has(svg.lucide-check)').first().waitFor({ timeout: 8000 });
+  });
+
   await check("set a member's plan to Growth", async () => {
     await page.goto(`${BASE}/admin/members`);
     const row = page.locator("tr", { hasText: "Acacia Solar" }).first();
@@ -257,6 +278,39 @@ async function visit(page, path, shotName) {
     await page.getByText("Current plan").first().waitFor({ timeout: 8000 });
     await page.getByText("25% off event representation").first().waitFor({ timeout: 8000 });
     await page.screenshot({ path: `${OUT}/e2e-25-plans-growth.png`, fullPage: true });
+  });
+  await ctx.close();
+}
+
+// ------------------------------------------------------------------ Enterprise via a linked client
+{
+  const { ctx, page } = await signIn("admin@dhow.test");
+  await check("link a client to the member and move them to Enterprise", async () => {
+    await page.goto(`${BASE}/admin/clients`);
+    const href = await page.locator('a[href^="/admin/clients/"]').first().getAttribute("href");
+    await page.goto(`${BASE}${href}`);
+    await page.locator('select[name="org_id"]').selectOption({ label: "Acacia Solar Ltd" });
+    await page.locator('form:has(select[name="org_id"])').getByRole("button", { name: "Save" }).click();
+    await page.waitForTimeout(2000);
+  });
+  await ctx.close();
+}
+{
+  const { ctx, page } = await signIn("owner@acacia.test");
+  await check("Enterprise member sees Our work with projects", async () => {
+    await page.goto(`${BASE}/app`);
+    await page.locator('nav[aria-label="Main"]').getByText("Our work").click();
+    await page.waitForURL(/\/app\/work/);
+    await page.getByText("Your projects with Dhow").first().waitFor({ timeout: 8000 });
+    await page.screenshot({ path: `${OUT}/e2e-26-our-work.png`, fullPage: true });
+  });
+  await check("help card is the navy block", async () => {
+    await page.goto(`${BASE}/app`);
+    await page.locator("section.bg-navy-900").last().screenshot({ path: `${OUT}/e2e-27-help-card.png` });
+  });
+  await check("desktop header is tidy", async () => {
+    await page.goto(`${BASE}/app`);
+    await page.locator("header").first().screenshot({ path: `${OUT}/e2e-28-header.png` });
   });
   await ctx.close();
 }

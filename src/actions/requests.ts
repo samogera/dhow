@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { memberOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { emailLayout, sendEmail } from "@/lib/notify";
+import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import { rateLimit } from "@/lib/rate-limit";
 import { appUrl } from "@/lib/app-url";
 import { atLeast, type Tier } from "@/lib/plans";
@@ -58,6 +58,8 @@ export async function makeRequest(_: RequestState, fd: FormData): Promise<Reques
       `Reach them at ${m.user.email ?? "-"}${m.profile?.phone ? ` or ${m.profile.phone}` : ""}.`,
     ], { label: "Open requests", href: `${appUrl()}/admin/requests` }),
   }));
+  after(() => notifyStaff(["admin"], `${m.org.name}: ${k.title.toLowerCase()}`, [`${who} at ${m.org.name} asked for ${k.title.toLowerCase()}: ${targetName}.`, ...(p.data.note ? [`"${p.data.note}"`] : [])],
+    { label: "Open requests", href: `${appUrl()}/admin/requests` }).catch(() => null));
   revalidatePath("/app/investors");
   return { ok: k.done };
 }

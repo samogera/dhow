@@ -4,6 +4,7 @@ import { bytes, cn, day } from "@/lib/format";
 import { deleteInternalFile } from "@/actions/profiles";
 
 import { PARTNER_DOCS, docLabel } from "@/lib/partner-docs";
+import { SubmitButton } from "@/components/submit-button";
 const DHOW_CATEGORIES = [["incorporation", "Certificate of incorporation"], ["cr12", "CR12"], ["kra_pin", "KRA PIN certificate"], ["tax_compliance", "Tax compliance certificate"], ["company_profile", "Company profile"], ["license", "Licence"], ["contract", "Contract"], ["other", "Other"]] as const;
 type F = { id: string; label: string; category: string; file_name: string; size_bytes: number; expires_on: string | null; created_at: string; uploaded_via?: string };
 
@@ -28,7 +29,7 @@ export function InternalFiles({ files, ownerType, ownerId, fixedCategory, empty 
                 </div>
                 <a href={`/api/internal-files/${f.id}`} className="grid size-9 place-items-center rounded-full hover:bg-sunken" aria-label={`Download ${f.label}`}><Download className="size-4" /></a>
                 <form action={deleteInternalFile}><input type="hidden" name="id" value={f.id} />
-                  <button className="grid size-9 place-items-center rounded-full text-muted hover:bg-bad/10 hover:text-bad" aria-label={`Delete ${f.label}`}><Trash2 className="size-4" /></button>
+                  <SubmitButton className="grid size-9 place-items-center rounded-full text-muted hover:bg-bad/10 hover:text-bad" aria-label={`Delete ${f.label}`}><Trash2 className="size-4" /></SubmitButton>
                 </form>
               </li>
             );

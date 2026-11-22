@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type Alert = { id: string; level: "urgent" | "soon"; kind: "licence" | "invoice" | "bill" | "task" | "review" | "lead"; title: string; detail: string; href: string; date?: string };
+export type Alert = { id: string; level: "urgent" | "soon"; kind: "licence" | "invoice" | "bill" | "task" | "review" | "lead" | "request" | "application"; title: string; detail: string; href: string; date?: string };
 
 const days = (d: string, today: string) => Math.round((new Date(d).getTime() - new Date(today).getTime()) / 864e5);
 const when = (n: number) => (n < 0 ? `${-n} day${n === -1 ? "" : "s"} ago` : n === 0 ? "today" : n === 1 ? "tomorrow" : `in ${n} days`);
@@ -18,6 +18,11 @@ export async function loadAlerts(db: SupabaseClient, userId: string, canSeeMoney
     db.from("tasks").select("id, title, due_date, status, project_id, assignee, reviewer").neq("status", "done"),
     db.from("verifications").select("id", { count: "exact", head: true }).eq("status", "in_review"),
     db.from("leads").select("id, name, company, next_step, next_step_date, status").not("status", "in", "(won,lost)").not("next_step_date", "is", null).lte("next_step_date", today),
+  ]);
+  const [asks, apps, help] = await Promise.all([
+    db.from("member_requests").select("id, kind, target_name, created_at, organizations(name)").eq("status", "new").order("created_at").limit(50),
+    db.from("membership_applications").select("id, name, company, plan, created_at").eq("status", "new").order("created_at").limit(50),
+    db.from("leads").select("id, name, company, next_step, created_at").eq("status", "new").in("source", ["Member workspace", "Client portal"]).order("created_at").limit(50),
   ]);
   const out: Alert[] = [];
   const pname = (id: string | null) => partners.data?.find((p) => p.id === id)?.name;
@@ -56,6 +61,16 @@ export async function loadAlerts(db: SupabaseClient, userId: string, canSeeMoney
   if (reviews.count) out.push({ id: "verif", level: "soon", kind: "review", title: `${reviews.count} compan${reviews.count === 1 ? "y is" : "ies are"} waiting for verification`, detail: "Verification reviews", href: "/admin/reviews" });
   for (const l of leads.data ?? []) {
     out.push({ id: `l${l.id}`, level: "soon", kind: "lead", title: `Follow up: ${l.company ?? l.name}`, detail: l.next_step ?? "Next step is due", href: "/admin/leads", date: l.next_step_date! });
+  }
+  const ASK: Record<string, string> = { member_intro: "wants an introduction to", investor_intro: "wants an introduction to investor", event_representation: "wants you to represent them at" };
+  for (const r of (asks.data ?? []) as unknown as { id: string; kind: string; target_name: string | null; created_at: string; organizations: { name: string } | null }[]) {
+    out.push({ id: `q${r.id}`, level: "urgent", kind: "request", title: `${r.organizations?.name ?? "A member"} ${ASK[r.kind] ?? "asked for"} ${r.target_name ?? ""}`.trim(), detail: "New member request", href: "/admin/requests", date: r.created_at.slice(0, 10) });
+  }
+  for (const a of apps.data ?? []) {
+    out.push({ id: `a${a.id}`, level: "soon", kind: "application", title: `New application: ${a.company ?? a.name}`, detail: `${a.name}${a.plan ? ` · ${a.plan}` : ""} · decide before applications close`, href: "/admin/applications", date: a.created_at.slice(0, 10) });
+  }
+  for (const h of help.data ?? []) {
+    out.push({ id: `h${h.id}`, level: "urgent", kind: "request", title: `${h.company ?? h.name} needs a hand`, detail: h.next_step ?? "Help request", href: "/admin/leads", date: h.created_at.slice(0, 10) });
   }
   return out.sort((a, b) => (a.level === b.level ? (a.date ?? "9").localeCompare(b.date ?? "9") : a.level === "urgent" ? -1 : 1));
 }

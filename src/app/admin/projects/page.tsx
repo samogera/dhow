@@ -7,6 +7,7 @@ import { Drawer } from "@/components/drawer";
 import { Badge, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 import { day, kes, label } from "@/lib/format";
 import { addTask, saveProject, setProjectStatus, toggleTask } from "@/actions/admin";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Projects" };
 const COLS = ["todo", "in_progress", "review", "done"] as const;
@@ -88,7 +89,7 @@ export default async function Projects() {
                                 <form action={toggleTask} className="flex items-center gap-2">
                                   <input type="hidden" name="id" value={t.id} />
                                   <input type="hidden" name="done" value={t.status === "done" ? "0" : "1"} />
-                                  <button aria-label={t.status === "done" ? "Mark not done" : "Mark done"} className={`grid size-4 shrink-0 place-items-center rounded-full border ${t.status === "done" ? "border-navy-900 bg-navy-900 text-[9px] text-mint" : "border-line"}`}>{t.status === "done" ? "✓" : ""}</button>
+                                  <SubmitButton aria-label={t.status === "done" ? "Mark not done" : "Mark done"} className={`grid size-4 shrink-0 place-items-center rounded-full border ${t.status === "done" ? "border-navy-900 bg-navy-900 text-[9px] text-mint" : "border-line"}`}>{t.status === "done" ? "✓" : ""}</SubmitButton>
                                   <span className={`text-xs ${t.status === "done" ? "text-muted line-through" : ""}`}>{t.title}</span>
                                 </form>
                               </li>
@@ -101,7 +102,7 @@ export default async function Projects() {
                       <form action={setProjectStatus} className="flex gap-1">
                         <input type="hidden" name="id" value={p.id} />
                         <select name="status" defaultValue={p.status} aria-label="Status" className="rounded-full bg-sunken px-2 py-1 text-xs">{COLS.map((c) => <option key={c} value={c}>{label(c)}</option>)}</select>
-                        <button className="text-xs text-navy-600 underline">Move</button>
+                        <SubmitButton className="text-xs text-navy-600 underline">Move</SubmitButton>
                       </form>
                       </div>
                     </article>

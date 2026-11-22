@@ -8,8 +8,8 @@ import { Button } from "@/components/ui";
 export function Submit({ children, pending, ...p }: ComponentProps<typeof Button> & { pending?: string }) {
   const { pending: busy } = useFormStatus();
   return (
-    <Button type="submit" disabled={busy} {...p}>
-      {busy ? pending ?? "Saving…" : children}
+    <Button type="submit" disabled={busy} aria-busy={busy || undefined} {...p}>
+      {busy ? <span className="inline-flex items-center gap-2"><span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />{pending ?? "Saving…"}</span> : children}
     </Button>
   );
 }

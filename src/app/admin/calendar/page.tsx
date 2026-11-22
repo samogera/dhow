@@ -10,6 +10,7 @@ import { CopyField } from "@/components/copy-field";
 import { appUrl } from "@/lib/app-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BellRing, CalendarPlus, Mail } from "lucide-react";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -56,10 +57,10 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
               </div>
               <CopyField value={feed} />
               <p className="text-xs text-faint">Private link: anyone who has it can see these dates. Google refreshes it every few hours; phones and Outlook more often.</p>
-              <form action={makeCalendarFeed}><button className="text-xs text-muted underline">Make a new link (the old one stops working)</button></form>
+              <form action={makeCalendarFeed}><SubmitButton className="text-xs text-muted underline">Make a new link (the old one stops working)</SubmitButton></form>
             </div>
           ) : (
-            <form action={makeCalendarFeed} className="mt-4"><button className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Create my calendar link</button></form>
+            <form action={makeCalendarFeed} className="mt-4"><SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Create my calendar link</SubmitButton></form>
           )}
         </Card>
         <Card>
@@ -73,7 +74,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
           <form action={saveEmailPrefs} className="mt-4 space-y-3 text-sm">
             <label className="flex items-start gap-2.5"><input type="checkbox" name="daily_digest" defaultChecked={me?.daily_digest ?? true} className="mt-0.5 accent-navy-900" /><span><span className="font-medium">Morning alerts</span><br /><span className="text-muted">At 7am, what&apos;s urgent or coming up. Only on days there&apos;s something.</span></span></label>
             <label className="flex items-start gap-2.5"><input type="checkbox" name="instant_emails" defaultChecked={me?.instant_emails ?? true} className="mt-0.5 accent-navy-900" /><span><span className="font-medium">Right away</span><br /><span className="text-muted">Tasks given to you, reviews waiting, payments received, partner uploads and new reviews.</span></span></label>
-            <button className="rounded-full border border-line px-4 py-2 text-sm font-medium"><BellRing className="mr-1.5 inline size-4" />Save</button>
+            <SubmitButton className="rounded-full border border-line px-4 py-2 text-sm font-medium"><BellRing className="mr-1.5 inline size-4" />Save</SubmitButton>
           </form>
           <ActionForm action={sendMyAlertsNow} submit="Send me my alerts now" submitVariant="outline" className="mt-4 border-t border-line pt-4">{null}</ActionForm>
         </Card>

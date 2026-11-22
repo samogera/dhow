@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Crown, LifeBuoy, LogOut, Settings, Shield } from "lucide-react";
 import { signOut } from "@/actions/auth";
+import { SubmitButton } from "@/components/submit-button";
 
 export function UserMenu({ name, email, staff, helpHref = "/help", settingsHref }: { name: string; email: string; staff: boolean; helpHref?: string; settingsHref?: string }) {
   const initials = (name || email).split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -33,9 +34,9 @@ export function UserMenu({ name, email, staff, helpHref = "/help", settingsHref 
           <LifeBuoy className="size-4" /> Help Centre
         </Link>
         <form action={signOut}>
-          <button className="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">
+          <SubmitButton className="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-sm hover:bg-sunken">
             <LogOut className="size-4" /> Sign out
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </details>

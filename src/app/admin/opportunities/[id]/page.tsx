@@ -10,6 +10,7 @@ import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { day, label } from "@/lib/format";
 import { OPP_KINDS, defaultWhy, kindLabel } from "@/lib/opportunity-display";
 import { saveOpportunity, setApplicationStatus } from "@/actions/admin";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = { title: "Edit opportunity" };
 
@@ -126,7 +127,7 @@ export default async function EditOpportunity({ params, searchParams }: { params
                           <input name="staff_note" defaultValue={a.staff_note ?? ""} placeholder="Note to the company (optional)" className="field py-2 text-xs" />
                           <div className="flex gap-2">
                             <select name="status" defaultValue={a.status} className="flex-1 rounded-full bg-white px-3 py-2 text-xs" aria-label="Status">{["submitted", "shortlisted", "won", "lost"].map((x) => <option key={x} value={x}>{label(x)}</option>)}</select>
-                            <button className="rounded-full bg-navy-900 px-4 py-2 text-xs text-white">Update</button>
+                            <SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-xs text-white">Update</SubmitButton>
                           </div>
                         </form>
                       </li>

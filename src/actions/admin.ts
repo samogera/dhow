@@ -89,8 +89,9 @@ export async function setOrgPlan(fd: FormData) {
   if (!s) return;
   const p = z.object({ org_id: uuid, plan: z.enum(["free", "starter", "growth", "market_entry"]) }).safeParse(form(fd));
   if (!p.success) return;
-  await createAdminClient().from("organizations").update({ plan: p.data.plan, plan_until: null, plan_period: null }).eq("id", p.data.org_id);
+  await createAdminClient().from("organizations").update({ plan: p.data.plan, plan_until: null, plan_period: null, plan_cancelled_at: null }).eq("id", p.data.org_id);
   revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${p.data.org_id}`);
 }
 
 // ----------------------------------------------------------------- CRM
@@ -127,6 +128,11 @@ export async function linkClientOrg(fd: FormData) {
   const p = z.object({ id: uuid, org_id: optUuid }).safeParse(form(fd));
   if (!p.success) return;
   await s.supabase.from("clients").update({ org_id: p.data.org_id }).eq("id", p.data.id);
+  // Linking usually means they're an Enterprise client: switch their plan so "Our work" opens for them.
+  if (p.data.org_id && fd.get("enterprise") === "on" && (s.staffRole === "admin")) {
+    await createAdminClient().from("organizations").update({ plan: "market_entry", plan_until: null, plan_period: null, plan_cancelled_at: null }).eq("id", p.data.org_id);
+    revalidatePath("/admin/members");
+  }
   revalidatePath(`/admin/clients/${p.data.id}`);
 }
 

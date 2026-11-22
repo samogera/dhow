@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BadgeCheck, CalendarDays, MapPin, Star } from "lucide-react";
+import { BadgeCheck, CalendarDays, Check, MapPin, Star } from "lucide-react";
 import { Poster } from "@/components/poster";
 import { cn, day, daysUntil } from "@/lib/format";
 import { credit, eventDates, kindLabel } from "@/lib/opportunity-display";
@@ -13,7 +13,7 @@ export type CardOpp = {
 };
 
 /** A gallery card: poster, kind, a clear headline, who it's for, the highlight, and where it came from. */
-export function OpportunityCard({ o, href, status, footer, locked }: { o: CardOpp; href: string; status?: ReactNode; footer?: ReactNode; locked?: boolean }) {
+export function OpportunityCard({ o, href, status, footer, locked, reason }: { o: CardOpp; href: string; status?: ReactNode; footer?: ReactNode; locked?: boolean; reason?: string | null }) {
   const t = splitTitle(o.title);
   const left = o.deadline ? daysUntil(o.deadline) : null;
   const ev = eventDates(o);
@@ -42,6 +42,7 @@ export function OpportunityCard({ o, href, status, footer, locked }: { o: CardOp
           ) : null}
         </div>
         <div className="flex flex-1 flex-col p-5">
+          {reason ? <p className="mb-2 flex items-center gap-1 self-start rounded-full bg-mint-100 px-2.5 py-1 text-[11px] font-semibold text-green"><Check className="size-3" />{reason}</p> : null}
           <p className="text-[11px] font-semibold tracking-wide text-muted uppercase">{from.byDhow ? "Dhow Partners" : from.label}</p>
           <h3 className="mt-1.5 line-clamp-3 text-[1.05rem] leading-snug font-semibold text-navy-900 group-hover:text-navy-700">{t.headline}</h3>
           {t.sub ? <p className="mt-1 line-clamp-2 text-sm text-muted">{t.sub}</p> : null}

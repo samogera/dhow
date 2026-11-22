@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SettingsTabs } from "@/components/settings-tabs";
 import { Download, FileText, Trash2 } from "lucide-react";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { Card, CardHeader, Empty, Meter, PageHeader, StatusBadge, Table } from "@/components/ui";
@@ -23,7 +24,8 @@ export default async function Documents() {
 
   return (
     <>
-      <PageHeader title="Documents" sub="Company records, kept private to your team and Dhow reviewers." />
+      <PageHeader title="Settings" />
+      <SettingsTabs />
       <div className="grid gap-4 lg:grid-cols-[1fr_2fr]">
         <div className="space-y-4">
           <Card>

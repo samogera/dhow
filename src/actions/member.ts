@@ -218,3 +218,27 @@ export async function deleteMyCompany(_: ActionState, fd: FormData): Promise<Act
   (await cookies()).delete(ORG_COOKIE);
   redirect("/onboarding");
 }
+
+// ----------------------------------------------------------------- interests and email choices
+const InterestsIn = z.object({ kinds: z.array(z.enum(["grant", "tender", "program", "event"])).max(4), topics: z.array(z.string().max(40)).max(12) });
+/** What the company wants to hear about. Used to rank opportunities and fill the weekly email. */
+export async function saveInterests(_: ActionState, fd: FormData): Promise<ActionState> {
+  const m = await memberOrNull();
+  if (!m || !isOrgAdmin(m.role)) return { error: "Only owners and admins can change this." };
+  const p = InterestsIn.safeParse({ kinds: fd.getAll("kinds").map(String), topics: fd.getAll("topics").map(String) });
+  if (!p.success) return { error: "Check your choices and try again." };
+  const sector = String(fd.get("sector") ?? "").trim().slice(0, 60) || null;
+  await createAdminClient().from("organizations").update({ interest_kinds: p.data.kinds, interest_sectors: p.data.topics, ...(fd.has("sector") ? { sector } : {}) }).eq("id", m.org.id);
+  revalidatePath("/app", "layout");
+  return { ok: "Saved. Opportunities that fit now show first." };
+}
+
+/** Which emails this person gets. Account and security emails always go out. */
+export async function saveEmailChoices(_: ActionState, fd: FormData): Promise<ActionState> {
+  const m = await memberOrNull();
+  if (!m) return { error: "Sign in first." };
+  const prefs = { opportunities: fd.get("opportunities") === "on", deadlines: fd.get("deadlines") === "on", updates: fd.get("updates") === "on" };
+  await createAdminClient().from("profiles").update({ email_prefs: prefs }).eq("id", m.user.id);
+  revalidatePath("/app/settings/account");
+  return { ok: "Email choices saved." };
+}

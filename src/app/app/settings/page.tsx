@@ -6,7 +6,8 @@ import { ConfirmSubmit } from "@/components/forms";
 import { kes, label } from "@/lib/format";
 import { PLAN_LABEL, PLAN_PRICE_KES } from "@/lib/types";
 import { removeMember } from "@/actions/member";
-import { CompanyForm, CompanyProfileForm, DeleteAccountForm, DeleteCompanyForm, InviteForm, ProfileForm } from "./forms";
+import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InterestsForm, InviteForm } from "./forms";
+import { SettingsTabs } from "@/components/settings-tabs";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -32,15 +33,16 @@ export default async function Settings() {
   return (
     <>
       <PageHeader title="Settings" sub={`${m.org.name} · your role: ${label(m.role)}`} />
+      <SettingsTabs />
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader title="Company" sub={m.org.verification_status === "verified" ? "Registration details are locked while you're verified." : "Used for verification and invoices"} />
-          <CompanyForm org={m.org} disabled={!admin} />
+        <Card id="interests" className="scroll-mt-24">
+          <CardHeader title="What should we look for?" sub="We use this to put the best-fitting opportunities first and in your weekly email." />
+          <InterestsForm org={m.org} disabled={!admin} />
         </Card>
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Your profile" sub="Your phone number gets SMS updates" />
-            <ProfileForm name={m.profile?.full_name ?? ""} phone={m.profile?.phone ?? ""} />
+            <CardHeader title="Company details" sub={m.org.verification_status === "verified" ? "Registration details are locked while you're verified." : "Registration details are only needed to get verified."} />
+            <CompanyForm org={m.org} disabled={!admin} />
           </Card>
           <Card>
             <CardHeader title="Plan" />
@@ -97,10 +99,6 @@ export default async function Settings() {
         </Card>
       ) : null}
 
-      <Card className="mt-4 border-bad/20 bg-bad/5">
-        <CardHeader title="Delete my account" sub="Remove your login and personal details from Dhow" />
-        <DeleteAccountForm />
-      </Card>
     </>
   );
 }

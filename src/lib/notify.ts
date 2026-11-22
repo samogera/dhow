@@ -79,12 +79,15 @@ export async function notifyOrg(orgId: string, template: string, subject: string
     .eq("org_id", orgId)
     .in("role", ["owner", "admin"]);
   const ids = (members ?? []).map((m) => m.user_id as string);
-  const { data: profiles } = await admin.from("profiles").select("id, phone").in("id", ids);
+  const { data: profiles } = await admin.from("profiles").select("id, phone, email_prefs").in("id", ids);
+  const category = /deadline/.test(template) ? "deadlines" : /opportunit/.test(template) ? "opportunities" : "updates";
   for (const id of ids) {
+    const prefs = (profiles?.find((p) => p.id === id)?.email_prefs ?? {}) as Record<string, boolean>;
+    if (prefs[category] === false) continue;
     const { data: u } = await admin.auth.admin.getUserById(id);
     if (u.user?.email) await sendEmail({ orgId, template, to: u.user.email, subject, html: emailLayout(subject, paragraphs, cta) });
     const phone = profiles?.find((p) => p.id === id)?.phone;
-    if (phone) await sendSms({ orgId, template, to: phone, message: sms });
+    if (phone && sms) await sendSms({ orgId, template, to: phone, message: sms });
   }
 }
 
@@ -147,6 +150,29 @@ export async function sendMorningAlerts() {
     const subject = urgent.length ? `${urgent.length} urgent item${urgent.length === 1 ? "" : "s"} today` : `${rest.length} item${rest.length === 1 ? "" : "s"} coming up`;
     await sendEmail({ template: "morning_alerts", to: u.user.email, subject: `Dhow: ${subject}`,
       html: emailLayout(first ? `Good morning, ${first}` : "Good morning", lines, { label: "Open alerts", href: `${appUrl()}/admin/alerts` }) });
+    sent++;
+  }
+  return sent;
+}
+
+/** Monday email to each member company: the best new opportunities for it from the past week (rule-based ranking). */
+export async function sendWeeklyOpportunities() {
+  const { rankForCompany } = await import("@/lib/matching");
+  const admin = createAdminClient();
+  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: opps } = await admin.from("opportunities").select("id, kind, title, sectors, location, deadline, featured, requires_verified, kenya_fit")
+    .eq("published", true).gte("created_at", since).or(`deadline.is.null,deadline.gte.${today}`).limit(200);
+  if (!opps?.length) return 0;
+  const { data: orgs } = await admin.from("organizations").select("id, name, sector, interest_kinds, interest_sectors, verification_status");
+  let sent = 0;
+  for (const org of orgs ?? []) {
+    const top = rankForCompany(opps, org).filter((o) => o.match.score > 0).slice(0, 5);
+    if (!top.length) continue;
+    const lines = top.map((o) => `• ${o.title}${o.deadline ? ` (closes ${o.deadline})` : ""}${o.match.reasons[0] ? `: ${o.match.reasons[0].toLowerCase()}` : ""}`);
+    await notifyOrg(org.id, "weekly_opportunities", `${top.length} new opportunit${top.length === 1 ? "y" : "ies"} for ${org.name}`,
+      ["Here are this week's best new fits for your company, checked by the Dhow team:", ...lines],
+      "", { label: "See them all", href: `${appUrl()}/app/opportunities` });
     sent++;
   }
   return sent;

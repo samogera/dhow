@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { classifyOpportunities, enrichImported, importAllSources, retireExpired } from "@/lib/opportunity-import";
-import { dailyMaintenance, deadlineReminders } from "@/lib/workflows";
+import { dailyMaintenance, deadlineReminders, invoiceReminders } from "@/lib/workflows";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
-import { sendMorningAlerts } from "@/lib/notify";
+import { sendMorningAlerts, sendWeeklyOpportunities } from "@/lib/notify";
 
 export const maxDuration = 60;
 
@@ -21,6 +21,9 @@ export async function GET(req: Request) {
   await classifyOpportunities().catch(() => 0);
   await dailyMaintenance().catch(() => undefined);
   await deadlineReminders().catch(() => undefined);
+  const invoiceReminderEmails = await invoiceReminders().catch(() => 0);
   const alertEmails = await sendMorningAlerts().catch(() => 0);
-  return NextResponse.json({ ok: true, retired, opportunities, enriched, alertEmails });
+  const isMonday = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "Africa/Nairobi" }).format(new Date()) === "Mon";
+  if (isMonday) await sendWeeklyOpportunities().catch(() => 0);
+  return NextResponse.json({ ok: true, retired, opportunities, enriched, alertEmails, invoiceReminderEmails });
 }

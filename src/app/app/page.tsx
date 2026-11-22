@@ -5,8 +5,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardHeader, StatusBadge } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, day } from "@/lib/format";
+import { rankForCompany } from "@/lib/matching";
 
-const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on";
+const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, sectors";
 
 function greeting() {
   const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: "Africa/Nairobi" }).format(new Date()));
@@ -19,18 +20,19 @@ export default async function Dashboard() {
   const [{ count: docCount }, { data: opps }, { data: events }, { data: apps }, { data: dhow }] = await Promise.all([
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("org_id", org.id).in("status", ["uploaded", "approved"]),
     supabase.from("opportunities").select(OPP_COLS).eq("published", true).neq("kind", "event").or(`deadline.is.null,deadline.gte.${today}`)
-      .order("featured", { ascending: false }).order("deadline", { ascending: true, nullsFirst: false }).limit(3),
+      .order("featured", { ascending: false }).order("deadline", { ascending: true, nullsFirst: false }).limit(60),
     supabase.from("opportunities").select("id, title, starts_on, location").eq("published", true).eq("kind", "event").gte("starts_on", today).order("starts_on").limit(3),
     supabase.from("applications").select("id, status, opportunities(title)").eq("org_id", org.id).order("created_at", { ascending: false }).limit(4),
     createAdminClient().from("dhow_profile").select("booking_link, whatsapp, phone").limit(1).maybeSingle(),
   ]);
 
+  const picked = rankForCompany((opps ?? []) as (CardOpp & { sectors: string[] })[], org).slice(0, 3);
   const verified = org.verification_status === "verified";
   const pending = org.verification_status === "pending";
   const first = profile?.full_name?.split(" ")[0];
   const steps = [
     { done: true, title: "Create your workspace", why: "Done. Welcome aboard.", href: "/app/settings", icon: Building2 },
-    { done: Boolean(org.sector && org.website), title: "Complete your company profile", why: "Sector and website help us pick the right opportunities.", href: "/app/settings", icon: Building2 },
+    { done: Boolean(org.sector) && ((org.interest_kinds?.length ?? 0) + (org.interest_sectors?.length ?? 0) > 0), title: "Tell us what you're looking for", why: "Your sector and interests decide which opportunities show first.", href: "/app/settings#interests", icon: Building2 },
     { done: (docCount ?? 0) > 0, title: "Upload your company documents", why: "Your CR12 or incorporation certificate, and KRA PIN.", href: "/app/documents", icon: FileText },
     { done: verified || pending, title: "Get Dhow Verified", why: "A badge that shows partners and buyers your records check out.", href: "/app/verification", icon: BadgeCheck },
     { done: (apps?.length ?? 0) > 0, title: "Apply for your first opportunity", why: "Grants, programmes and tenders open to companies in Kenya.", href: "/app/opportunities", icon: Send },
@@ -117,9 +119,9 @@ export default async function Dashboard() {
               </div>
               <Link href="/app/opportunities" className="shrink-0 text-sm font-medium text-navy-600 hover:text-navy-900">See all</Link>
             </div>
-            {opps?.length ? (
+            {picked.length ? (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {(opps as CardOpp[]).map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} locked={o.requires_verified && !verified} />)}
+                {picked.map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && !verified} />)}
               </div>
             ) : (
               <Card className="text-center">

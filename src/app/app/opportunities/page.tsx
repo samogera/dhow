@@ -5,10 +5,12 @@ import { requireMember } from "@/lib/auth";
 import { Empty, PageHeader, Tabs } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, label } from "@/lib/format";
+import { rankForCompany } from "@/lib/matching";
+import { SlidersHorizontal } from "lucide-react";
 
 export const metadata: Metadata = { title: "Open opportunities" };
 const KINDS = ["all", "grant", "program", "event", "tender", "rfp"] as const;
-const plural = (k: string) => (k === "all" ? "All" : k === "rfp" ? "RFPs" : k === "program" ? "Programmes" : `${label(k)}s`);
+const plural = (k: string) => (k === "all" ? "For you" : k === "rfp" ? "RFPs" : k === "program" ? "Programmes" : `${label(k)}s`);
 
 export default async function Opportunities({ searchParams }: { searchParams: Promise<{ kind?: string; q?: string; sector?: string }> }) {
   const { supabase, org } = await requireMember();
@@ -26,8 +28,11 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
   if (kind !== "all") q = q.eq("kind", kind);
   if (term) q = q.or(`title.ilike.%${term}%,summary.ilike.%${term}%`);
   if (sp.sector) q = q.contains("sectors", [sp.sector]);
-  const { data: opps } = await q;
-  const sectors = [...new Set((opps ?? []).flatMap((o) => o.sectors as string[]))].sort();
+  const { data: raw } = await q;
+  // Best fit for this company first (sector, chosen topics and types, place, deadline). No AI: plain rules.
+  const opps = rankForCompany((raw ?? []) as (CardOpp & { sectors: string[] })[], org);
+  const setUp = (org.interest_kinds?.length ?? 0) + (org.interest_sectors?.length ?? 0) > 0 || Boolean(org.sector);
+  const sectors = [...new Set(opps.flatMap((o) => o.sectors ?? []))].sort();
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams(Object.entries({ kind: kind === "all" ? undefined : kind, q: term || undefined, sector: sp.sector, ...patch }).filter(([, v]) => v) as [string, string][]);
     const s = p.toString();
@@ -55,10 +60,17 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
         </div>
       ) : null}
 
-      {opps?.length ? (
+      {!setUp ? (
+        <Link href="/app/settings#interests" className="mb-6 flex items-center gap-3 rounded-3xl border border-dashed border-navy-200 bg-white/70 px-5 py-4 text-sm transition hover:bg-white">
+          <SlidersHorizontal className="size-5 shrink-0 text-navy-600" />
+          <span className="flex-1"><span className="font-semibold">Tell us what you&apos;re looking for</span><span className="block text-muted">Pick your sector and the kinds of opportunity you want, and the best fits will show first.</span></span>
+          <span className="font-medium text-navy-600">Choose →</span>
+        </Link>
+      ) : null}
+      {opps.length ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {opps.map((o) => (
-            <OpportunityCard key={o.id} o={o as CardOpp} href={`/app/opportunities/${o.id}`} locked={o.requires_verified && org.verification_status !== "verified"} />
+            <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} reason={o.match.score >= 4 ? o.match.reasons[0] : null} locked={o.requires_verified && org.verification_status !== "verified"} />
           ))}
         </div>
       ) : <Empty title={term || sp.sector ? "No matches" : "Nothing open in this category"} sub={term || sp.sector ? "Try another word or clear the filter." : "New opportunities are added every day."} />}

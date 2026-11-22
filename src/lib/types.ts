@@ -37,6 +37,8 @@ export interface Organization {
   founded_year?: number | null;
   team_size?: string | null;
   socials?: Record<string, string> | null;
+  interest_kinds?: string[];
+  interest_sectors?: string[];
 }
 
 export const DOC_KINDS = {

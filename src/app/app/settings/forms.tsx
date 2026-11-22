@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { deleteMyAccount, deleteMyCompany, inviteMember, updateOrganization, updateProfile } from "@/actions/member";
+import { deleteMyAccount, deleteMyCompany, inviteMember, saveEmailChoices, saveInterests, updateOrganization, updateProfile } from "@/actions/member";
 import { saveCompanyProfile } from "@/actions/profiles";
 import { ImageInput, SocialFields } from "@/components/profile-bits";
 import { FormMessage, Submit } from "@/components/forms";
@@ -107,6 +107,68 @@ export function DeleteCompanyForm({ name }: { name: string }) {
       <Field label={`Type ${name} to confirm`}><Input name="confirm" autoComplete="off" /></Field>
       <FormMessage state={state} />
       <Submit variant="danger" pending="Deleting…">Delete company</Submit>
+    </form>
+  );
+}
+
+const KIND_CHOICES = [
+  { key: "grant", label: "Grants and funding" },
+  { key: "tender", label: "Tenders and RFPs" },
+  { key: "program", label: "Programmes and accelerators" },
+  { key: "event", label: "Events and trade missions" },
+];
+const TOPIC_CHOICES = ["Agriculture", "Climate & energy", "Health", "Education", "Technology", "Finance", "Creative", "Women & youth", "Social impact"];
+
+function Chip({ name, value, label, checked, disabled }: { name: string; value: string; label: string; checked: boolean; disabled: boolean }) {
+  return (
+    <label className="cursor-pointer">
+      <input type="checkbox" name={name} value={value} defaultChecked={checked} disabled={disabled} className="peer sr-only" />
+      <span className="inline-flex items-center rounded-full border border-line bg-white px-3.5 py-2 text-sm transition peer-checked:border-navy-900 peer-checked:bg-navy-900 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-navy-300">{label}</span>
+    </label>
+  );
+}
+
+export function InterestsForm({ org, disabled }: { org: Organization; disabled: boolean }) {
+  const [state, action] = useActionState(saveInterests, undefined);
+  return (
+    <form action={action} className="space-y-5">
+      <Field label="Your sector">
+        <Select name="sector" defaultValue={org.sector ?? ""} disabled={disabled}><option value="">Choose your sector</option>{SECTORS.map((s) => <option key={s}>{s}</option>)}</Select>
+      </Field>
+      <div>
+        <p className="mb-2 text-sm font-medium">Show me</p>
+        <div className="flex flex-wrap gap-2">{KIND_CHOICES.map((k) => <Chip key={k.key} name="kinds" value={k.key} label={k.label} checked={(org.interest_kinds ?? []).includes(k.key)} disabled={disabled} />)}</div>
+      </div>
+      <div>
+        <p className="mb-2 text-sm font-medium">Topics I care about</p>
+        <div className="flex flex-wrap gap-2">{TOPIC_CHOICES.map((t) => <Chip key={t} name="topics" value={t} label={t} checked={(org.interest_sectors ?? []).includes(t)} disabled={disabled} />)}</div>
+      </div>
+      <FormMessage state={state} />
+      {!disabled ? <Submit>Save what we look for</Submit> : <p className="text-sm text-muted">Only owners and admins can change this.</p>}
+    </form>
+  );
+}
+
+const EMAIL_CHOICES = [
+  { key: "opportunities", label: "New opportunities for us", sub: "A short weekly email with the best new fits for your company." },
+  { key: "deadlines", label: "Deadline reminders", sub: "When an application you started is about to close." },
+  { key: "updates", label: "Verification and payment updates", sub: "Results of checks, receipts and changes to your account." },
+] as const;
+
+export function EmailChoicesForm({ prefs }: { prefs: Record<string, boolean> }) {
+  const [state, action] = useActionState(saveEmailChoices, undefined);
+  return (
+    <form action={action} className="space-y-1">
+      {EMAIL_CHOICES.map((c) => (
+        <label key={c.key} className="flex cursor-pointer items-start gap-3 rounded-2xl px-1 py-3 hover:bg-sunken/50">
+          <input type="checkbox" name={c.key} defaultChecked={prefs[c.key] !== false} className="peer sr-only" />
+          <span aria-hidden className="relative mt-0.5 h-6 w-10 shrink-0 rounded-full bg-line transition peer-checked:bg-green after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-4" />
+          <span><span className="block text-sm font-medium">{c.label}</span><span className="block text-sm text-muted">{c.sub}</span></span>
+        </label>
+      ))}
+      <p className="px-1 pb-2 text-xs text-faint">Sign-in, security and legal emails are always sent.</p>
+      <FormMessage state={state} />
+      <Submit variant="outline">Save email choices</Submit>
     </form>
   );
 }

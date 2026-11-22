@@ -149,3 +149,40 @@ export async function deadlineReminders() {
       { label: "Finish your application", href: `${app()}/app/applications` });
   }
 }
+
+/** Friendly payment reminders to clients: 3 days before, on the day, then 3, 7 and 14 days late, then every 14 days.
+ *  Each email has a pay button (M-Pesa or card) and, if the client has one, a link to their project page. */
+export async function invoiceReminders() {
+  const { emailLayout, sendEmail } = await import("@/lib/notify");
+  const { invoicePayUrl } = await import("@/lib/payments");
+  const db = createAdminClient();
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(new Date());
+  const { data: invs } = await db.from("invoices")
+    .select("id, number, due_date, total_kes, paid_kes, status, last_reminder_on, reminders, clients(name, email, portal_token)")
+    .in("status", ["sent", "part_paid", "overdue"]).eq("reminders", true).not("due_date", "is", null);
+  let sent = 0;
+  for (const i of (invs ?? []) as unknown as { id: string; number: string; due_date: string; total_kes: number; paid_kes: number; last_reminder_on: string | null; clients: { name: string; email: string | null; portal_token: string | null } | null }[]) {
+    const c = i.clients;
+    const balance = Number(i.total_kes) - Number(i.paid_kes);
+    if (!c?.email || balance <= 0 || i.last_reminder_on === today) continue;
+    const d = Math.round((new Date(today).getTime() - new Date(i.due_date).getTime()) / 864e5); // days past due (negative = before)
+    const due = d === -3 || d === 0 || d === 3 || d === 7 || (d >= 14 && d % 14 === 0);
+    if (!due) continue;
+    const amount = `KSh ${Math.round(balance).toLocaleString("en-KE")}`;
+    const subject = d < 0 ? `Invoice ${i.number} is due in 3 days` : d === 0 ? `Invoice ${i.number} is due today` : `Invoice ${i.number} is ${d} days overdue`;
+    const hello = `Hello ${c.name},`;
+    const body = [
+      hello,
+      d < 0 ? `A quick reminder that invoice ${i.number} for ${amount} is due on ${i.due_date}.`
+        : d === 0 ? `Invoice ${i.number} for ${amount} is due today.`
+        : `Our records show ${amount} on invoice ${i.number} is still unpaid. It was due on ${i.due_date}. If you've already paid, thank you, and please ignore this.`,
+      "You can pay in a minute by M-Pesa or card using the button below, or by bank transfer using the details on the invoice.",
+      ...(c.portal_token ? [`Your project page, with all invoices and progress: ${appUrl()}/client/${c.portal_token}`] : []),
+      "Questions about this invoice? Just reply to this email.",
+    ];
+    await sendEmail({ template: "invoice_reminder", to: c.email, subject, html: emailLayout(subject, body, { label: `Pay ${amount}`, href: invoicePayUrl(i.id) }) });
+    await db.from("invoices").update({ last_reminder_on: today }).eq("id", i.id);
+    sent++;
+  }
+  return sent;
+}

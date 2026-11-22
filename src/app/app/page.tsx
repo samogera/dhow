@@ -198,7 +198,7 @@ export default async function Dashboard() {
       <Card className="p-6 sm:p-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-start">
           <div>
-            <p className="text-sm font-medium text-green">We're here</p>
+            <p className="text-sm font-medium text-green">We&apos;re here</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Need a hand?</h2>
             <p className="mt-2 text-sm text-muted">Pick what you need and leave your details. The Dhow team will reach out within one working day.</p>
             {wa || dhow?.booking_link ? (

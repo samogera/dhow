@@ -58,7 +58,15 @@ export async function sendSignInLink(_: ActionState, fd: FormData): Promise<Acti
   }
   const next = safePath(fd.get("next")) ?? "/";
   const supabase = await createClient();
-  await supabase.auth.signInWithOtp({ email: email.data, options: { shouldCreateUser: false, emailRedirectTo: `${app()}/auth/callback?next=${encodeURIComponent(next)}` } });
+  const { error } = await supabase.auth.signInWithOtp({ email: email.data, options: { shouldCreateUser: false, emailRedirectTo: `${app()}/auth/callback?next=${encodeURIComponent(next)}` } });
+  if (error) {
+    // No account with this email: say so plainly instead of pretending an email is on its way.
+    if (error.code === "otp_disabled" || /signups not allowed|user not found/i.test(error.message)) {
+      return { error: "There's no Dhow account with that email yet. Check the spelling, or create a free account below." };
+    }
+    if (error.status === 429 || /rate limit|security purposes/i.test(error.message)) return { error: "A link was sent a moment ago. Wait a minute, then try again." };
+    return { error: "We couldn't send the link just now. Try again in a minute, or sign in with your password." };
+  }
   return { ok: "Check your inbox for your sign-in link." };
 }
 

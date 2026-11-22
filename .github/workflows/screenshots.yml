@@ -55,6 +55,7 @@ jobs:
           mkdir -p /tmp/pub/shots
           cp shots/*.png /tmp/pub/shots/ 2>/dev/null || echo "::error::no screenshots were taken"
           cp /tmp/out/shoot.txt /tmp/pub/ 2>/dev/null || true
+          echo '{"git":{"deploymentEnabled":false}}' > /tmp/pub/vercel.json
           cp shots/*.pdf shots/*.xlsx /tmp/pub/shots/ 2>/dev/null || true
           grep -i -A12 "error" /tmp/out/server.txt | head -200 > /tmp/pub/server-errors.txt 2>/dev/null || true
           echo "commit=$GITHUB_SHA" > /tmp/pub/summary.txt

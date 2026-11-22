@@ -32,7 +32,7 @@ jobs:
           mkdir -p /tmp/r && cp install.txt typecheck.txt lint.txt build.txt /tmp/r/
           printf "commit=%s\ntypecheck=%s\nlint=%s\nbuild=%s\n" "$GITHUB_SHA" "${{ steps.tsc.outputs.code }}" "${{ steps.lint.outputs.code }}" "${{ steps.build.outputs.code }}" > /tmp/r/summary.txt
           git config user.name ci && git config user.email ci@users.noreply.github.com
-          git checkout --orphan ci-results && git rm -rqf . && cp /tmp/r/* . && git add *.txt
+          git checkout --orphan ci-results && git rm -rqf . && cp /tmp/r/* . && echo '{"git":{"deploymentEnabled":false}}' > vercel.json && git add *.txt vercel.json
           git commit -qm "CI results for $GITHUB_SHA" && git push -f origin ci-results
       - name: Fail if anything failed
         run: test "${{ steps.tsc.outputs.code }}${{ steps.lint.outputs.code }}${{ steps.build.outputs.code }}" = "000"

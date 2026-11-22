@@ -19,6 +19,7 @@ const InvestorIn = z.object({
   ticket: text(80),
   countries: text(120),
   website: z.string().trim().url("Use a full web address, like https://…").optional().or(z.literal("")).transform((v) => v || null),
+  contact_name: text(120),
   active: z.enum(["on"]).optional().transform((v) => v === "on"),
 });
 
@@ -67,4 +68,27 @@ export async function saveDiscounts(_: ActionState, fd: FormData): Promise<Actio
   revalidatePath("/admin/discounts");
   revalidatePath("/app/plans");
   return { ok: "Discounts saved." };
+}
+
+/** Create (or replace) an investor's private link. */
+export async function makeInvestorLink(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = z.string().uuid().safeParse(fd.get("id"));
+  if (!id.success) return;
+  const { data } = await s.supabase.from("investors").select("portal_token").eq("id", id.data).single();
+  if (fd.get("reset") === "1" || !data?.portal_token) {
+    const { randomBytes } = await import("node:crypto");
+    await s.supabase.from("investors").update({ portal_token: randomBytes(24).toString("base64url") }).eq("id", id.data);
+  }
+  revalidatePath("/admin/investors");
+}
+
+export async function markInvestorInterestSeen(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = z.string().uuid().safeParse(fd.get("id"));
+  if (!id.success) return;
+  await s.supabase.from("investor_interest").update({ seen_by_staff: true }).eq("id", id.data);
+  revalidatePath("/admin/investors");
 }

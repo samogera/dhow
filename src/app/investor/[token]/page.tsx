@@ -1,0 +1,143 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Building2, CalendarDays, MapPin, Users } from "lucide-react";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { shareMeta } from "@/lib/share-meta";
+import { VerifiedTick } from "@/components/verified-tick";
+import { cn, day } from "@/lib/format";
+import { InvestorChoice } from "./choice";
+
+const valid = (t: string) => /^[A-Za-z0-9_-]{24,64}$/.test(t);
+
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const { data: i } = valid(token) ? await createAdminClient().from("investors").select("name").eq("portal_token", token).maybeSingle() : { data: null };
+  return shareMeta(i ? `${i.name} · Companies for you from Dhow Partners` : "Companies for you · Dhow Partners",
+    "Verified companies in Kenya, picked for you by Dhow Partners. Say who you'd like to meet and we'll make the introduction.", `/investor/${token}`);
+}
+
+type Co = {
+  id: string; name: string; logo_url: string | null; sector: string | null; country: string | null; tagline: string | null; about: string | null;
+  founded_year: number | null; team_size: string | null; verification_status: string; website: string | null; interest_sectors?: string[] | null;
+};
+const CO = "id, name, logo_url, sector, country, tagline, about, founded_year, team_size, verification_status, website, interest_sectors";
+
+function CompanyCard({ c, token, current, note, asked }: { c: Co; token: string; current?: "interested" | "not_now" | null; note?: string | null; asked?: string | null }) {
+  const initials = c.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  return (
+    <article className={cn("flex flex-col gap-4 rounded-[1.5rem] bg-white p-5 ring-1 transition sm:p-6", current === "interested" ? "ring-2 ring-green/50" : "ring-line")}>
+      <div className="flex items-start gap-3">
+        {c.logo_url ? <img src={c.logo_url} alt="" className="size-12 shrink-0 rounded-xl bg-white object-contain ring-1 ring-line" />
+          : <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-navy-50 font-semibold text-navy-700">{initials}</span>}
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-center gap-1.5 font-semibold text-navy-900"><span className="truncate">{c.name}</span>{c.verification_status === "verified" ? <VerifiedTick label={false} /> : null}</h3>
+          <p className="truncate text-sm text-muted">{[c.sector, c.country].filter(Boolean).join(" · ")}</p>
+        </div>
+      </div>
+      {c.tagline || c.about ? <p className="line-clamp-4 text-sm text-ink/80">{c.tagline || c.about}</p> : null}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+        {c.founded_year ? <span className="flex items-center gap-1"><CalendarDays className="size-3.5" />Since {c.founded_year}</span> : null}
+        {c.team_size ? <span className="flex items-center gap-1"><Users className="size-3.5" />{c.team_size} people</span> : null}
+        {c.country ? <span className="flex items-center gap-1"><MapPin className="size-3.5" />{c.country}</span> : null}
+        {c.website ? <a href={c.website.startsWith("http") ? c.website : `https://${c.website}`} target="_blank" rel="noopener noreferrer" className="text-navy-600 hover:underline">Website ↗</a> : null}
+      </div>
+      {note ? <p className="rounded-xl bg-mint-100/70 px-3.5 py-2.5 text-sm text-ink/85"><span className="font-medium text-green">Their note{asked ? ` · ${asked}` : ""}: </span>{note}</p> : null}
+      <div className="mt-auto border-t border-line pt-4"><InvestorChoice token={token} orgId={c.id} current={current} /></div>
+    </article>
+  );
+}
+
+export default async function InvestorPortal({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ sector?: string }> }) {
+  const { token } = await params;
+  const { sector } = await searchParams;
+  if (!valid(token)) notFound();
+  const db = createAdminClient();
+  const { data: inv } = await db.from("investors").select("id, name, kind, sectors, stages, ticket, countries, logo_url, contact_name, active").eq("portal_token", token).maybeSingle();
+  if (!inv || !inv.active) notFound();
+
+  const [{ data: asks }, { data: listed }, { data: answers }] = await Promise.all([
+    db.from("member_requests").select(`note, created_at, organizations(${CO})`).eq("kind", "investor_intro").eq("target_id", inv.id).neq("status", "declined").order("created_at", { ascending: false }),
+    db.from("organizations").select(CO).eq("listed", true).eq("verification_status", "verified").order("name").limit(300),
+    db.from("investor_interest").select("org_id, response").eq("investor_id", inv.id),
+  ]);
+  const answer = new Map((answers ?? []).map((a) => [a.org_id as string, a.response as "interested" | "not_now"]));
+  const asked = ((asks ?? []) as unknown as { note: string | null; created_at: string; organizations: Co | null }[]).filter((a) => a.organizations);
+  const askedIds = new Set(asked.map((a) => a.organizations!.id));
+  const wants = ((inv.sectors as string[]) ?? []).map((s) => s.toLowerCase());
+  const fits = (c: Co) => !wants.length || wants.some((w) => [c.sector, ...(c.interest_sectors ?? [])].some((x) => x?.toLowerCase().includes(w) || (x && w.includes(x.toLowerCase()))));
+  const others = ((listed ?? []) as Co[]).filter((c) => !askedIds.has(c.id));
+  const sectors = [...new Set(others.map((c) => c.sector).filter(Boolean))].sort() as string[];
+  const shown = others.filter((c) => (!sector || c.sector === sector)).sort((a, b) => Number(fits(b)) - Number(fits(a)));
+  const interested = [...answer.values()].filter((v) => v === "interested").length;
+
+  return (
+    <div className="min-h-dvh">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 pt-7">
+        <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="h-6 w-auto" />
+        <a href="mailto:hello@dhowpartners.com" className="text-sm font-medium text-navy-600">Contact us</a>
+      </header>
+      <main className="mx-auto max-w-6xl space-y-10 px-5 py-10">
+        <section className="relative overflow-hidden rounded-[2rem] bg-navy-900 px-6 py-8 text-white sm:px-10 sm:py-10">
+          <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-mint/20 blur-3xl" />
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm text-white/70">Prepared for {inv.contact_name ? `${inv.contact_name}, ` : ""}{inv.name}</p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Companies you may want to meet</h1>
+              <p className="mt-2 max-w-2xl text-sm text-white/75">Verified businesses in Kenya, from the Dhow Partners network. Tap <b>I&apos;m interested</b> and we&apos;ll make a warm introduction. Contact details are shared once both sides agree.</p>
+            </div>
+            <div className="flex gap-6 text-sm">
+              <div><p className="text-3xl font-semibold">{asked.length}</p><p className="text-white/70">asked for you</p></div>
+              <div><p className="text-3xl font-semibold">{interested}</p><p className="text-white/70">you liked</p></div>
+            </div>
+          </div>
+          {wants.length || inv.ticket ? (
+            <p className="relative mt-6 flex flex-wrap gap-2 text-xs">
+              {inv.ticket ? <span className="rounded-full bg-white/10 px-3 py-1">Ticket {inv.ticket}</span> : null}
+              {((inv.sectors as string[]) ?? []).map((s) => <span key={s} className="rounded-full bg-white/10 px-3 py-1">{s}</span>)}
+              {((inv.stages as string[]) ?? []).map((s) => <span key={s} className="rounded-full bg-white/10 px-3 py-1">{s}</span>)}
+            </p>
+          ) : null}
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold tracking-tight">Asked to meet you</h2>
+          <p className="mt-1 text-sm text-muted">These companies asked Dhow Partners for an introduction to {inv.name}.</p>
+          {asked.length ? (
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {asked.map((a) => <CompanyCard key={a.organizations!.id} c={a.organizations!} token={token} current={answer.get(a.organizations!.id)} note={a.note} asked={day(a.created_at)} />)}
+            </div>
+          ) : <p className="mt-5 rounded-[1.5rem] border border-dashed border-line px-6 py-8 text-center text-sm text-muted">No requests yet. When a company asks to meet you, it shows here.</p>}
+        </section>
+
+        <section>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Verified companies{wants.length ? " in your sectors first" : ""}</h2>
+              <p className="mt-1 text-sm text-muted">Businesses that are Dhow Verified and chose to be found.</p>
+            </div>
+          </div>
+          {sectors.length > 1 ? (
+            <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5 sm:mx-0 sm:flex-wrap sm:px-0">
+              <Link href={`/investor/${token}`} className={cn("shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium", !sector ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink/70")}>All</Link>
+              {sectors.map((s) => (
+                <Link key={s} href={`/investor/${token}?sector=${encodeURIComponent(s)}`} className={cn("shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium", sector === s ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink/70")}>{s}</Link>
+              ))}
+            </div>
+          ) : null}
+          {shown.length ? (
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {shown.map((c) => <CompanyCard key={c.id} c={c} token={token} current={answer.get(c.id)} />)}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-[1.5rem] border border-dashed border-line px-6 py-10 text-center">
+              <Building2 className="mx-auto size-6 text-faint" />
+              <p className="mt-2 text-sm text-muted">New verified companies join every week. Check back soon.</p>
+            </div>
+          )}
+        </section>
+      </main>
+      <footer className="pb-10 text-center text-xs text-faint">Dhow Partners · Nairobi, Kenya · This page is private to {inv.name}. Please don&apos;t share it.</footer>
+    </div>
+  );
+}

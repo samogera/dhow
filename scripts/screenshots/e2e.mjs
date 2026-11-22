@@ -246,6 +246,31 @@ async function visit(page, path, shotName) {
     await page.getByText("Savannah Growth Fund").first().waitFor({ timeout: 8000 });
   });
 
+  await check("create an investor's private page and answer as the investor", async () => {
+    await go(page, `${BASE}/admin/investors`);
+    const card = page.locator("div.card, article").filter({ hasText: "Savannah Growth Fund" }).first();
+    await card.getByRole("button", { name: "Create their page" }).click();
+    await page.waitForTimeout(1500);
+    await go(page, `${BASE}/admin/investors`);
+    const href = await page.getByRole("link", { name: "Open it ↗" }).first().getAttribute("href");
+    if (!href) throw new Error("no investor link");
+    const pub = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const ip = await pub.newPage();
+    await ip.goto(`${BASE}${href}`, { waitUntil: "networkidle" });
+    await ip.getByText("Companies you may want to meet").waitFor({ timeout: 8000 });
+    await ip.getByRole("button", { name: "I'm interested" }).first().click();
+    await ip.getByText("Dhow Partners will set up the introduction").first().waitFor({ timeout: 10000 });
+    await ip.screenshot({ path: `${OUT}/e2e-42-investor-page.png`, fullPage: true });
+    const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 });
+    const mp = await m.newPage();
+    await mp.goto(`${BASE}${href}`, { waitUntil: "networkidle" });
+    await mp.screenshot({ path: `${OUT}/e2e-43-investor-page-phone.png`, fullPage: true });
+    await m.close();
+    await pub.close();
+    await go(page, `${BASE}/admin/alerts`);
+    await page.getByText("wants to meet").first().waitFor({ timeout: 8000 });
+  });
+
   await check("save plan discounts", async () => {
     await go(page, `${BASE}/admin/discounts`);
     await page.fill('input[name="premium_events"]', "25");

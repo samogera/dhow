@@ -4,7 +4,8 @@ import { connections, PROVIDER_LABEL, providerConfigured, upcomingEvents, type C
 import { ButtonAnchor, Card, Empty, PageHeader } from "@/components/ui";
 import { ConfirmSubmit } from "@/components/forms";
 import { cn, time } from "@/lib/format";
-import { disconnectCalendar, makeCalendarFeed, saveEmailPrefs } from "@/actions/admin";
+import { disconnectCalendar, makeCalendarFeed, saveEmailPrefs, sendMyAlertsNow } from "@/actions/admin";
+import { ActionForm } from "@/components/forms";
 import { CopyField } from "@/components/copy-field";
 import { appUrl } from "@/lib/app-url";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -74,6 +75,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
             <label className="flex items-start gap-2.5"><input type="checkbox" name="instant_emails" defaultChecked={me?.instant_emails ?? true} className="mt-0.5 accent-navy-900" /><span><span className="font-medium">Right away</span><br /><span className="text-muted">Tasks given to you, reviews waiting, payments received, partner uploads and new reviews.</span></span></label>
             <button className="rounded-full border border-line px-4 py-2 text-sm font-medium"><BellRing className="mr-1.5 inline size-4" />Save</button>
           </form>
+          <ActionForm action={sendMyAlertsNow} submit="Send me my alerts now" submitVariant="outline" className="mt-4 border-t border-line pt-4">{null}</ActionForm>
         </Card>
       </div>
 

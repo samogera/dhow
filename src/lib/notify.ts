@@ -110,6 +110,20 @@ export async function notifyUser(userId: string | null | undefined, subject: str
   if (u.user?.email) await sendEmail({ template: "staff_direct", to: u.user.email, subject, html: emailLayout(subject, paragraphs, cta) });
 }
 
+/** Sends one person their alerts right now (a test of the morning email). Returns what happened, in words. */
+export async function sendAlertsNow(userId: string, email: string, name: string | null, money: boolean) {
+  const { loadAlerts } = await import("@/lib/alerts");
+  const alerts = await loadAlerts(createAdminClient(), userId, money);
+  const lines = alerts.length
+    ? alerts.slice(0, 24).map((a) => `• ${a.level === "urgent" ? "URGENT: " : ""}${a.title}. ${a.detail}`)
+    : ["Nothing urgent right now. This is a test to show that Dhow alerts reach your inbox."];
+  const first = (name ?? "").split(" ")[0];
+  await sendEmail({ template: "alerts_test", to: email, subject: alerts.length ? `Dhow: ${alerts.length} alert${alerts.length === 1 ? "" : "s"} for you` : "Dhow: email alerts are working",
+    html: emailLayout(first ? `Hi ${first}, here are your alerts` : "Your alerts", lines, { label: "Open alerts", href: `${appUrl()}/admin/alerts` }) });
+  const { data } = await createAdminClient().from("notifications").select("status, error").eq("to_address", email).eq("template", "alerts_test").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return { count: alerts.length, status: data?.status ?? "unknown", error: data?.error ?? null };
+}
+
 /** Morning email to each staff member with what needs attention today. Sent only when there is something to say. */
 export async function sendMorningAlerts() {
   const { loadAlerts } = await import("@/lib/alerts");

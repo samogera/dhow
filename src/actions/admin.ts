@@ -889,3 +889,14 @@ export async function saveEmailPrefs(fd: FormData) {
   await createAdminClient().from("profiles").update({ daily_digest: fd.get("daily_digest") === "on", instant_emails: fd.get("instant_emails") === "on" }).eq("id", s.user.id);
   revalidatePath("/admin/calendar");
 }
+
+/** "Send me my alerts now": emails the signed-in person their current alerts, to test email. */
+export async function sendMyAlertsNow(): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s || !s.user.email) return DENIED;
+  const { sendAlertsNow } = await import("@/lib/notify");
+  const r = await sendAlertsNow(s.user.id, s.user.email, s.profile?.full_name ?? null, s.staffRole === "admin" || s.staffRole === "finance");
+  if (r.status === "sent") return { ok: `Sent to ${s.user.email} with ${r.count} alert${r.count === 1 ? "" : "s"}. Check your inbox (and spam the first time).` };
+  if (r.status === "skipped") return { error: "Email isn't switched on: RESEND_API_KEY isn't set on the server yet. Add it in Vercel and redeploy." };
+  return { error: `Email didn't send: ${r.error ?? "unknown error"}. If it mentions the domain, finish verifying dhowpartners.com in Resend.` };
+}

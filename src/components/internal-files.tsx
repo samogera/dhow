@@ -1,8 +1,7 @@
 import { Download, FileText, Trash2 } from "lucide-react";
-import { ActionForm } from "@/components/forms";
-import { Field, Input, Select } from "@/components/ui";
+import { FileUpload } from "@/components/file-upload";
 import { bytes, cn, day } from "@/lib/format";
-import { deleteInternalFile, uploadInternalFile } from "@/actions/profiles";
+import { deleteInternalFile } from "@/actions/profiles";
 
 import { PARTNER_DOCS, docLabel } from "@/lib/partner-docs";
 const DHOW_CATEGORIES = [["incorporation", "Certificate of incorporation"], ["cr12", "CR12"], ["kra_pin", "KRA PIN certificate"], ["tax_compliance", "Tax compliance certificate"], ["company_profile", "Company profile"], ["license", "Licence"], ["contract", "Contract"], ["other", "Other"]] as const;
@@ -36,18 +35,8 @@ export function InternalFiles({ files, ownerType, ownerId, fixedCategory, empty 
           })}
         </ul>
       ) : <p className="text-sm text-muted">{empty}</p>}
-      <ActionForm action={uploadInternalFile} submit="Upload" submitVariant="outline" className="grid gap-3 rounded-3xl bg-sunken/60 p-4 sm:grid-cols-2">
-        <input type="hidden" name="owner_type" value={ownerType} />
-        {ownerId ? <input type="hidden" name="owner_id" value={ownerId} /> : null}
-        <div className="sm:col-span-2"><Field label="File name"><Input name="label" required placeholder={placeholder} /></Field></div>
-        {fixedCategory ? <input type="hidden" name="category" value={fixedCategory} /> : <Field label="Type"><Select name="category" defaultValue={ownerType === "partner" ? "incorporation" : "incorporation"}>{(ownerType === "partner" ? [...PARTNER_DOCS.map((d) => [d.key, d.label] as const), ["other", "Other"] as const] : DHOW_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>}
-        <Field label="Expires" hint="Optional"><Input name="expires_on" type="date" /></Field>
-        <div className="sm:col-span-2">
-          <input type="file" name="file" required accept="application/pdf,image/png,image/jpeg"
-            className="block w-full text-sm text-muted file:mr-3 file:rounded-full file:border-0 file:bg-navy-900 file:px-4 file:py-2 file:text-xs file:font-medium file:text-white" />
-          <p className="mt-1 text-xs text-faint">PDF, PNG or JPG, up to 10 MB.</p>
-        </div>
-      </ActionForm>
+      <FileUpload tone="soft" ownerType={ownerType} ownerId={ownerId} fixedCategory={fixedCategory} placeholder={placeholder}
+        docs={(ownerType === "partner" ? [...PARTNER_DOCS.map((d) => [d.key, d.label] as const), ["other", "Other"] as const] : DHOW_CATEGORIES).map(([key, label]) => ({ key, label }))} />
     </div>
   );
 }

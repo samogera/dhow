@@ -4,9 +4,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { isOrgAdmin, memberOrNull, staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isFile, removeInternal, uploadImage, uploadInternal } from "@/lib/storage";
+import { isFile, removeInternal, uploadImage } from "@/lib/storage";
 import { SOCIALS } from "@/lib/socials";
-import { FILE_CATEGORY_KEYS, PARTNER_DOCS } from "@/lib/partner-docs";
 import { rateLimit } from "@/lib/rate-limit";
 import { randomBytes } from "node:crypto";
 import type { ActionState } from "@/components/forms";
@@ -117,31 +116,6 @@ export async function savePartnerProfile(_: ActionState, fd: FormData): Promise<
 }
 
 // ----------------------------------------------------------------- internal files (partner and Dhow documents)
-const FileIn = z.object({
-  owner_type: z.enum(["partner", "dhow"]),
-  owner_id: optUuid,
-  label: z.string().trim().min(1, "Give the file a name").max(160),
-  category: z.enum(FILE_CATEGORY_KEYS).default("other"),
-  expires_on: date,
-});
-export async function uploadInternalFile(_: ActionState, fd: FormData): Promise<ActionState> {
-  const s = await staffOrNull();
-  if (!s) return DENIED;
-  const p = FileIn.safeParse(form(fd));
-  if (!p.success) return first(p.error);
-  if (p.data.owner_type === "partner" && !p.data.owner_id) return { error: "Missing partner." };
-  const f = fd.get("file");
-  if (!isFile(f)) return { error: "Choose a file to upload." };
-  const up = await uploadInternal(f, `${p.data.owner_type}/${p.data.owner_id ?? "dhow"}`);
-  if ("error" in up) return up;
-  const { error } = await s.supabase.from("internal_files").insert({
-    ...p.data, file_name: up.name, object_path: up.path, mime_type: up.mime, size_bytes: up.size, uploaded_by: s.user.id,
-  });
-  if (error) { await removeInternal(up.path); return { error: error.message }; }
-  revalidatePath(p.data.owner_type === "partner" ? `/admin/partners/${p.data.owner_id}` : "/admin/company");
-  return { ok: "File uploaded." };
-}
-
 export async function deleteInternalFile(fd: FormData) {
   const s = await staffOrNull(["admin"]);
   if (!s) return;
@@ -230,30 +204,6 @@ export async function makePartnerLink(fd: FormData) {
 const token = z.string().regex(/^[A-Za-z0-9_-]{24,64}$/);
 
 /** A partner uploads one of the requested documents through their private link. */
-export async function partnerUpload(_: ActionState, fd: FormData): Promise<ActionState> {
-  const t = token.safeParse(fd.get("token"));
-  if (!t.success) return { error: "This link isn't valid." };
-  if (!(await rateLimit(`partner-upload:${t.data}`, 30, 3600))) return { error: "Too many uploads. Try again in an hour." };
-  const db = createAdminClient();
-  const { data: p } = await db.from("partners").select("id").eq("upload_token", t.data).maybeSingle();
-  if (!p) return { error: "This link has expired. Ask Dhow Partners for a new one." };
-  const doc = PARTNER_DOCS.find((d) => d.key === fd.get("category"));
-  if (!doc) return { error: "Choose which document this is." };
-  const expires = date.safeParse(fd.get("expires_on") ?? "");
-  const f = fd.get("file");
-  if (!isFile(f)) return { error: "Choose a file." };
-  const up = await uploadInternal(f, `partner/${p.id}`);
-  if ("error" in up) return up;
-  const { error } = await db.from("internal_files").insert({
-    owner_type: "partner", owner_id: p.id, label: doc.label, category: doc.key, file_name: up.name, object_path: up.path,
-    mime_type: up.mime, size_bytes: up.size, expires_on: expires.success ? expires.data : null, uploaded_via: "partner_link",
-  });
-  if (error) { await removeInternal(up.path); return { error: "Could not save the file. Try again." }; }
-  revalidatePath(`/partner/${t.data}`);
-  revalidatePath(`/admin/partners/${p.id}`);
-  return { ok: `${doc.label} uploaded. Thank you.` };
-}
-
 const ReviewIn = z.object({
   token, reviewer_name: z.string().trim().min(2, "Enter your name").max(120), reviewer_company: text(160),
   rating: z.coerce.number().int().min(1, "Choose a rating").max(5), comment: text(2000),

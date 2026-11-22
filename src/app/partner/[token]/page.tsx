@@ -5,7 +5,7 @@ import { CenteredShell } from "@/components/centered-shell";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PARTNER_DOCS } from "@/lib/partner-docs";
 import { cn, day } from "@/lib/format";
-import { UploadForm } from "./upload";
+import { FileUpload } from "@/components/file-upload";
 
 export const metadata: Metadata = { title: "Upload documents", robots: { index: false } };
 
@@ -40,7 +40,7 @@ export default async function PartnerUpload({ params }: { params: Promise<{ toke
       </ul>
 
       <div className="mt-8 border-t border-line pt-6">
-        <UploadForm token={token} docs={(missing.length ? missing : PARTNER_DOCS).map((d) => ({ key: d.key, label: d.label, expires: "expires" in d && d.expires }))} />
+        <FileUpload token={token} docs={(missing.length ? missing : PARTNER_DOCS).map((d) => ({ key: d.key, label: d.label, expires: "expires" in d && d.expires }))} />
       </div>
     </CenteredShell>
   );

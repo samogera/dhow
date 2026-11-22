@@ -184,3 +184,51 @@ export function splitTitle(title: string): { headline: string; sub: string | nul
   }
   return { headline: t.charAt(0).toUpperCase() + t.slice(1), sub, tag };
 }
+
+// ----------------------------------------------------------------- is it open to Kenya?
+// Dhow works with companies and people in Kenya and East Africa. An opportunity is:
+//   open      it names Kenya / East Africa / Africans in general, or says any nationality can apply
+//   excluded  it is limited to other countries (citizens, residents or students elsewhere)
+//   check     nothing clear either way: a person decides
+
+export type KenyaFit = { fit: "open" | "check" | "excluded"; reason: string };
+
+const OTHER_PLACES: [RegExp, string][] = [
+  [/\bnigeria(n|ns)?\b/i, "Nigeria"], [/\bsouth africa(n|ns)?\b/i, "South Africa"], [/\bghana(ian|ians)?\b/i, "Ghana"],
+  [/\b(sadc|southern african development community)\b/i, "SADC countries"], [/\becowas\b/i, "ECOWAS countries"],
+  [/\bwest africa(n|ns)?\b/i, "West Africa"], [/\bsouthern africa(n|ns)?\b/i, "Southern Africa"], [/\bnorth africa(n|ns)?\b/i, "North Africa"],
+  [/\b(egypt(ian|ians)?|morocc(o|an|ans)|zimbabwe(an|ans)?|zambia(n|ns)?|cameroon(ian|ians)?|senegal(ese)?|botswana|namibia(n|ns)?|malawi(an|ans)?|mozambique)\b/i, "another African country"],
+  [/\b(united states|u\.s\.|us citizens?|american (citizens|students|residents|nationals)|state in the united states|ut austin)\b/i, "the United States"],
+  [/\b(united kingdom|uk (citizens|residents|nationals|students)|british (citizens|nationals))\b/i, "the UK"],
+  [/\b(canad(a|ian|ians))\b/i, "Canada"], [/\baustralia(n|ns)?\b/i, "Australia"], [/\b(eu member states|european union citizens|eu citizens)\b/i, "the EU"],
+  [/\b(latin america|latam|caribbean)\b/i, "Latin America"], [/\b(india|indian|pakistan(i|is)?|bangladesh(i|is)?|philippines|filipino)\b/i, "South Asia / Asia"],
+];
+const RESTRICTS = /\b(citizens? of|residents? of|nationals? of|national of|must be (a|an)? ?\w+ (citizen|national|resident)|for (young |aspiring |early-career |emerging )?\w+ (graduates|students|journalists|youth|entrepreneurs|women|researchers|citizens|nationals)|only open to|open only to|exclusively for|based in|registered in|member states)\b/i;
+const OPEN_KENYA = /\b(kenya|kenyan|kenyans|nairobi|east africa|east african|eastern africa|east (and|&) southern africa|eac\b|african (countries|nationals|citizens|youth|entrepreneurs|startups|researchers|women)|(?<!(south|west|north|southern|central) )africans\b|citizen of an african country|sub-saharan africa|across africa|all african)\b/i;
+const NAMES_KENYA = /\b(kenya|kenyan|kenyans|nairobi|east africa|east african|eastern africa|east (and|&) southern africa)\b/i;
+const COUNTRY_LIST = /\b(eligible countries|eligibility list|list of (eligible )?countries|selected countries|participating countries|\d+\+? (eligible )?countries)\b/i;
+const OPEN_ALL = /\b(all nationalities|any nationality|any country|all countries|worldwide|open to (applicants|candidates|everyone|individuals) (from )?(all|any|around the world)|regardless of (nationality|country)|global(ly)? (open|call)|international applicants|from around the world)\b/i;
+const US_FUNDING = /\b(broad agency announcement|department of defense|\bdod\b|air force|army research|military academy|notice of intent|fy ?\d{2})\b/i;
+
+export function kenyaFit(o: { title: string; summary?: string | null; eligibility?: string[] | null; location?: string | null; source?: string | null; about?: string | null }): KenyaFit {
+  const title = o.title ?? "";
+  const elig = (o.eligibility ?? []).join(" ");
+  const text = `${title} ${o.summary ?? ""} ${elig} ${o.about ?? ""}`;
+  const head = `${title} ${elig}`;
+
+  if (NAMES_KENYA.test(head)) return { fit: "open", reason: "Names Kenya or East Africa" };
+  // Targeted at another country in the title ("for young Nigerian graduates", "Bursary for students in South Africa").
+  for (const [re, place] of OTHER_PLACES) {
+    if (re.test(title) && !OPEN_ALL.test(text) && !/\b((?<!(south|west|north|southern|central) )africans|african countries|across africa)\b/i.test(title)) return { fit: "excluded", reason: `Only for ${place}` };
+  }
+  // Eligibility limits applicants to another country.
+  for (const [re, place] of OTHER_PLACES) {
+    if (re.test(elig) && RESTRICTS.test(elig) && !OPEN_KENYA.test(elig) && !OPEN_ALL.test(elig)) return { fit: "excluded", reason: `Eligibility limited to ${place}` };
+  }
+  if (/grants\.gov/i.test(o.source ?? "") && US_FUNDING.test(title) && !OPEN_KENYA.test(text)) return { fit: "excluded", reason: "US government call for US organisations" };
+  if (COUNTRY_LIST.test(text) && !NAMES_KENYA.test(text)) return { fit: "check", reason: "Only some countries: check the list for Kenya" };
+  if (OPEN_KENYA.test(text)) return { fit: "open", reason: "Open to Africans or East Africa" };
+  if (OPEN_ALL.test(text) || /^global$/i.test(o.location ?? "")) return { fit: "open", reason: "Open worldwide" };
+  if (/^africa$/i.test(o.location ?? "")) return { fit: "open", reason: "Open across Africa" };
+  return { fit: "check", reason: "Check who can apply" };
+}

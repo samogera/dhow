@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { enrichImported, importAllSources, retireExpired } from "@/lib/opportunity-import";
+import { classifyOpportunities, enrichImported, importAllSources, retireExpired } from "@/lib/opportunity-import";
 import { dailyMaintenance, deadlineReminders } from "@/lib/workflows";
 import { rateLimit } from "@/lib/rate-limit";
 import { safeEqual } from "@/lib/crypto";
@@ -18,6 +18,7 @@ export async function GET(req: Request) {
   const retired = await retireExpired().catch(() => 0);
   const opportunities = await importAllSources().catch((e) => [{ error: String(e) }]);
   const enriched = await enrichImported(15).catch(() => 0);
+  await classifyOpportunities().catch(() => 0);
   await dailyMaintenance().catch(() => undefined);
   await deadlineReminders().catch(() => undefined);
   const alertEmails = await sendMorningAlerts().catch(() => 0);

@@ -634,6 +634,16 @@ export async function publishOpportunity(fd: FormData) {
   revalidatePath("/app/opportunities");
 }
 
+/** Staff say an opportunity set aside as "not for Kenya" is in fact open to Kenya: it goes back to review. */
+export async function restoreOpportunity(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  await s.supabase.from("opportunities").update({ kenya_fit: "open", fit_reason: "Restored by staff" }).eq("id", id.data);
+  revalidatePath("/admin/opportunities");
+}
+
 export async function deleteOpportunity(fd: FormData) {
   const s = await staffOrNull(["admin"]);
   if (!s) return;
@@ -650,10 +660,11 @@ export async function deleteOpportunity(fd: FormData) {
 export async function importOpportunitiesNow(): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
-  const { enrichImported, importAllSources, retireExpired } = await import("@/lib/opportunity-import");
+  const { classifyOpportunities, enrichImported, importAllSources, retireExpired } = await import("@/lib/opportunity-import");
   await retireExpired().catch(() => 0);
   const results = await importAllSources();
   await enrichImported(15).catch(() => 0);
+  await classifyOpportunities().catch(() => 0);
   revalidatePath("/admin/opportunities");
   const added = results.reduce((n, r) => n + r.added, 0);
   const failed = results.filter((r) => r.error);

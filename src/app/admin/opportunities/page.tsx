@@ -6,14 +6,27 @@ import { ActionForm } from "@/components/forms";
 import { ButtonLink, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Tabs } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, day } from "@/lib/format";
-import { deleteOpportunity, importOpportunitiesNow, publishOpportunity, saveSource, toggleFeatured, toggleSource } from "@/actions/admin";
+import { deleteOpportunity, importOpportunitiesNow, publishOpportunity, restoreOpportunity, saveSource, toggleFeatured, toggleSource } from "@/actions/admin";
 
 export const metadata: Metadata = { title: "Opportunities" };
 
-const COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, published";
+const COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on, published, kenya_fit, fit_reason";
+type Opp = CardOpp & { kenya_fit?: string | null; fit_reason?: string | null };
+const FIT: Record<string, string> = { open: "bg-mint-100 text-green", check: "bg-amber-100 text-amber-800", excluded: "bg-bad/10 text-bad" };
+const FIT_LABEL: Record<string, string> = { open: "Open to Kenya", check: "Check eligibility", excluded: "Not for Kenya" };
 const pill = "rounded-full px-3.5 py-1.5 text-xs font-medium transition";
 
-function Actions({ o, review }: { o: CardOpp; review?: boolean }) {
+function Actions({ o, review }: { o: Opp; review?: boolean }) {
+  if (o.kenya_fit === "excluded") {
+    return (
+      <>
+        <form action={restoreOpportunity}><input type="hidden" name="id" value={o.id} />
+          <button className={cn(pill, "border border-line hover:bg-sunken")}>It is open to Kenya: move to review</button>
+        </form>
+        <Link href={`/admin/opportunities/${o.id}`} className={cn(pill, "text-muted hover:text-ink")}>Look</Link>
+      </>
+    );
+  }
   return (
     <>
       <form action={publishOpportunity}>
@@ -42,11 +55,13 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
     s.supabase.from("opportunities").select(COLS).is("dismissed_at", null).order("created_at", { ascending: false }).limit(300),
     s.supabase.from("opportunity_sources").select("*").order("created_at"),
   ]);
-  const opps = (all ?? []) as CardOpp[];
-  const review = opps.filter((o) => !o.published && o.imported_at && (!o.deadline || o.deadline >= today));
-  const live = opps.filter((o) => o.published || !o.imported_at);
-  const events = opps.filter((o) => o.kind === "event");
-  const list = tab === "live" ? live : tab === "events" ? events : review;
+  const opps = (all ?? []) as Opp[];
+  const notKenya = opps.filter((o) => o.kenya_fit === "excluded");
+  const review = opps.filter((o) => !o.published && o.kenya_fit !== "excluded" && (!o.deadline || o.deadline >= today))
+    .sort((a, b) => (a.kenya_fit === "check" ? 0 : 1) - (b.kenya_fit === "check" ? 0 : 1));
+  const live = opps.filter((o) => o.published);
+  const events = opps.filter((o) => o.kind === "event" && o.kenya_fit !== "excluded");
+  const list = tab === "live" ? live : tab === "events" ? events : tab === "not-kenya" ? notKenya : review;
 
   return (
     <>
@@ -58,8 +73,9 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
       </PageHeader>
       <Tabs current={`/admin/opportunities?tab=${tab}`} items={[
         { href: "/admin/opportunities?tab=review", label: `To review (${review.length})` },
-        { href: "/admin/opportunities?tab=live", label: `Live and drafts (${live.length})` },
+        { href: "/admin/opportunities?tab=live", label: `Open opportunities (${live.length})` },
         { href: "/admin/opportunities?tab=events", label: `Events (${events.length})` },
+        { href: "/admin/opportunities?tab=not-kenya", label: `Not for Kenya (${notKenya.length})` },
         { href: "/admin/opportunities?tab=sources", label: `Sources (${sources?.length ?? 0})` },
       ]} />
 
@@ -112,7 +128,9 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {list.map((o) => (
             <OpportunityCard key={o.id} o={o} href={`/admin/opportunities/${o.id}`}
-              status={tab === "review" ? undefined : <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm", o.published ? "bg-green text-white" : "bg-white/95 text-muted")}>{o.published ? "Live" : "Draft"}</span>}
+              status={tab === "review" || tab === "not-kenya"
+                ? (o.kenya_fit ? <span title={o.fit_reason ?? ""} className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm", FIT[o.kenya_fit])}>{tab === "not-kenya" ? o.fit_reason : FIT_LABEL[o.kenya_fit]}</span> : undefined)
+                : <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm", o.published ? "bg-green text-white" : "bg-white/95 text-muted")}>{o.published ? "Live" : "Draft"}</span>}
               footer={<Actions o={o} review={tab === "review"} />} />
           ))}
         </div>
@@ -121,7 +139,9 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
           <ButtonLink href="/admin/opportunities/new?kind=event"><Plus className="size-4" />Add an event</ButtonLink>
         </Empty>
       ) : tab === "live" ? (
-        <Empty title="No opportunities yet" sub="Post one, or publish from the review tab." />
+        <Empty title="No open opportunities yet" sub="Post one, or publish from the review tab." />
+      ) : tab === "not-kenya" ? (
+        <Empty title="Nothing set aside" sub="Opportunities limited to other countries land here, so they never go live by mistake." />
       ) : (
         <Empty title="Nothing to review" sub="Click Import now to check your sources, or wait for the next automatic import." />
       )}

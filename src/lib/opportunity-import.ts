@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  BENEFITS, ELIGIBILITY, aboutFrom, applyLinkFrom, decodeEntities, extractDeadline, isNotAnOpportunity, kindFrom, locationFrom, ogImage, sameOpportunity,
+  BENEFITS, ELIGIBILITY, aboutFrom, kenyaFit, applyLinkFrom, decodeEntities, extractDeadline, isNotAnOpportunity, kindFrom, locationFrom, ogImage, sameOpportunity,
   sectionPoints, sectorsFrom, stripTags, summaryFrom,
 } from "@/lib/opportunity-parse";
 
@@ -131,6 +131,9 @@ export async function importSource(src: Source): Promise<{ found: number; added:
     if (known.some((k) => (k.deadline ?? null) === deadline && sameOpportunity(k.title, i.title))) continue;
     const summary = summaryFrom(i.text);
     const head = `${i.title} ${i.categories.join(" ")} ${summary}`;
+    const eligibility = i.html ? sectionPoints(i.html, ELIGIBILITY) : [];
+    const location = locationFrom(`${i.title} ${summary}`, i.categories);
+    const fit = kenyaFit({ title: i.title, summary, eligibility, location, source: src.name });
     rows.push({
       kind: kindFrom(i.title, i.categories),
       title: i.title.slice(0, 200),
@@ -138,14 +141,16 @@ export async function importSource(src: Source): Promise<{ found: number; added:
       body: "",
       source: src.name,
       url: i.link,
-      location: locationFrom(`${i.title} ${summary}`, i.categories),
+      location,
       deadline,
       requires_verified: src.requires_verified,
-      published: src.auto_publish,
+      published: src.auto_publish && fit.fit === "open",
+      kenya_fit: fit.fit,
+      fit_reason: fit.reason,
       image_url: i.image,
       about: aboutFrom(i.text),
       apply_url: i.html ? applyLinkFrom(i.html, i.link) : src.kind === "grants_gov" ? i.link : null,
-      eligibility: i.html ? sectionPoints(i.html, ELIGIBILITY) : [],
+      eligibility,
       benefits: i.html ? sectionPoints(i.html, BENEFITS) : [],
       sectors: sectorsFrom(head),
       source_id: src.id,
@@ -216,4 +221,23 @@ export async function importAllSources() {
     }
   }
   return results;
+}
+
+/** Works out "open to Kenya?" for imported opportunities that don't have an answer yet, or whose details just arrived.
+ *  Imported ones limited to other countries are taken down; staff can restore them. */
+export async function classifyOpportunities(all = false) {
+  const db = createAdminClient();
+  let q = db.from("opportunities").select("id, title, summary, eligibility, location, source, about, published, imported_at, kenya_fit, fit_reason")
+    .is("dismissed_at", null).not("imported_at", "is", null).limit(500);
+  if (!all) q = q.or("kenya_fit.is.null,kenya_fit.eq.check");
+  const { data } = await q;
+  let changed = 0;
+  for (const o of data ?? []) {
+    if (o.fit_reason === "Restored by staff") continue;
+    const f = kenyaFit(o);
+    if (f.fit === o.kenya_fit && f.reason === o.fit_reason) continue;
+    await db.from("opportunities").update({ kenya_fit: f.fit, fit_reason: f.reason, ...(f.fit === "excluded" ? { published: false } : {}) }).eq("id", o.id);
+    changed++;
+  }
+  return changed;
 }

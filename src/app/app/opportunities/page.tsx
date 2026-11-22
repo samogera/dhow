@@ -6,7 +6,7 @@ import { Empty, PageHeader, Tabs } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { cn, label } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Opportunities" };
+export const metadata: Metadata = { title: "Open opportunities" };
 const KINDS = ["all", "grant", "program", "event", "tender", "rfp"] as const;
 const plural = (k: string) => (k === "all" ? "All" : k === "rfp" ? "RFPs" : k === "program" ? "Programmes" : `${label(k)}s`);
 
@@ -36,7 +36,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Opportunities" sub="Grants, programmes, tenders and events for African businesses. Updated every day.">
+      <PageHeader title="Open opportunities" sub="Grants, programmes, tenders and events open to businesses in Kenya, checked by the Dhow team.">
         <form className="relative w-full sm:w-72">
           {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />

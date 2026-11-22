@@ -104,10 +104,17 @@ export async function saveClient(_: ActionState, fd: FormData): Promise<ActionSt
   const p = ClientIn.safeParse(form(fd));
   if (!p.success) return first(p.error);
   const { id, ...row } = p.data;
-  const { error } = id ? await s.supabase.from("clients").update(row).eq("id", id) : await s.supabase.from("clients").insert({ ...row, account_lead: s.user.id });
-  if (error) return { error: error.message };
+  if (id) {
+    const { error } = await s.supabase.from("clients").update(row).eq("id", id);
+    if (error) return { error: error.message };
+    revalidatePath("/admin/clients");
+    revalidatePath(`/admin/clients/${id}`);
+    return { ok: "Client saved." };
+  }
+  const { data, error } = await s.supabase.from("clients").insert({ ...row, account_lead: s.user.id }).select("id").single();
+  if (error || !data) return { error: error?.message ?? "Could not add the client." };
   revalidatePath("/admin/clients");
-  return { ok: id ? "Client saved." : "Client added." };
+  redirect(`/admin/clients/${data.id}`);
 }
 
 const LeadIn = z.object({
@@ -181,8 +188,8 @@ export async function saveContact(_: ActionState, fd: FormData): Promise<ActionS
   if (!p.success) return first(p.error);
   const { error } = await s.supabase.from("contacts").insert(p.data);
   if (error) return { error: error.message };
-  revalidatePath("/admin/clients");
-  revalidatePath("/admin/partners");
+  revalidatePath("/admin/clients", "layout");
+  revalidatePath("/admin/partners", "layout");
   return { ok: "Contact added." };
 }
 
@@ -648,4 +655,45 @@ export async function disconnectCalendar(fd: FormData) {
   await createAdminClient().from("calendar_connections").delete().eq("user_id", s.user.id).eq("provider", provider);
   revalidatePath("/admin/calendar");
   revalidatePath("/admin");
+}
+
+// ----------------------------------------------------------------- client partners and bank balance
+const AssignIn = z.object({
+  client_id: uuid, partner_id: uuid, service: text(200),
+  agreed_pct: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0).max(100).nullable()),
+});
+export async function assignPartner(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const p = AssignIn.safeParse(form(fd));
+  if (!p.success) return { error: "Choose a partner." };
+  let pct = p.data.agreed_pct;
+  if (pct == null) pct = (await s.supabase.from("partners").select("agreed_pct").eq("id", p.data.partner_id).single()).data?.agreed_pct ?? null;
+  const { error } = await s.supabase.from("client_partners").insert({ ...p.data, agreed_pct: pct });
+  if (error) return { error: error.code === "23505" ? "That partner is already on this client for that work." : error.message };
+  revalidatePath(`/admin/clients/${p.data.client_id}`);
+  return { ok: "Partner assigned." };
+}
+
+export async function updateClientPartner(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const p = z.object({ id: uuid, action: z.enum(["done", "active", "remove"]) }).safeParse(form(fd));
+  if (!p.success) return;
+  const q = p.data.action === "remove"
+    ? s.supabase.from("client_partners").delete().eq("id", p.data.id).select("client_id").single()
+    : s.supabase.from("client_partners").update({ status: p.data.action }).eq("id", p.data.id).select("client_id").single();
+  const { data } = await q;
+  if (data) revalidatePath(`/admin/clients/${data.client_id}`);
+}
+
+export async function setBankBalance(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull(["finance"]);
+  if (!s) return DENIED;
+  const p = z.object({ bank_balance: z.coerce.number().min(-1e12).max(1e12), bank_balance_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).safeParse(form(fd));
+  if (!p.success) return { error: "Enter the balance and the statement date." };
+  const { error } = await createAdminClient().from("dhow_profile").update(p.data).eq("id", 1);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/finance");
+  return { ok: "Balance updated." };
 }

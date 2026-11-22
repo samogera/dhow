@@ -4,7 +4,10 @@ import { requireStaff } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { ButtonLink, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Stat, StatusBadge, Table, Tabs } from "@/components/ui";
 import { day, kes } from "@/lib/format";
-import { addBill, payBill } from "@/actions/admin";
+import { addBill, payBill, setBankBalance } from "@/actions/admin";
+import { Download, Landmark } from "lucide-react";
+import { Drawer } from "@/components/drawer";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ShareCalculator } from "./calculator";
 
 export const metadata: Metadata = { title: "Finance" };
@@ -28,6 +31,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
     { label: "Received this year", amount: sumWhere((d) => d.startsWith(yr)) },
     { label: "All received", amount: sumWhere(() => true) },
   ].filter((p) => p.amount > 0);
+  const { data: bank } = await createAdminClient().from("dhow_profile").select("bank_name, bank_account_no, bank_balance, bank_balance_at").eq("id", 1).maybeSingle();
   const p = pos ?? { received_kes: 0, owed_by_clients_kes: 0, paid_out_kes: 0, owed_to_partners_kes: 0 };
   const net = Number(p.received_kes) + Number(p.owed_by_clients_kes) - Number(p.paid_out_kes) - Number(p.owed_to_partners_kes);
   const today = new Date().toISOString().slice(0, 10);
@@ -35,8 +39,36 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   return (
     <>
       <PageHeader title="Finance" sub="Net position = (received + owed by clients) − (paid out + owed to partners)">
-        <ButtonLink href="/admin/finance/invoices/new">New invoice</ButtonLink>
+        <div className="flex flex-wrap gap-2">
+          <Drawer label="Download" title="Download finance records" sub="CSV files open in Excel and Google Sheets." variant="outline" plus={false}>
+            <div className="space-y-3">
+              {[["invoices", "All invoices", "Number, client, dates, totals, paid and balance"], ["payments", "Payments received", "Every M-Pesa, bank and card payment"], ["bills", "Partner bills", "What we owe partners and what's paid"]].map(([k, t, d]) => (
+                <a key={k} href={`/api/finance/export?kind=${k}`} className="flex items-center gap-4 rounded-2xl border border-line p-4 transition hover:bg-sunken">
+                  <span className="grid size-10 place-items-center rounded-xl bg-navy-50 text-navy-700"><Download className="size-5" /></span>
+                  <span><span className="block font-medium">{t}</span><span className="block text-sm text-muted">{d}</span></span>
+                </a>
+              ))}
+              <p className="text-xs text-muted">Each invoice's PDF is on its own page under Download PDF.</p>
+            </div>
+          </Drawer>
+          <ButtonLink href="/admin/finance/invoices/new">New invoice</ButtonLink>
+        </div>
       </PageHeader>
+
+      <div className="card mb-4 flex flex-wrap items-center gap-4">
+        <span className="grid size-11 place-items-center rounded-2xl bg-navy-900 text-white"><Landmark className="size-5" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="label">{bank?.bank_name ?? "Bank"}{bank?.bank_account_no ? ` · ···${bank.bank_account_no.slice(-4)}` : ""}</p>
+          <p className="num text-2xl font-semibold tracking-tight">{bank?.bank_balance != null ? kes(bank.bank_balance) : "Balance not entered"}</p>
+          <p className="text-xs text-muted">{bank?.bank_balance_at ? `From your statement on ${day(bank.bank_balance_at)}. Not a live bank feed.` : "Enter the balance from your I&M app or statement to keep it here."}</p>
+        </div>
+        <Drawer label="Update balance" title="Update bank balance" sub="Copy it from the I&M app or your latest statement." variant="outline" plus={false}>
+          <ActionForm action={setBankBalance} submit="Save balance" className="grid gap-3 sm:grid-cols-2">
+            <Field label="Balance (KES)"><Input name="bank_balance" type="number" step="any" inputMode="decimal" required defaultValue={bank?.bank_balance ?? ""} /></Field>
+            <Field label="As at"><Input name="bank_balance_at" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></Field>
+          </ActionForm>
+        </Drawer>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
         <Stat label="Net position" value={<span className="num">{kes(net)}</span>} highlight />

@@ -6,6 +6,9 @@ import { isOrgAdmin, memberOrNull, staffOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isFile, removeInternal, uploadImage, uploadInternal } from "@/lib/storage";
 import { SOCIALS } from "@/lib/socials";
+import { FILE_CATEGORY_KEYS, PARTNER_DOCS } from "@/lib/partner-docs";
+import { rateLimit } from "@/lib/rate-limit";
+import { randomBytes } from "node:crypto";
 import type { ActionState } from "@/components/forms";
 
 const DENIED: ActionState = { error: "You don't have access to do that." };
@@ -69,6 +72,9 @@ const PartnerIn = z.object({
   relationship: z.enum(["service", "referral", "institution"]),
   status: z.enum(["vetting", "approved", "paused", "rejected"]),
   commission_terms: text(300), website: url, email: text(160), phone: text(40), notes: text(4000),
+  about: text(3000),
+  agreed_pct: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0, "Percentage between 0 and 100").max(100, "Percentage between 0 and 100").nullable()).optional(),
+  services: z.string().max(1000).optional().transform((v) => (v ?? "").split(/[,\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 20)),
 });
 export async function savePartnerProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
@@ -98,7 +104,7 @@ const FileIn = z.object({
   owner_type: z.enum(["partner", "dhow"]),
   owner_id: optUuid,
   label: z.string().trim().min(1, "Give the file a name").max(160),
-  category: z.enum(["certificate", "company_profile", "registration", "tax", "contract", "license", "other"]).default("other"),
+  category: z.enum(FILE_CATEGORY_KEYS).default("other"),
   expires_on: date,
 });
 export async function uploadInternalFile(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -169,6 +175,10 @@ const DhowIn = z.object({
   registration_no: text(60), kra_pin: text(20), vat_no: text(40), founded_year: year,
   address: text(300), postal_address: text(120), email: text(160), phone: text(40), whatsapp: text(40),
   website: url, booking_link: url, bank_details: text(1000),
+  bank_name: text(120), bank_account_name: text(160), bank_account_no: z.string().trim().max(40).regex(/^[\d\s-]*$/, "Account number: digits only").optional().transform((v) => v?.replace(/[\s-]/g, "") || null),
+  bank_branch: text(120), bank_swift: text(20),
+  paybill: z.string().trim().max(10).regex(/^\d*$/, "Paybill: digits only").optional().transform((v) => v || null),
+  paybill_account: text(40), invoice_terms: text(300),
 });
 export async function saveDhowProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull(["admin"]);
@@ -182,4 +192,66 @@ export async function saveDhowProfile(_: ActionState, fd: FormData): Promise<Act
   if (error) return { error: error.message };
   revalidatePath("/admin/company");
   return { ok: "Dhow profile saved." };
+}
+
+// ----------------------------------------------------------------- partner links (documents and client reviews, no login)
+export async function makePartnerLink(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  const kind = fd.get("kind") === "review" ? "review_token" : "upload_token";
+  if (!id.success) return;
+  const fresh = fd.get("reset") === "1";
+  const { data } = await s.supabase.from("partners").select(kind).eq("id", id.data).single();
+  if (fresh || !(data as Record<string, string | null> | null)?.[kind]) {
+    await s.supabase.from("partners").update({ [kind]: randomBytes(24).toString("base64url") }).eq("id", id.data);
+  }
+  revalidatePath(`/admin/partners/${id.data}`);
+}
+
+const token = z.string().regex(/^[A-Za-z0-9_-]{24,64}$/);
+
+/** A partner uploads one of the requested documents through their private link. */
+export async function partnerUpload(_: ActionState, fd: FormData): Promise<ActionState> {
+  const t = token.safeParse(fd.get("token"));
+  if (!t.success) return { error: "This link isn't valid." };
+  if (!(await rateLimit(`partner-upload:${t.data}`, 30, 3600))) return { error: "Too many uploads. Try again in an hour." };
+  const db = createAdminClient();
+  const { data: p } = await db.from("partners").select("id").eq("upload_token", t.data).maybeSingle();
+  if (!p) return { error: "This link has expired. Ask Dhow Partners for a new one." };
+  const doc = PARTNER_DOCS.find((d) => d.key === fd.get("category"));
+  if (!doc) return { error: "Choose which document this is." };
+  const expires = date.safeParse(fd.get("expires_on") ?? "");
+  const f = fd.get("file");
+  if (!isFile(f)) return { error: "Choose a file." };
+  const up = await uploadInternal(f, `partner/${p.id}`);
+  if ("error" in up) return up;
+  const { error } = await db.from("internal_files").insert({
+    owner_type: "partner", owner_id: p.id, label: doc.label, category: doc.key, file_name: up.name, object_path: up.path,
+    mime_type: up.mime, size_bytes: up.size, expires_on: expires.success ? expires.data : null, uploaded_via: "partner_link",
+  });
+  if (error) { await removeInternal(up.path); return { error: "Could not save the file. Try again." }; }
+  revalidatePath(`/partner/${t.data}`);
+  revalidatePath(`/admin/partners/${p.id}`);
+  return { ok: `${doc.label} uploaded. Thank you.` };
+}
+
+const ReviewIn = z.object({
+  token, reviewer_name: z.string().trim().min(2, "Enter your name").max(120), reviewer_company: text(160),
+  rating: z.coerce.number().int().min(1, "Choose a rating").max(5), comment: text(2000),
+});
+/** A client reviews a partner through the partner's review link. */
+export async function submitPartnerReview(_: ActionState, fd: FormData): Promise<ActionState> {
+  const p = ReviewIn.safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  if (!(await rateLimit(`partner-review:${p.data.token}`, 10, 3600))) return { error: "Too many reviews from this link. Try later." };
+  const db = createAdminClient();
+  const { data: partner } = await db.from("partners").select("id").eq("review_token", p.data.token).maybeSingle();
+  if (!partner) return { error: "This review link isn't valid any more." };
+  const { error } = await db.from("partner_reviews").insert({
+    partner_id: partner.id, source: "link", reviewer_name: p.data.reviewer_name, reviewer_company: p.data.reviewer_company, rating: p.data.rating, comment: p.data.comment,
+  });
+  if (error) return { error: "Could not save your review. Try again." };
+  revalidatePath(`/admin/partners/${partner.id}`);
+  return { ok: "Thank you. Your review has been sent to Dhow Partners." };
 }

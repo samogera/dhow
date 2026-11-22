@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
 import { loadInvoice } from "@/lib/invoices";
+import { loadIssuer } from "@/lib/dhow-profile";
+import { InvoiceSheet } from "@/components/invoice-sheet";
 import { ActionForm, ConfirmSubmit } from "@/components/forms";
-import { ButtonAnchor, Card, CardHeader, Field, Input, Select, StatusBadge, Table } from "@/components/ui";
+import { ButtonAnchor, Card, CardHeader, Field, Input, Select, StatusBadge } from "@/components/ui";
 import { day, kes } from "@/lib/format";
 import { cancelInvoice, recordPayment, sendInvoice } from "@/actions/admin";
 import { paystackConfigured } from "@/lib/paystack";
@@ -18,6 +20,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const s = await requireStaff(["finance"]);
   const inv = await loadInvoice(s.supabase, id);
   if (!inv) notFound();
+  const issuer = await loadIssuer();
   const { data: payments } = await s.supabase.from("invoice_payments").select("id, amount_kes, method, reference, paid_on").eq("invoice_id", id).order("paid_on");
   const balance = inv.total_kes - inv.paid_kes;
   const live = inv.status !== "cancelled";
@@ -40,28 +43,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-        <Card>
-          <CardHeader title="Items" sub={inv.client.email ?? "No email on file for this client"} />
-          <Table head={["Item", "Qty", "Price", "Amount"]}>
-            {inv.items.map((it, i) => (
-              <tr key={i}>
-                <td>{it.description}</td>
-                <td className="num">{it.quantity}</td>
-                <td className="num">{kes(it.unit_price_kes)}</td>
-                <td className="num">{kes(it.quantity * it.unit_price_kes)}</td>
-              </tr>
-            ))}
-          </Table>
-          <dl className="ml-auto mt-6 w-full max-w-72 space-y-1.5 text-sm">
-            <div className="flex justify-between text-muted"><dt>Subtotal</dt><dd className="num">{kes(inv.subtotal_kes)}</dd></div>
-            <div className="flex justify-between text-muted"><dt>VAT {inv.vat_rate}%</dt><dd className="num">{kes(inv.vat_kes)}</dd></div>
-            <div className="flex justify-between border-t border-line pt-2 font-semibold"><dt>Total</dt><dd className="num">{kes(inv.total_kes)}</dd></div>
-            <div className="flex justify-between text-muted"><dt>Paid</dt><dd className="num">{kes(inv.paid_kes)}</dd></div>
-            <div className="flex justify-between rounded-full bg-mint px-3 py-1.5 font-semibold"><dt>Balance</dt><dd className="num">{kes(balance)}</dd></div>
-          </dl>
-          {inv.notes ? <p className="mt-6 whitespace-pre-line text-sm text-muted">{inv.notes}</p> : null}
-        </Card>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <InvoiceSheet issuer={issuer} number={inv.number} issue={inv.issue_date} due={inv.due_date} client={inv.client} lines={inv.items} vatRate={inv.vat_rate} paid={inv.paid_kes} notes={inv.notes} />
 
         <div className="space-y-4">
           {live && balance > 0 ? (
@@ -72,7 +55,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Amount (KES)"><Input name="amount_kes" type="number" min="1" step="any" defaultValue={balance} required /></Field>
                   <Field label="Date"><Input name="paid_on" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
-                  <Field label="Method"><Select name="method" defaultValue="M-Pesa">{["M-Pesa", "I&M Bank", "Cash", "Other"].map((m) => <option key={m}>{m}</option>)}</Select></Field>
+                  <Field label="Method"><Select name="method" defaultValue="M-Pesa">{["M-Pesa", "I&M Bank", "Airtel Money", "Cash", "Other"].map((m) => <option key={m}>{m}</option>)}</Select></Field>
                   <Field label="Reference"><Input name="reference" placeholder="QK7…" /></Field>
                 </div>
               </ActionForm>

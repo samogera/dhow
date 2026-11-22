@@ -80,3 +80,8 @@ insert into invoice_payments (invoice_id, amount_kes, method, reference, paid_on
   ('d0000000-0000-4000-8000-000000000003', 98600, 'M-Pesa', 'QJ3K8RTY2W', current_date - 60);
 insert into bills (description, partner_id, amount_kes, paid_kes, due_date)
 select 'Referral commission: Kivu project', id, 45000, 15000, current_date + 10 from partners where name = 'Binary One';
+
+-- Sample payment details for screenshots only (placeholders, not real accounts)
+update dhow_profile set legal_name = 'Dhow Partners Limited', trading_name = 'Dhow Partners', address = 'Nairobi, Kenya',
+  bank_name = 'Sample Bank', bank_account_name = 'Dhow Partners Limited', bank_account_no = '00000000000000',
+  paybill = '000000', paybill_account = '00000000000000', invoice_terms = 'Please quote the invoice number when you pay.' where id = 1;

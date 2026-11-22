@@ -5,6 +5,7 @@ import { ActionForm } from "@/components/forms";
 import { ButtonLink, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Stat, StatusBadge, Table, Tabs } from "@/components/ui";
 import { day, kes } from "@/lib/format";
 import { addBill, payBill } from "@/actions/admin";
+import { ShareCalculator } from "./calculator";
 
 export const metadata: Metadata = { title: "Finance" };
 
@@ -18,6 +19,15 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
     s.supabase.from("partners").select("id, name").order("name"),
     s.supabase.from("projects").select("id, name").neq("status", "done").order("name"),
   ]);
+  const { data: received } = tab === "calculator" ? await s.supabase.from("invoice_payments").select("amount_kes, paid_on") : { data: null };
+  const now = new Date();
+  const ym = now.toISOString().slice(0, 7), yr = now.toISOString().slice(0, 4);
+  const sumWhere = (f: (d: string) => boolean) => (received ?? []).filter((r) => f(r.paid_on)).reduce((n, r) => n + Number(r.amount_kes), 0);
+  const presets = [
+    { label: "Received this month", amount: sumWhere((d) => d.startsWith(ym)) },
+    { label: "Received this year", amount: sumWhere((d) => d.startsWith(yr)) },
+    { label: "All received", amount: sumWhere(() => true) },
+  ].filter((p) => p.amount > 0);
   const p = pos ?? { received_kes: 0, owed_by_clients_kes: 0, paid_out_kes: 0, owed_to_partners_kes: 0 };
   const net = Number(p.received_kes) + Number(p.owed_by_clients_kes) - Number(p.paid_out_kes) - Number(p.owed_to_partners_kes);
   const today = new Date().toISOString().slice(0, 10);
@@ -28,7 +38,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
         <ButtonLink href="/admin/finance/invoices/new">New invoice</ButtonLink>
       </PageHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
         <Stat label="Net position" value={<span className="num">{kes(net)}</span>} highlight />
         <Stat label="Received" value={<span className="num">{kes(p.received_kes)}</span>} />
         <Stat label="Clients owe us" value={<span className="num">{kes(p.owed_by_clients_kes)}</span>} />
@@ -37,10 +47,12 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
       </div>
 
       <div className="mt-8">
-        <Tabs current={tab} items={[{ href: "/admin/finance?tab=invoices", label: "Invoices" }, { href: "/admin/finance?tab=bills", label: "Partner bills" }]} />
+        <Tabs current={`/admin/finance?tab=${tab}`} items={[{ href: "/admin/finance?tab=invoices", label: "Invoices" }, { href: "/admin/finance?tab=bills", label: "Partner bills" }, { href: "/admin/finance?tab=calculator", label: "Share calculator" }]} />
       </div>
 
-      {tab === "bills" ? (
+      {tab === "calculator" ? (
+        <ShareCalculator presets={presets} />
+      ) : tab === "bills" ? (
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
           <Card>
             <CardHeader title="Partner bills" sub="What we owe partners and suppliers" />

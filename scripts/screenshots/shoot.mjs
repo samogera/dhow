@@ -1,6 +1,6 @@
 // Signs in as a member and as staff, then screenshots every main screen.
 import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 
 const BASE = "http://localhost:3000";
 const OUT = "shots";
@@ -78,6 +78,12 @@ async function shotInner(page, path, name, { full = true } = {}) {
   await shot(page, "/admin/finance", "28-staff-finance");
   await shot(page, "/admin/finance/invoices/new", "29-staff-new-invoice");
   await shot(page, "/admin/finance/invoices/d0000000-0000-4000-8000-000000000001", "30-staff-invoice");
+  await shot(page, "/admin/finance?tab=calculator", "30b-staff-calculator");
+  await shot(page, "/admin/projects/c0000000-0000-4000-8000-000000000001", "30d-staff-project-detail");
+  try {
+    const res = await page.request.get(`${BASE}/api/invoices/d0000000-0000-4000-8000-000000000001/pdf`);
+    writeFileSync(`${OUT}/30c-invoice.pdf`, await res.body());
+  } catch (e) { console.log("pdf failed", e.message); }
   await shot(page, "/admin/wiki", "31-staff-wiki");
   await shot(page, "/admin/wiki/client-journey", "32-staff-wiki-page");
   await shot(page, "/admin/links", "33-staff-links");

@@ -14,6 +14,7 @@ type D = {
   legal_name: string; trading_name: string | null; tagline: string | null; about: string | null; registration_no: string | null; kra_pin: string | null;
   vat_no: string | null; founded_year: number | null; address: string | null; postal_address: string | null; email: string | null; phone: string | null;
   whatsapp: string | null; website: string | null; booking_link: string | null; logo_url: string | null; bank_details: string | null; socials: Record<string, string> | null; updated_at: string;
+  bank_name: string | null; bank_account_name: string | null; bank_account_no: string | null; bank_branch: string | null; bank_swift: string | null; paybill: string | null; paybill_account: string | null; invoice_terms: string | null;
 };
 
 function Block({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
@@ -74,11 +75,22 @@ export default async function Company() {
                 <W><Field label="About us"><Textarea name="about" rows={5} defaultValue={d.about ?? ""} /></Field></W>
                 <Field label="Year founded"><Input name="founded_year" type="number" min={1900} max={2100} defaultValue={d.founded_year ?? ""} /></Field>
               </Block>
-              <Block title="Registration and tax">
+              <Block title="Registration and tax" sub="The KRA PIN shows on invoices">
                 <Field label="Registration number"><Input name="registration_no" defaultValue={d.registration_no ?? ""} /></Field>
                 <Field label="KRA PIN"><Input name="kra_pin" defaultValue={d.kra_pin ?? ""} /></Field>
                 <Field label="VAT number"><Input name="vat_no" defaultValue={d.vat_no ?? ""} /></Field>
-                <W><Field label="Bank details" hint="For invoices and partner payments"><Textarea name="bank_details" rows={3} defaultValue={d.bank_details ?? ""} /></Field></W>
+              </Block>
+              <Block title="Getting paid" sub="Printed on every invoice and the online payment page">
+                <Field label="Bank"><Input name="bank_name" defaultValue={d.bank_name ?? ""} placeholder="I&M Bank Kenya" /></Field>
+                <Field label="Account name"><Input name="bank_account_name" defaultValue={d.bank_account_name ?? ""} /></Field>
+                <Field label="Account number"><Input name="bank_account_no" inputMode="numeric" defaultValue={d.bank_account_no ?? ""} /></Field>
+                <Field label="Branch"><Input name="bank_branch" defaultValue={d.bank_branch ?? ""} /></Field>
+                <Field label="SWIFT code" hint="For payments from abroad"><Input name="bank_swift" defaultValue={d.bank_swift ?? ""} /></Field>
+                <div />
+                <Field label="M-Pesa / Airtel Paybill"><Input name="paybill" inputMode="numeric" defaultValue={d.paybill ?? ""} /></Field>
+                <Field label="Paybill account number"><Input name="paybill_account" defaultValue={d.paybill_account ?? ""} /></Field>
+                <W><Field label="Payment note" hint="Short line under the payment details"><Input name="invoice_terms" defaultValue={d.invoice_terms ?? ""} /></Field></W>
+                <W><Field label="Other bank details" hint="Optional, for partners"><Textarea name="bank_details" rows={2} defaultValue={d.bank_details ?? ""} /></Field></W>
               </Block>
               <Block title="Contact">
                 <Field label="Email"><Input name="email" type="email" defaultValue={d.email ?? ""} /></Field>

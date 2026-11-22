@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useContext, useEffect, useRef } from "react";
+import { DrawerContext } from "@/components/drawer";
 import { useFormStatus } from "react-dom";
 import type { ComponentProps } from "react";
 import { Button } from "@/components/ui";
@@ -36,9 +37,12 @@ export function ActionForm({
 }) {
   const [state, act] = useActionState(action, undefined);
   const ref = useRef<HTMLFormElement>(null);
+  const drawer = useContext(DrawerContext);
   useEffect(() => {
-    if (state?.ok) ref.current?.reset();
-  }, [state]);
+    if (!state?.ok) return;
+    ref.current?.reset();
+    if (drawer) { const t = setTimeout(drawer.close, 700); return () => clearTimeout(t); }
+  }, [state, drawer]);
   return (
     <form ref={ref} action={act} className={className ?? "space-y-4"}>
       {children}

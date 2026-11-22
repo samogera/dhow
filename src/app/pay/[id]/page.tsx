@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { confirmPaystack, validInvoicePayToken } from "@/lib/payments";
 import { day, kes } from "@/lib/format";
 import { PayForm } from "./form";
+import { loadIssuer } from "@/lib/dhow-profile";
 
 export const metadata: Metadata = { title: "Pay invoice", robots: { index: false } };
 
@@ -20,6 +21,7 @@ export default async function PayInvoice({ params, searchParams }: { params: Pro
   if (!inv || inv.status === "draft") notFound();
   const client = inv.clients as unknown as { name: string; email: string | null } | null;
   const balance = Number(inv.total_kes) - Number(inv.paid_kes);
+  const issuer = await loadIssuer();
 
   return (
     <CenteredShell>
@@ -47,6 +49,26 @@ export default async function PayInvoice({ params, searchParams }: { params: Pro
             <div className="flex justify-between border-t border-line pt-2 text-base font-semibold"><dt>Balance</dt><dd className="num">{kes(balance)}</dd></div>
           </dl>
           <div className="mt-6"><PayForm id={inv.id} t={t} email={client?.email ?? ""} amount={kes(balance)} /></div>
+          {issuer.paybill.number || issuer.bank.account_no ? (
+            <div className="mt-6 space-y-3 text-sm">
+              <p className="text-center text-xs text-muted">Or pay directly, quoting invoice {inv.number}</p>
+              {issuer.paybill.number ? (
+                <dl className="rounded-2xl border border-line p-4">
+                  <p className="mb-1.5 font-semibold text-navy-900">M-Pesa or Airtel Money</p>
+                  <div className="flex justify-between"><dt className="text-muted">Paybill</dt><dd className="num font-medium">{issuer.paybill.number}</dd></div>
+                  <div className="flex justify-between"><dt className="text-muted">Account no.</dt><dd className="num font-medium">{issuer.paybill.account}</dd></div>
+                </dl>
+              ) : null}
+              {issuer.bank.account_no ? (
+                <dl className="rounded-2xl border border-line p-4">
+                  <p className="mb-1.5 font-semibold text-navy-900">Bank transfer</p>
+                  {issuer.bank.name ? <div className="flex justify-between"><dt className="text-muted">Bank</dt><dd className="font-medium">{issuer.bank.name}</dd></div> : null}
+                  {issuer.bank.account_name ? <div className="flex justify-between"><dt className="text-muted">Account name</dt><dd className="font-medium">{issuer.bank.account_name}</dd></div> : null}
+                  <div className="flex justify-between"><dt className="text-muted">Account no.</dt><dd className="num font-medium">{issuer.bank.account_no}</dd></div>
+                </dl>
+              ) : null}
+            </div>
+          ) : null}
         </>
       )}
     </CenteredShell>

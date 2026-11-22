@@ -10,6 +10,7 @@ import { loadInvoice } from "@/lib/invoices";
 import { paystackConfigured } from "@/lib/paystack";
 import { invoicePayUrl } from "@/lib/payments";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
+import { loadIssuer } from "@/lib/dhow-profile";
 import { emailLayout, notifyOrg, sendEmail } from "@/lib/notify";
 import { kes } from "@/lib/format";
 import type { ActionState } from "@/components/forms";
@@ -199,10 +200,16 @@ export async function saveProject(_: ActionState, fd: FormData): Promise<ActionS
   const p = ProjectIn.safeParse(form(fd));
   if (!p.success) return first(p.error);
   const { id, ...row } = p.data;
-  const { error } = id ? await s.supabase.from("projects").update(row).eq("id", id) : await s.supabase.from("projects").insert({ ...row, owner: s.user.id });
-  if (error) return { error: error.message };
-  revalidatePath("/admin/projects");
-  return { ok: "Project saved." };
+  if (id) {
+    const { error } = await s.supabase.from("projects").update(row).eq("id", id);
+    if (error) return { error: error.message };
+    revalidateWork(id);
+    return { ok: "Project saved." };
+  }
+  const { data, error } = await s.supabase.from("projects").insert({ ...row, owner: s.user.id }).select("id").single();
+  if (error || !data) return { error: error?.message ?? "Could not create the project." };
+  revalidateWork();
+  redirect(`/admin/projects/${data.id}`);
 }
 
 export async function setProjectStatus(fd: FormData) {
@@ -211,19 +218,26 @@ export async function setProjectStatus(fd: FormData) {
   const p = z.object({ id: uuid, status: z.enum(["todo", "in_progress", "review", "done"]) }).safeParse(form(fd));
   if (!p.success) return;
   await s.supabase.from("projects").update({ status: p.data.status }).eq("id", p.data.id);
-  revalidatePath("/admin/projects");
+  revalidateWork(p.data.id);
 }
 
-const TaskIn = z.object({ title: z.string().trim().min(2).max(300), project_id: optUuid, due_date: date, priority: z.enum(["low", "medium", "high"]) });
+const TaskIn = z.object({
+  title: z.string().trim().min(2, "Write the task").max(300), project_id: optUuid, due_date: date,
+  priority: z.enum(["low", "medium", "high"]).default("medium"), assignee: optUuid, reviewer: optUuid, notes: text(2000),
+});
+function revalidateWork(projectId?: string | null) {
+  revalidatePath("/admin/projects");
+  if (projectId) revalidatePath(`/admin/projects/${projectId}`);
+  revalidatePath("/admin");
+}
 export async function addTask(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
   const p = TaskIn.safeParse(form(fd));
   if (!p.success) return first(p.error);
-  const { error } = await s.supabase.from("tasks").insert({ ...p.data, assignee: s.user.id });
+  const { error } = await s.supabase.from("tasks").insert({ ...p.data, assignee: p.data.assignee ?? s.user.id });
   if (error) return { error: error.message };
-  revalidatePath("/admin/projects");
-  revalidatePath("/admin");
+  revalidateWork(p.data.project_id);
   return { ok: "Task added." };
 }
 
@@ -232,15 +246,72 @@ export async function toggleTask(fd: FormData) {
   if (!s) return;
   const p = z.object({ id: uuid, done: z.enum(["1", "0"]) }).safeParse(form(fd));
   if (!p.success) return;
-  await s.supabase.from("tasks").update(p.data.done === "1" ? { status: "done", done_at: new Date().toISOString() } : { status: "todo", done_at: null }).eq("id", p.data.id);
-  revalidatePath("/admin/projects");
-  revalidatePath("/admin");
+  const { data } = await s.supabase.from("tasks").update(p.data.done === "1" ? { status: "done", done_at: new Date().toISOString() } : { status: "todo", done_at: null, review_state: null }).eq("id", p.data.id).select("project_id").single();
+  revalidateWork(data?.project_id);
+}
+
+export async function setTaskStatus(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const p = z.object({ id: uuid, status: z.enum(["todo", "in_progress", "review", "done"]) }).safeParse(form(fd));
+  if (!p.success) return;
+  const patch: Record<string, unknown> = { status: p.data.status, done_at: p.data.status === "done" ? new Date().toISOString() : null };
+  if (p.data.status !== "review" && p.data.status !== "done") patch.review_state = null;
+  const { data } = await s.supabase.from("tasks").update(patch).eq("id", p.data.id).select("project_id").single();
+  revalidateWork(data?.project_id);
+}
+
+/** Sends a task to someone else to check. */
+export async function requestTaskReview(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const p = z.object({ id: uuid, reviewer: uuid }).safeParse(form(fd));
+  if (!p.success) return { error: "Choose who should review it." };
+  const { data: t } = await s.supabase.from("tasks").select("assignee, project_id, title").eq("id", p.data.id).single();
+  if (!t) return { error: "Task not found." };
+  if (t.assignee === p.data.reviewer) return { error: "Pick someone other than the person who did the task." };
+  const { error } = await s.supabase.from("tasks").update({ reviewer: p.data.reviewer, status: "review", review_state: "requested", review_note: null, reviewed_by: null, reviewed_at: null }).eq("id", p.data.id);
+  if (error) return { error: error.message };
+  revalidateWork(t.project_id);
+  return { ok: "Sent for review." };
+}
+
+/** The reviewer approves the task (it's done) or sends it back with a note. Never the person who did it. */
+export async function reviewTask(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await staffOrNull();
+  if (!s) return DENIED;
+  const p = z.object({ id: uuid, decision: z.enum(["approve", "changes"]), note: text(1000) }).safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  const { data: t } = await s.supabase.from("tasks").select("assignee, reviewer, project_id").eq("id", p.data.id).single();
+  if (!t) return { error: "Task not found." };
+  if (t.assignee === s.user.id) return { error: "Someone other than the person who did the task has to review it." };
+  if (t.reviewer && t.reviewer !== s.user.id && s.staffRole !== "admin") return { error: "This review is assigned to someone else." };
+  if (p.data.decision === "changes" && !p.data.note) return { error: "Say what needs to change." };
+  const now = new Date().toISOString();
+  const { error } = await s.supabase.from("tasks").update(p.data.decision === "approve"
+    ? { status: "done", done_at: now, review_state: "approved", review_note: p.data.note, reviewed_by: s.user.id, reviewed_at: now }
+    : { status: "in_progress", done_at: null, review_state: "changes", review_note: p.data.note, reviewed_by: s.user.id, reviewed_at: now }).eq("id", p.data.id);
+  if (error) return { error: error.message };
+  revalidateWork(t.project_id);
+  return { ok: p.data.decision === "approve" ? "Approved and marked done." : "Sent back with your note." };
+}
+
+export async function deleteTask(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const { data } = await s.supabase.from("tasks").delete().eq("id", id.data).select("project_id").single();
+  revalidateWork(data?.project_id);
 }
 
 // ----------------------------------------------------------------- finance
 const Item = z.object({ description: z.string().trim().min(1).max(300), quantity: z.coerce.number().positive().max(1e6), unit_price_kes: z.coerce.number().min(0).max(1e10) });
 const InvoiceIn = z.object({
-  client_id: uuid,
+  client_id: z.string(),
+  new_client_name: z.string().trim().max(160).optional(),
+  new_client_email: z.string().trim().email("Enter a valid client email").max(160).optional().or(z.literal("")),
+  new_client_country: z.string().trim().max(80).optional(),
   project_id: optUuid,
   issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -262,8 +333,16 @@ export async function createInvoice(_: ActionState, fd: FormData): Promise<Actio
   const p = InvoiceIn.safeParse(form(fd));
   if (!p.success) return first(p.error);
   if (p.data.due_date < p.data.issue_date) return { error: "The due date is before the issue date." };
-  const { items, ...head } = p.data;
-  const { data: inv, error } = await s.supabase.from("invoices").insert({ ...head, created_by: s.user.id }).select("id").single();
+  const { items, new_client_name, new_client_email, new_client_country, client_id, ...head } = p.data;
+  let clientId = client_id;
+  if (client_id === "new") {
+    if (!new_client_name || new_client_name.length < 2) return { error: "Enter the new client's name." };
+    const { data: c, error: ce } = await s.supabase.from("clients")
+      .insert({ name: new_client_name, email: new_client_email || null, country: new_client_country || "Kenya", stage: "active" }).select("id").single();
+    if (ce || !c) return { error: ce?.message ?? "Could not add the client." };
+    clientId = c.id;
+  } else if (!uuid.safeParse(client_id).success) return { error: "Choose a client." };
+  const { data: inv, error } = await s.supabase.from("invoices").insert({ ...head, client_id: clientId, created_by: s.user.id }).select("id").single();
   if (error || !inv) return { error: error?.message ?? "Could not create the invoice." };
   const { error: e2 } = await s.supabase.from("invoice_items").insert(items.map((it, i) => ({ ...it, invoice_id: inv.id, sort: i })));
   if (e2) return { error: e2.message };
@@ -281,7 +360,8 @@ export async function sendInvoice(_: ActionState, fd: FormData): Promise<ActionS
   if (!inv.client.email) return { error: "Add an email address to this client first." };
   if (inv.status === "cancelled") return { error: "This invoice is cancelled." };
 
-  const pdf = await renderInvoicePdf(inv);
+  const issuer = await loadIssuer();
+  const pdf = await renderInvoicePdf(inv, issuer, paystackConfigured() ? invoicePayUrl(inv.id) : undefined);
   await sendEmail({
     template: "invoice",
     to: inv.client.email,
@@ -289,7 +369,7 @@ export async function sendInvoice(_: ActionState, fd: FormData): Promise<ActionS
     html: emailLayout(`Invoice ${inv.number}`, [
       `Hello ${inv.client.name},`,
       `Please find attached invoice ${inv.number} for ${kes(inv.total_kes - inv.paid_kes)}, due on ${new Date(inv.due_date).toDateString()}.`,
-      paystackConfigured() ? "You can pay online by M-Pesa or card using the button below, or by bank transfer as shown on the invoice." : "Payment details are on the invoice.",
+      paystackConfigured() ? "You can pay online by M-Pesa or card using the button below, or by bank transfer or M-Pesa Paybill as shown on the invoice." : "Bank and M-Pesa Paybill details are on the invoice.",
       "Thank you for working with Dhow Partners.",
     ], paystackConfigured() ? { label: `Pay ${kes(inv.total_kes - inv.paid_kes)} online`, href: invoicePayUrl(inv.id) } : undefined),
     attachments: [{ filename: `Dhow-Partners-Invoice-${inv.number}.pdf`, content: pdf }],

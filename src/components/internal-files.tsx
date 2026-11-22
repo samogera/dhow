@@ -1,11 +1,12 @@
 import { Download, FileText, Trash2 } from "lucide-react";
 import { ActionForm } from "@/components/forms";
 import { Field, Input, Select } from "@/components/ui";
-import { bytes, cn, day, label } from "@/lib/format";
+import { bytes, cn, day } from "@/lib/format";
 import { deleteInternalFile, uploadInternalFile } from "@/actions/profiles";
 
-export const FILE_CATEGORIES = ["certificate", "company_profile", "registration", "tax", "license", "contract", "other"] as const;
-type F = { id: string; label: string; category: string; file_name: string; size_bytes: number; expires_on: string | null; created_at: string };
+import { PARTNER_DOCS, docLabel } from "@/lib/partner-docs";
+const DHOW_CATEGORIES = [["incorporation", "Certificate of incorporation"], ["cr12", "CR12"], ["kra_pin", "KRA PIN certificate"], ["tax_compliance", "Tax compliance certificate"], ["company_profile", "Company profile"], ["license", "Licence"], ["contract", "Contract"], ["other", "Other"]] as const;
+type F = { id: string; label: string; category: string; file_name: string; size_bytes: number; expires_on: string | null; created_at: string; uploaded_via?: string };
 
 /** Staff-only files for a partner or for Dhow: certificates, company profiles, registration and tax papers. */
 export function InternalFiles({ files, ownerType, ownerId }: { files: F[]; ownerType: "partner" | "dhow"; ownerId?: string }) {
@@ -22,7 +23,7 @@ export function InternalFiles({ files, ownerType, ownerId }: { files: F[]; owner
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{f.label}</p>
                   <p className="truncate text-xs text-muted">
-                    {label(f.category)} · {bytes(f.size_bytes)} · added {day(f.created_at)}
+                    {docLabel(f.category)} · {bytes(f.size_bytes)}{"uploaded_via" in f && f.uploaded_via === "partner_link" ? " · sent by partner" : ""} · added {day(f.created_at)}
                     {f.expires_on ? <span className={cn(expired && "font-medium text-bad")}> · {expired ? "expired" : "expires"} {day(f.expires_on)}</span> : null}
                   </p>
                 </div>
@@ -39,7 +40,7 @@ export function InternalFiles({ files, ownerType, ownerId }: { files: F[]; owner
         <input type="hidden" name="owner_type" value={ownerType} />
         {ownerId ? <input type="hidden" name="owner_id" value={ownerId} /> : null}
         <div className="sm:col-span-2"><Field label="File name"><Input name="label" required placeholder="Certificate of incorporation" /></Field></div>
-        <Field label="Type"><Select name="category" defaultValue="certificate">{FILE_CATEGORIES.map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select></Field>
+        <Field label="Type"><Select name="category" defaultValue={ownerType === "partner" ? "incorporation" : "incorporation"}>{(ownerType === "partner" ? [...PARTNER_DOCS.map((d) => [d.key, d.label] as const), ["other", "Other"] as const] : DHOW_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
         <Field label="Expires" hint="Optional"><Input name="expires_on" type="date" /></Field>
         <div className="sm:col-span-2">
           <input type="file" name="file" required accept="application/pdf,image/png,image/jpeg"

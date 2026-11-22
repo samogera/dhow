@@ -58,16 +58,16 @@ export type DocKind = keyof typeof DOC_KINDS;
 
 export const PLAN_LABEL: Record<PlanTier, string> = {
   free: "Free",
-  starter: "Basic",
-  growth: "Premium",
-  market_entry: "Business",
+  starter: "Basic (Starter)",
+  growth: "Premium (Growth)",
+  market_entry: "Enterprise (Market Entry)",
 };
 
 export const PLAN_PRICE_KES: Record<PlanTier, number | null> = {
   free: 0,
-  starter: 0,
+  starter: 1000,
   growth: 5000,
-  market_entry: 15000,
+  market_entry: null,
 };
 
 export function storageCapBytes(plan: PlanTier, status: VerificationState): number {

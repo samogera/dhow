@@ -93,7 +93,7 @@ export default async function EditOpportunity({ params, searchParams }: { params
                   <label className="flex items-center gap-2"><input type="checkbox" name="published" defaultChecked={o?.published ?? true} className="size-4 accent-navy-900" />Published</label>
                   <label className="flex items-center gap-2"><input type="checkbox" name="featured" defaultChecked={o?.featured ?? false} className="size-4 accent-navy-900" />Recommended by Dhow</label>
                   <label className="flex items-center gap-2"><input type="checkbox" name="requires_verified" defaultChecked={o?.requires_verified ?? false} className="size-4 accent-navy-900" />Verified companies only</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" name="members_only" defaultChecked={o?.members_only ?? false} className="size-4 accent-navy-900" />Paying members only (Premium, Business)</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" name="members_only" defaultChecked={o?.members_only ?? false} className="size-4 accent-navy-900" />Paying members only (Basic and up)</label>
                 </div>
               </Wide>
             </Section>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Globe2, Mail, Phone, Search, UsersRound } from "lucide-react";
+import { Mail, Phone, Search, UsersRound } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui";
@@ -27,6 +27,8 @@ export default async function Directory({ searchParams }: { searchParams: Promis
   const list = all.filter((c) => (!sp.sector || c.sector === sp.sector) && (!q || [c.name, c.tagline, c.about, c.sector].some((v) => v?.toLowerCase().includes(q))));
   const sectors = [...new Set(all.map((c) => c.sector).filter(Boolean))].sort() as string[];
   const me = all.some((c) => c.id === org.id);
+  const { data: open } = await createAdminClient().from("member_requests").select("target_id").eq("org_id", org.id).eq("kind", "member_intro").in("status", ["new", "in_progress"]);
+  const asked = new Set((open ?? []).map((r) => r.target_id as string));
 
   return (
     <>
@@ -71,8 +73,7 @@ export default async function Directory({ searchParams }: { searchParams: Promis
                 {c.listed_contact && c.email ? <a href={`mailto:${c.email}`} className="flex items-center gap-2 text-navy-600"><Mail className="size-4" />{c.email}</a> : null}
                 {c.listed_contact && c.phone ? <a href={`tel:${c.phone}`} className="flex items-center gap-2 text-navy-600"><Phone className="size-4" />{c.phone}</a> : null}
                 {c.website || Object.keys(c.socials ?? {}).length ? <SocialLinks website={c.website} socials={c.socials} /> : null}
-                {!(c.listed_contact && (c.email || c.phone)) && !c.website && !Object.keys(c.socials ?? {}).length
-                  ? <a href={`mailto:hello@dhowpartners.com?subject=${encodeURIComponent(`Introduction to ${c.name}`)}`} className="flex items-center gap-2 font-medium text-navy-600"><Globe2 className="size-4" />Ask Dhow to introduce you</a> : null}
+                {c.id !== org.id ? <div className="pt-1"><RequestButton kind="member_intro" targetId={c.id} label="Ask Dhow to introduce you" placeholder="What would you like to talk to them about? (optional)" done={asked.has(c.id)} /></div> : null}
               </div>
             </article>
           ))}

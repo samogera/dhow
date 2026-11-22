@@ -114,7 +114,7 @@ export async function dailyMaintenance() {
 
   // 2b. Paid membership past its end date goes back to Free (or Basic, if verified).
   const todayIso = new Date().toISOString().slice(0, 10);
-  await db.from("organizations").update({ plan: "free", plan_period: null, plan_until: null }).in("plan", ["growth", "market_entry"]).lt("plan_until", todayIso);
+  await db.from("organizations").update({ plan: "free", plan_period: null, plan_until: null }).in("plan", ["starter", "growth", "market_entry"]).lt("plan_until", todayIso);
 
   // 3. Invoices past due.
   const today = new Date().toISOString().slice(0, 10);
@@ -195,12 +195,12 @@ export async function invoiceReminders() {
 export async function membershipReminders() {
   const db = createAdminClient();
   const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
-  const { data } = await db.from("organizations").select("id, plan, plan_until").in("plan", ["growth", "market_entry"]).in("plan_until", [day(7), day(1)]);
+  const { data } = await db.from("organizations").select("id, plan, plan_until").in("plan", ["starter", "growth", "market_entry"]).in("plan_until", [day(7), day(1)]);
   for (const o of data ?? []) {
-    const name = o.plan === "market_entry" ? "Business" : "Premium";
+    const name = o.plan === "market_entry" ? "Enterprise" : o.plan === "starter" ? "Basic" : "Premium";
     const when = new Date(`${o.plan_until}T12:00:00+03:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "Africa/Nairobi" });
     await notifyOrg(o.id, "membership_renewal", `Your ${name} plan ends on ${when}`,
-      [`Your Dhow ${name} membership ends on ${when}. Renew to keep your member events, storage and applications.`, "If you don't renew, you'll move to the free plan and keep your documents."],
+      [`Your Dhow ${name} membership ends on ${when}. Renew to keep your member events, storage and tracked applications.`, "If you don't renew, you'll move to the free plan and keep your documents."],
       `Your Dhow ${name} plan ends on ${when}. Renew at ${appUrl()}/app/plans`,
       { label: "Renew", href: `${appUrl()}/app/plans` }).catch(() => undefined);
   }

@@ -177,10 +177,9 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
   const p = z.object({ opportunity_id: z.string().uuid(), note: z.string().trim().max(2000).optional(), stage: z.enum(["interested", "started", "submitted"]).default("submitted") }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Something's missing." };
   const tier = TIERS[tierOf(m.org)];
-  if (tier.applications !== null) {
-    const monthStart = `${new Date().toISOString().slice(0, 7)}-01T00:00:00Z`;
-    const { count } = await m.supabase.from("applications").select("id", { count: "exact", head: true }).eq("org_id", m.org.id).gte("created_at", monthStart);
-    if ((count ?? 0) >= tier.applications) return { error: `Your ${tier.name} plan includes ${tier.applications} applications a month. Upgrade to apply for more.` };
+  if (tier.tracked !== null) {
+    const { count } = await m.supabase.from("applications").select("id", { count: "exact", head: true }).eq("org_id", m.org.id).neq("status", "withdrawn");
+    if ((count ?? 0) >= tier.tracked) return { error: `Your ${tier.name} plan tracks up to ${tier.tracked} applications. Remove one or upgrade to track more.` };
   }
   // RLS (can_apply) enforces published, open and verified-only rules.
   const { error } = await m.supabase.from("applications").insert({
@@ -208,6 +207,7 @@ export async function setApplicationStage(fd: FormData) {
   if (!p.success) return;
   await m.supabase.from("applications").update({ status: p.data.status }).eq("id", p.data.id).eq("org_id", m.org.id);
   revalidatePath("/app/applications");
+  revalidatePath("/app/opportunities/[id]", "page");
 }
 
 export async function withdrawApplication(fd: FormData) {

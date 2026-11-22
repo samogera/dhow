@@ -7,7 +7,7 @@ import { initializeTransaction, paystackConfigured } from "@/lib/paystack";
 import { priceOf, TIERS } from "@/lib/plans";
 import { appUrl } from "@/lib/app-url";
 
-const Body = z.object({ tier: z.enum(["premium", "business"]), period: z.enum(["monthly", "yearly"]) });
+const Body = z.object({ tier: z.enum(["basic", "premium"]), period: z.enum(["monthly", "yearly"]) });
 
 /** Starts a Premium or Business membership payment (one month or one year) through Paystack checkout. */
 export async function POST(req: Request) {
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     .select("id").single();
   if (!pay) return NextResponse.json({ error: "Could not start payment." }, { status: 500 });
 
-  // DM-<tier><period>-<payment id>: p/b for Premium/Business, m/y for monthly/yearly.
+  // DM-<tier><period>-<payment id>: b/p for Basic/Premium, m/y for monthly/yearly.
   const reference = `DM-${tier[0]}${period[0]}-${pay.id}`;
   await db.from("payments").update({ checkout_request_id: reference }).eq("id", pay.id);
   try {

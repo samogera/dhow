@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Lock, MapPin, Star } from "lucide-react";
 import { requireMember } from "@/lib/auth";
-import { tierOf } from "@/lib/plans";
+import { atLeast } from "@/lib/plans";
 import { Empty, PageHeader } from "@/components/ui";
 import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
 import { Poster } from "@/components/poster";
@@ -30,7 +30,7 @@ function DateTile({ d }: { d: string | null }) {
 
 export default async function Events() {
   const { org, supabase } = await requireMember();
-  const member = ["premium", "business"].includes(tierOf(org));
+  const member = atLeast(org, "basic");
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("opportunities")
@@ -56,9 +56,9 @@ export default async function Events() {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight">Member events</h2>
-                <p className="text-sm text-muted">Briefings, roundtables and visits for Premium and Business members.</p>
+                <p className="text-sm text-muted">Briefings, roundtables and visits for paying members.</p>
               </div>
-              {!member ? <Link href="/app/plans" className="inline-flex items-center gap-1.5 text-sm font-medium text-navy-600 hover:text-navy-900"><Lock className="size-3.5" />Unlock with Premium</Link> : null}
+              {!member ? <Link href="/app/plans" className="inline-flex items-center gap-1.5 text-sm font-medium text-navy-600 hover:text-navy-900"><Lock className="size-3.5" />Unlock from Basic</Link> : null}
             </div>
             {memberEvents.length ? (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">

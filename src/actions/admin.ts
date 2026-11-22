@@ -120,6 +120,16 @@ export async function saveClient(_: ActionState, fd: FormData): Promise<ActionSt
   redirect(`/admin/clients/${data.id}`);
 }
 
+/** Connects a client to a member company, so Enterprise members see this work inside their workspace. */
+export async function linkClientOrg(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const p = z.object({ id: uuid, org_id: optUuid }).safeParse(form(fd));
+  if (!p.success) return;
+  await s.supabase.from("clients").update({ org_id: p.data.org_id }).eq("id", p.data.id);
+  revalidatePath(`/admin/clients/${p.data.id}`);
+}
+
 const LeadIn = z.object({
   id: optUuid,
   name: z.string().trim().min(2, "Describe the lead").max(200),

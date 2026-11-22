@@ -1,43 +1,47 @@
 import type { Organization } from "@/lib/types";
 
-// Four membership tiers. Free and Basic cost nothing: Basic comes with being Dhow Verified.
-// Premium and Business are paid monthly or yearly. They map onto the stored plan values:
-//   growth -> Premium, market_entry -> Business (starter is an old value, treated as Basic).
+// Membership, matching dhowpartners.com/apply:
+//   Free        signed up, no paid plan
+//   Basic       "Starter" on the website, KSh 1,000 a month
+//   Premium     "Growth" on the website, KSh 5,000 a month
+//   Enterprise  "Market Entry" on the website, custom quote, set by the Dhow team
+// Stored plan values: starter -> Basic, growth -> Premium, market_entry -> Enterprise.
 
-export type Tier = "free" | "basic" | "premium" | "business";
+export type Tier = "free" | "basic" | "premium" | "enterprise";
 export type Period = "monthly" | "yearly";
 
 const MB = 1024 * 1024;
 
 export const TIERS: Record<Tier, {
-  name: string; tagline: string; monthly: number | null; yearly: number | null;
-  storage: number; documents: number; applications: number | null; perks: string[];
+  name: string; site: string | null; tagline: string; monthly: number | null; yearly: number | null;
+  storage: number; documents: number; tracked: number | null; perks: string[];
 }> = {
   free: {
-    name: "Free", tagline: "Get started and look around.", monthly: 0, yearly: 0,
-    storage: 50 * MB, documents: 10, applications: 2,
-    perks: ["Open opportunities and events", "2 applications a month", "10 documents, 50 MB", "Help from the Dhow team"],
+    name: "Free", site: null, tagline: "Look around and start tracking.", monthly: 0, yearly: 0,
+    storage: 50 * MB, documents: 10, tracked: 3,
+    perks: ["Open opportunities and events", "Track 3 applications", "10 documents, 50 MB", "Help from the Dhow team"],
   },
   basic: {
-    name: "Basic", tagline: "Free once you're Dhow Verified.", monthly: 0, yearly: 0,
-    storage: 500 * MB, documents: 50, applications: 5,
-    perks: ["Everything in Free", "Dhow Verified badge", "Verified-only opportunities", "5 applications a month", "50 documents, 500 MB", "Listing in the member directory"],
+    name: "Basic", site: "Starter", tagline: "For small and micro businesses.", monthly: 1000, yearly: 10000,
+    storage: 500 * MB, documents: 50, tracked: 10,
+    perks: ["5 curated opportunities every week", "A live Q&A every month", "Free advice calls, on a need basis", "Representation at major events, at a discounted rate", "Member events", "Track 10 applications · 50 documents, 500 MB", "5% off Dhow Partners fees"],
   },
   premium: {
-    name: "Premium", tagline: "For companies actively growing in Kenya.", monthly: 5000, yearly: 50000,
-    storage: 2048 * MB, documents: 200, applications: 20,
-    perks: ["Everything in Basic", "Member events and briefings", "20 applications a month", "200 documents, 2 GB", "Introductions to Dhow partners", "Priority help"],
+    name: "Premium", site: "Growth", tagline: "For businesses trading 2 years or more.", monthly: 5000, yearly: 50000,
+    storage: 2048 * MB, documents: 200, tracked: null,
+    perks: ["Everything in Basic", "Access to all opportunities", "Introductions to vetted investors", "An investor-readiness review", "A one-on-one strategy call each quarter", "Priority when we represent members at events", "Unlimited tracking · 200 documents, 2 GB", "10% off Dhow Partners fees"],
   },
-  business: {
-    name: "Business", tagline: "The full Dhow service for serious market entry.", monthly: 15000, yearly: 150000,
-    storage: 10240 * MB, documents: 1000, applications: null,
-    perks: ["Everything in Premium", "Unlimited applications", "1,000 documents, 10 GB", "A named Dhow account lead", "KenInvest-style guidance on setting up", "Proposal reviews"],
+  enterprise: {
+    name: "Enterprise", site: "Market Entry", tagline: "For businesses that want their full setup done for them.", monthly: null, yearly: null,
+    storage: 10240 * MB, documents: 1000, tracked: null,
+    perks: ["Everything in Premium", "Your full setup, coordinated for you", "One named contact from start to finish", "Vetted law, tax and accounting firms", "A written setup plan", "Weekly check-ins until setup is done", "Your projects, tasks, invoices and progress in one place"],
   },
 };
 
-export const PAID: Tier[] = ["premium", "business"];
-export const TIER_ORDER: Tier[] = ["free", "basic", "premium", "business"];
-export const PLAN_FOR: Record<"premium" | "business", "growth" | "market_entry"> = { premium: "growth", business: "market_entry" };
+export const TIER_ORDER: Tier[] = ["free", "basic", "premium", "enterprise"];
+export const PAYABLE = ["basic", "premium"] as const;
+export type Payable = (typeof PAYABLE)[number];
+export const PLAN_FOR: Record<Payable, "starter" | "growth"> = { basic: "starter", premium: "growth" };
 
 type OrgLike = Pick<Organization, "plan" | "verification_status"> & { plan_until?: string | null };
 
@@ -46,12 +50,14 @@ export function planActive(org: OrgLike) {
 }
 
 export function tierOf(org: OrgLike): Tier {
-  if (planActive(org)) {
-    if (org.plan === "market_entry") return "business";
-    if (org.plan === "growth") return "premium";
-  }
-  return org.verification_status === "verified" ? "basic" : "free";
+  if (!planActive(org)) return "free";
+  if (org.plan === "market_entry") return "enterprise";
+  if (org.plan === "growth") return "premium";
+  if (org.plan === "starter") return "basic";
+  return "free";
 }
+
+export const atLeast = (org: OrgLike, t: Tier) => TIER_ORDER.indexOf(tierOf(org)) >= TIER_ORDER.indexOf(t);
 
 export function priceOf(tier: Tier, period: Period) {
   return period === "yearly" ? TIERS[tier].yearly : TIERS[tier].monthly;

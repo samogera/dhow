@@ -67,3 +67,25 @@ export async function askForHelp(_: HelpState, fd: FormData): Promise<HelpState>
   }));
   return { ok: true };
 }
+
+/** A member asks for Enterprise (Market Entry): emails the Dhow inbox and adds a lead with their details. */
+export async function applyForEnterprise(): Promise<HelpState> {
+  const m = await memberOrNull();
+  if (!m) return { error: "Sign in first." };
+  if (!(await rateLimit("help", 5, 600))) return { error: "Too many requests. Try again in a few minutes." };
+  const db = createAdminClient();
+  const name = m.profile?.full_name || m.user.email || "Member";
+  await db.from("leads").insert({ name, company: m.org.name, email: m.user.email, phone: m.profile?.phone ?? null, source: "Member workspace", next_step: "Wants Enterprise (Market Entry): scope and quote" });
+  after(() => sendEmail({
+    template: "help_request",
+    to: process.env.HELP_INBOX ?? "hello@dhowpartners.com",
+    replyTo: m.user.email ?? undefined,
+    subject: `Enterprise request: ${m.org.name}`,
+    html: emailLayout(`${m.org.name} wants Enterprise`, [
+      `From: ${name} (${m.user.email ?? "-"}${m.profile?.phone ? `, ${m.profile.phone}` : ""})`,
+      "They asked for the Market Entry / Enterprise plan from their Plans page. Call them to scope the setup and send a quote.",
+      "When agreed, set their plan to Enterprise in Members.",
+    ], { label: "Open members", href: `${appUrl()}/admin/members` }),
+  }));
+  return { ok: true };
+}

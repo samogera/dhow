@@ -9,7 +9,7 @@ import { ButtonLink, Card, CardHeader, Field, Input, Select, Stat, StatusBadge }
 import { Avatar } from "@/components/profile-bits";
 import { ClientFields, type ClientRow } from "@/components/client-fields";
 import { cn, day, kes } from "@/lib/format";
-import { assignPartner, saveClient, saveContact, saveProject, updateClientPartner } from "@/actions/admin";
+import { assignPartner, linkClientOrg, saveClient, saveContact, saveProject, updateClientPartner } from "@/actions/admin";
 import { makeClientLink } from "@/actions/profiles";
 import { CopyField } from "@/components/copy-field";
 import { appUrl } from "@/lib/app-url";
@@ -37,6 +37,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     ? await db.from("tasks").select("id, title, status, due_date, project_id, assignee").in("project_id", projectIds).neq("status", "done").order("due_date", { ascending: true, nullsFirst: false })
     : { data: [] as { id: string; title: string; status: string; due_date: string | null; project_id: string; assignee: string | null }[] };
   const { data: staff } = await db.from("profiles").select("id, full_name").not("staff_role", "is", null);
+  const { data: orgs } = await db.from("organizations").select("id, name").order("name").limit(1000);
   const { data: reviews } = await db.from("client_reviews").select("*").eq("client_id", id).order("created_at", { ascending: false });
   const token = (c as { portal_token?: string | null }).portal_token;
 
@@ -155,6 +156,17 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="space-y-4">
+          <Card>
+            <CardHeader title="Member account" sub="Link their Dhow member company. On Enterprise they see this work under Our work, after signing in." />
+            <form action={linkClientOrg} className="flex gap-2">
+              <input type="hidden" name="id" value={client.id} />
+              <select name="org_id" defaultValue={(c as { org_id?: string | null }).org_id ?? ""} aria-label="Member company" className="field flex-1 py-2 text-sm">
+                <option value="">Not linked</option>
+                {(orgs ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+              <button className="rounded-xl bg-navy-900 px-4 text-sm font-medium text-white">Save</button>
+            </form>
+          </Card>
           <Card className="border-mint/40 bg-mint-100/50">
             <CardHeader title="Client page" sub="A private link where they see progress, download and pay invoices, and leave a review. No login." />
             {token ? (

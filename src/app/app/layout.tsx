@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { guardMemberSide, requireMember } from "@/lib/auth";
+import { atLeast } from "@/lib/plans";
 import { Logo } from "@/components/logo";
 import { MemberNav } from "@/components/member-nav";
 import { MemberTabBar } from "@/components/mobile-nav";
@@ -26,7 +27,7 @@ export default async function MemberLayout({ children }: { children: React.React
             </form>
           ) : null}
         </div>
-        <div className="hidden min-w-0 lg:block"><MemberNav /></div>
+        <div className="hidden min-w-0 lg:block"><MemberNav enterprise={atLeast(m.org, "enterprise")} /></div>
         <UserMenu name={m.profile?.full_name ?? ""} email={m.user.email ?? ""} staff={Boolean(m.profile?.staff_role)} settingsHref="/app/settings" />
       </header>
       <main className="pt-8 pb-32 sm:pt-10 lg:pb-16">{children}</main>

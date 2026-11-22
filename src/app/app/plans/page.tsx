@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { confirmPaystack } from "@/lib/payments";
 import { Meter, PageHeader } from "@/components/ui";
@@ -17,12 +16,11 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
   const { org, role, supabase } = await requireMember();
   const current = tierOf(org);
   const tier = TIERS[current];
-  const monthStart = `${new Date().toISOString().slice(0, 7)}-01T00:00:00Z`;
   const [{ count: docs }, { count: apps }] = await Promise.all([
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("org_id", org.id).neq("status", "rejected").neq("status", "pending_upload"),
-    supabase.from("applications").select("id", { count: "exact", head: true }).eq("org_id", org.id).gte("created_at", monthStart),
+    supabase.from("applications").select("id", { count: "exact", head: true }).eq("org_id", org.id).neq("status", "withdrawn"),
   ]);
-  const paidTier = current === "premium" || current === "business";
+  const paidTier = current !== "free";
 
   return (
     <>
@@ -39,12 +37,12 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="label">Your plan</p>
-            <p className="mt-1 text-3xl font-semibold tracking-tight">{tier.name}</p>
+            <p className="mt-1 text-3xl font-semibold tracking-tight">{tier.name}{tier.site ? <span className="ml-2 align-middle text-base font-normal text-muted">({tier.site})</span> : null}</p>
             <p className="mt-1 text-sm text-muted">
               {paidTier && org.plan_until ? `Paid ${org.plan_period === "yearly" ? "yearly" : "monthly"} · runs until ${day(org.plan_until)}` : paidTier ? "Set up by the Dhow team" : tier.tagline}
             </p>
           </div>
-          {current === "free" ? <Link href="/app/verification" className="rounded-full bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800">Get verified for Basic</Link> : null}
+
         </div>
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
           <div>
@@ -58,18 +56,18 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
             <div className="mt-2"><Meter value={docs ?? 0} max={tier.documents} label="Documents" /></div>
           </div>
           <div>
-            <p className="text-sm text-muted">Applications this month</p>
-            <p className="num mt-1 font-semibold">{apps ?? 0} <span className="font-normal text-muted">{tier.applications === null ? "· unlimited" : `of ${tier.applications}`}</span></p>
-            {tier.applications !== null ? <div className="mt-2"><Meter value={apps ?? 0} max={tier.applications} label="Applications" /></div> : null}
+            <p className="text-sm text-muted">Applications tracked</p>
+            <p className="num mt-1 font-semibold">{apps ?? 0} <span className="font-normal text-muted">{tier.tracked === null ? "· unlimited" : `of ${tier.tracked}`}</span></p>
+            {tier.tracked !== null ? <div className="mt-2"><Meter value={apps ?? 0} max={tier.tracked} label="Applications tracked" /></div> : null}
           </div>
         </div>
       </section>
 
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-semibold tracking-tight">Membership plans</h2>
-        <p className="mt-1 text-sm text-muted">Pay by M-Pesa or card. Monthly or yearly, no auto-renewal: we remind you before it ends.</p>
+        <p className="mt-1 text-sm text-muted">Pay by M-Pesa or card, monthly or yearly. No auto-renewal: we remind you before it ends.</p>
       </div>
-      <PlanPicker current={current} canPay={isOrgAdmin(role)} verified={org.verification_status === "verified"} until={org.plan_until ?? null} />
+      <PlanPicker current={current} canPay={isOrgAdmin(role)} until={org.plan_until ?? null} />
     </>
   );
 }

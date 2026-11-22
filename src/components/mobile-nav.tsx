@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, Briefcase, Building2, CalendarDays, Compass, Crown, FileCheck2, House, FileText, LayoutGrid, LifeBuoy, Menu, Receipt, Settings, UsersRound, X,
+  BadgeCheck, Briefcase, Building2, CalendarDays, Compass, Crown, FileCheck2, House, Landmark, FileText, LayoutGrid, LifeBuoy, Menu, Receipt, Settings, UsersRound, X,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { AdminNav } from "@/components/admin-nav";
@@ -93,6 +93,8 @@ export function MemberTabBar() {
     { href: "/app/verification", label: "Verification", sub: "Get or renew your Dhow Verified badge", icon: BadgeCheck },
     { href: "/app/documents", label: "Documents", sub: "Your company files", icon: FileText },
     { href: "/app/directory", label: "Directory", sub: "Verified member companies", icon: Building2 },
+    { href: "/app/work", label: "Our work", sub: "Projects, tasks and invoices (Enterprise)", icon: Briefcase },
+    { href: "/app/investors", label: "Investors", sub: "Introductions to vetted investors", icon: Landmark },
     { href: "/app/plans", label: "Plan", sub: "Free, Basic, Premium or Business", icon: Crown },
     { href: "/app/settings", label: "Settings", sub: "Company, documents, verification, emails", icon: Settings },
     { href: "/help", label: "Help Centre", sub: "Guides for every page", icon: LifeBuoy },

@@ -6,7 +6,10 @@ import { ArrowLeft, ArrowUpRight, BadgeCheck, CalendarDays, Check, Clock, Gift, 
 import { Markdown } from "@/components/markdown";
 import { Poster } from "@/components/poster";
 import { requireMember } from "@/lib/auth";
-import { tierOf } from "@/lib/plans";
+import { atLeast } from "@/lib/plans";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { RequestButton } from "@/components/request-button";
+import { StageSelect } from "@/app/app/applications/stage";
 import { ButtonLink, Card, StatusBadge } from "@/components/ui";
 import { cn, day, daysUntil } from "@/lib/format";
 import { credit, defaultWhy, eventDates, hostOf, kindLabel, officialLink } from "@/lib/opportunity-display";
@@ -30,12 +33,14 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
   const { org, supabase } = await requireMember();
   const { data: o } = await supabase.from("opportunities").select("*").eq("id", id).eq("published", true).maybeSingle();
   if (!o) notFound();
-  const { data: app } = await supabase.from("applications").select("status, submitted_at").eq("org_id", org.id).eq("opportunity_id", id).maybeSingle();
+  const { data: app } = await supabase.from("applications").select("id, status, submitted_at").eq("org_id", org.id).eq("opportunity_id", id).neq("status", "withdrawn").maybeSingle();
 
   const t = splitTitle(o.title);
   const left = o.deadline ? daysUntil(o.deadline) : null;
   const closed = left !== null && left < 0;
-  const membersOnly = Boolean(o.members_only) && !["premium", "business"].includes(tierOf(org));
+  const { data: rep } = await createAdminClient().from("member_requests").select("id").eq("org_id", org.id).eq("kind", "event_representation").eq("target_id", id).in("status", ["new", "in_progress"]).maybeSingle();
+  const repAsked = Boolean(rep);
+  const membersOnly = Boolean(o.members_only) && !atLeast(org, "basic");
   const blocked = o.requires_verified && org.verification_status !== "verified";
   const official = officialLink(o);
   const from = credit(o);
@@ -133,15 +138,17 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
           <Card>
             {app ? (
               <div className="space-y-2">
-                <p className="font-semibold">Tracked in your applications</p>
-                <StatusBadge status={app.status} />
+                <p className="font-semibold">In My applications</p>
+                {["interested", "draft", "started", "submitted"].includes(app.status)
+                  ? <div className="flex items-center gap-2 text-sm text-muted">Stage <StageSelect id={app.id} status={app.status === "draft" ? "interested" : app.status} /></div>
+                  : <StatusBadge status={app.status} />}
                 <p className="text-sm text-muted">Added {day(app.submitted_at)}</p>
               </div>
             ) : closed ? (
               <p className="text-sm text-muted">This one has closed. New opportunities are added every day.</p>
             ) : membersOnly ? (
               <div className="space-y-3">
-                <p className="text-sm">This is a member event for Premium and Business members.</p>
+                <p className="text-sm">This is for paying members, from the Basic plan.</p>
                 <ButtonLink href="/app/plans" variant="accent" className="w-full">See plans</ButtonLink>
               </div>
             ) : blocked ? (
@@ -151,6 +158,15 @@ export default async function Opportunity({ params }: { params: Promise<{ id: st
               </div>
             ) : <ApplyForm opportunityId={o.id} external={Boolean(go)} />}
           </Card>
+          {isEvent && !closed ? (
+            <Card className="space-y-3">
+              <p className="font-semibold">Can&apos;t make it, or want a stand?</p>
+              <p className="text-sm text-muted">Dhow can represent your company here: share your materials, meet people for you and report back.</p>
+              {atLeast(org, "basic")
+                ? <RequestButton kind="event_representation" targetId={o.id} label="Ask Dhow to represent us" placeholder="What should we bring, and who should we meet? (optional)" done={repAsked} />
+                : <ButtonLink href="/app/plans" variant="outline" className="w-full">Available from Basic</ButtonLink>}
+            </Card>
+          ) : null}
         </div>
       </div>
 

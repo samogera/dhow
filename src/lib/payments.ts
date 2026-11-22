@@ -74,7 +74,7 @@ async function confirmMembership(reference: string, tx: Awaited<ReturnType<typeo
     .eq("id", pay.id).eq("status", "pending").select("id");
   if (updated?.length) {
     const code = reference.slice(3, 5);
-    const plan = code[0] === "b" ? "market_entry" : "growth";
+    const plan = code[0] === "b" ? "starter" : "growth";
     const period = code[1] === "y" ? "yearly" : "monthly";
     const { data: org } = await db.from("organizations").select("name, plan, plan_until").eq("id", pay.org_id).single();
     // Renewing the same plan early adds time on top; otherwise the new plan starts today.
@@ -83,7 +83,7 @@ async function confirmMembership(reference: string, tx: Awaited<ReturnType<typeo
     if (period === "yearly") from.setUTCFullYear(from.getUTCFullYear() + 1);
     else from.setUTCMonth(from.getUTCMonth() + 1);
     await db.from("organizations").update({ plan, plan_period: period, plan_until: from.toISOString().slice(0, 10) }).eq("id", pay.org_id);
-    const name = plan === "market_entry" ? "Business" : "Premium";
+    const name = plan === "starter" ? "Basic" : "Premium";
     await notifyStaff(["finance", "admin"], `${org?.name ?? "A member"} paid for ${name}`, [`${kes(pay.amount_kes)} for ${name} (${period}) by ${channelLabel(tx.channel)} through Paystack.`, `Reference: ${receipt}`],
       { label: "Open members", href: `${appUrl()}/admin/members` }).catch(() => undefined);
   }

@@ -8,14 +8,15 @@ export const metadata: Metadata = { title: "Set up your company" };
 export default async function Onboarding() {
   await guardMemberSide();
   const s = await requireUser();
+  const first = s.profile?.full_name?.split(" ")[0];
   return (
-    <CenteredShell wide logoHref="/app">
+    <CenteredShell logoHref="/app">
       <div>
-        <p className="label">Step 1 of 1</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-          Welcome{s.profile?.full_name ? `, ${s.profile.full_name.split(" ")[0]}` : ""}. Tell us about your company.
-        </h1>
-        <p className="mt-2 text-muted">You can change this later. Registration details are needed only for verification.</p>
+        <div className="mb-5 flex items-center gap-2" aria-label="Step 2 of 2">
+          <span className="h-1.5 flex-1 rounded-full bg-green" /><span className="h-1.5 flex-1 rounded-full bg-green" />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-navy-900">{first ? `Welcome, ${first}.` : "Welcome."} What&apos;s your company called?</h1>
+        <p className="mt-2 text-sm text-muted">That&apos;s all we need to set up your workspace. Registration details come later, only if you want to get verified.</p>
         <OnboardingForm />
       </div>
     </CenteredShell>

@@ -12,7 +12,7 @@ const safePath = (p: unknown) => (typeof p === "string" && p.startsWith("/") && 
 const SignUp = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(10, "Use at least 10 characters").max(128),
+  password: z.string().min(8, "Use at least 8 characters").max(128),
 });
 
 export async function signUp(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -47,6 +47,19 @@ export async function signIn(_: ActionState, fd: FormData): Promise<ActionState>
   if (next) redirect(next);
   const { data: profile } = await supabase.from("profiles").select("staff_role").eq("id", data.user.id).single();
   redirect(profile?.staff_role ? "/admin" : "/app");
+}
+
+/** Passwordless sign-in: emails a one-time link. Same reply whether or not the account exists. */
+export async function sendSignInLink(_: ActionState, fd: FormData): Promise<ActionState> {
+  const email = z.string().trim().toLowerCase().email().safeParse(fd.get("email"));
+  if (!email.success) return { error: "Enter your email address." };
+  if (!(await rateLimit("signin-link", 10, 600)) || !(await rateLimit(`signin-link:${email.data}`, 3, 3600))) {
+    return { error: "Too many links asked for. Wait a little, or sign in with your password." };
+  }
+  const next = safePath(fd.get("next")) ?? "/";
+  const supabase = await createClient();
+  await supabase.auth.signInWithOtp({ email: email.data, options: { shouldCreateUser: false, emailRedirectTo: `${app()}/auth/callback?next=${encodeURIComponent(next)}` } });
+  return { ok: "Check your inbox for your sign-in link." };
 }
 
 export async function signOut() {

@@ -1,36 +1,34 @@
 "use client";
 import { useActionState } from "react";
+import { Building2 } from "lucide-react";
 import { createOrganization } from "@/actions/member";
 import { FormMessage, Submit } from "@/components/forms";
-import { Field, Input, Select } from "@/components/ui";
+import { Field, Select } from "@/components/ui";
 import { SECTORS } from "@/lib/types";
 
+const COUNTRIES = ["Kenya", "Uganda", "Tanzania", "Rwanda", "Ethiopia", "United Kingdom", "United States", "United Arab Emirates", "India", "China", "Other"];
 
+/** Only what we need to set up the workspace. Registration details come later, when the company wants to be verified. */
 export function OnboardingForm() {
   const [state, action] = useActionState(createOrganization, undefined);
   return (
-    <form action={action} className="mt-8 grid gap-4 sm:grid-cols-2">
-      <div className="sm:col-span-2"><Field label="Company name"><Input name="name" required placeholder="Acme Kenya Ltd" /></Field></div>
-      <Field label="Country of registration">
-        <Select name="country" defaultValue="Kenya">
-          {["Kenya", "Uganda", "Tanzania", "Rwanda", "United Kingdom", "United States", "United Arab Emirates", "India", "China", "Other"].map((c) => <option key={c}>{c}</option>)}
-        </Select>
+    <form action={action} className="mt-7 space-y-4">
+      <Field label="Company name">
+        <label className="relative block">
+          <Building2 className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
+          <input name="name" required autoFocus autoComplete="organization" placeholder="e.g. Acme Kenya Ltd" className="field pl-11" />
+        </label>
       </Field>
-      <Field label="Sector">
-        <Select name="sector" defaultValue="">
-          <option value="" disabled>Choose a sector</option>
-          {SECTORS.map((s) => <option key={s}>{s}</option>)}
-        </Select>
-      </Field>
-      <Field label="BRS registration number" hint="Optional now, needed to get verified"><Input name="brs_number" placeholder="PVT-AB1CD2EF" /></Field>
-      <Field label="Company KRA PIN" hint="Stored encrypted"><Input name="kra_pin" placeholder="P051234567X" /></Field>
-      <Field label="Registered P.O. Box" hint="Optional now, used for verification"><Input name="postal_address" inputMode="numeric" placeholder="12345" /></Field>
-      <Field label="Postal code"><Input name="postal_code" inputMode="numeric" placeholder="00100" /></Field>
-      <div className="sm:col-span-2"><Field label="Website"><Input name="website" placeholder="acme.co.ke" /></Field></div>
-      <div className="sm:col-span-2 space-y-3">
-        <FormMessage state={state} />
-        <Submit className="w-full py-3" pending="Creating…">Create company</Submit>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Registered in">
+          <Select name="country" defaultValue="Kenya">{COUNTRIES.map((c) => <option key={c}>{c}</option>)}</Select>
+        </Field>
+        <Field label="Sector" hint="Optional">
+          <Select name="sector" defaultValue=""><option value="">Choose later</option>{SECTORS.map((s) => <option key={s}>{s}</option>)}</Select>
+        </Field>
       </div>
+      <FormMessage state={state} />
+      <Submit variant="accent" className="w-full py-3" pending="Setting up…">Continue</Submit>
     </form>
   );
 }

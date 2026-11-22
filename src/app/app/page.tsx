@@ -1,103 +1,206 @@
 import Link from "next/link";
-import { BadgeCheck, CalendarClock, FileText, ShieldAlert } from "lucide-react";
+import { ArrowRight, BadgeCheck, Briefcase, Building2, CalendarDays, Check, FileText, MessageCircle, PhoneCall, Send, ShieldAlert } from "lucide-react";
 import { requireMember } from "@/lib/auth";
-import { ButtonLink, Card, CardHeader, Empty, Meter, PageHeader, StatusBadge } from "@/components/ui";
-import { bytes, day, daysUntil, label } from "@/lib/format";
-import { PLAN_LABEL, storageCapBytes } from "@/lib/types";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { Card, CardHeader, StatusBadge } from "@/components/ui";
+import { OpportunityCard, type CardOpp } from "@/components/opportunity-card";
+import { cn, day } from "@/lib/format";
+
+const OPP_COLS = "id, kind, title, summary, source, url, apply_url, imported_at, location, deadline, requires_verified, image_url, benefits, featured, starts_on, ends_on";
+
+function greeting() {
+  const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: "Africa/Nairobi" }).format(new Date()));
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+}
 
 export default async function Dashboard() {
   const { org, profile, supabase } = await requireMember();
-  const [{ data: docs }, { data: opps }, { data: apps }] = await Promise.all([
-    supabase.from("documents").select("id, file_name, kind, status, created_at").eq("org_id", org.id).neq("status", "pending_upload").order("created_at", { ascending: false }).limit(4),
-    supabase.from("opportunities").select("id, title, kind, source, deadline, requires_verified").eq("published", true).or(`deadline.is.null,deadline.gte.${new Date().toISOString().slice(0, 10)}`).order("deadline", { ascending: true, nullsFirst: false }).limit(5),
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ count: docCount }, { data: opps }, { data: events }, { data: apps }, { data: dhow }] = await Promise.all([
+    supabase.from("documents").select("id", { count: "exact", head: true }).eq("org_id", org.id).in("status", ["uploaded", "approved"]),
+    supabase.from("opportunities").select(OPP_COLS).eq("published", true).neq("kind", "event").or(`deadline.is.null,deadline.gte.${today}`)
+      .order("featured", { ascending: false }).order("deadline", { ascending: true, nullsFirst: false }).limit(3),
+    supabase.from("opportunities").select("id, title, starts_on, location").eq("published", true).eq("kind", "event").gte("starts_on", today).order("starts_on").limit(3),
     supabase.from("applications").select("id, status, opportunities(title)").eq("org_id", org.id).order("created_at", { ascending: false }).limit(4),
+    createAdminClient().from("dhow_profile").select("booking_link, whatsapp, phone").limit(1).maybeSingle(),
   ]);
 
   const verified = org.verification_status === "verified";
-  const cap = storageCapBytes(org.plan, org.verification_status);
+  const pending = org.verification_status === "pending";
   const first = profile?.full_name?.split(" ")[0];
+  const steps = [
+    { done: true, title: "Create your workspace", why: "Done. Welcome aboard.", href: "/app/settings", icon: Building2 },
+    { done: Boolean(org.sector && org.website), title: "Complete your company profile", why: "Sector and website help us pick the right opportunities.", href: "/app/settings", icon: Building2 },
+    { done: (docCount ?? 0) > 0, title: "Upload your company documents", why: "Your CR12 or incorporation certificate, and KRA PIN.", href: "/app/documents", icon: FileText },
+    { done: verified || pending, title: "Get Dhow Verified", why: "A badge that shows partners and buyers your records check out.", href: "/app/verification", icon: BadgeCheck },
+    { done: (apps?.length ?? 0) > 0, title: "Apply for your first opportunity", why: "Grants, programmes and tenders open to companies in Kenya.", href: "/app/opportunities", icon: Send },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const allDone = doneCount === steps.length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+  const wa = dhow?.whatsapp ? `https://wa.me/${dhow.whatsapp.replace(/\D/g, "").replace(/^0/, "254")}` : null;
 
   return (
-    <>
-      <PageHeader title="Welcome back," accent={first || org.name} sub={`${org.name} · ${PLAN_LABEL[org.plan]} plan`}>
-        <ButtonLink href="/app/documents" variant="outline"><FileText className="size-4" /> Upload documents</ButtonLink>
-        {!verified ? <ButtonLink href="/app/verification" variant="accent"><BadgeCheck className="size-4" /> Get verified</ButtonLink> : null}
-      </PageHeader>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Verification status, the green card */}
-        <div className={verified ? "card bg-mint-100" : "card"}>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className={verified ? "label text-green" : "label"}>Verification</p>
-              <p className="mt-1 text-sm">{verified ? "Your badge is live" : "Build trust with partners and buyers"}</p>
-            </div>
-            {verified ? <BadgeCheck className="size-6 text-green" /> : <ShieldAlert className="size-6 text-warn" />}
+    <div className="space-y-6">
+      {/* Welcome */}
+      <section className="relative overflow-hidden rounded-[2rem] bg-navy-900 px-6 py-7 text-white sm:px-9 sm:py-9">
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-mint/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 left-1/3 size-72 rounded-full bg-green/25 blur-3xl" />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm text-white/70">{greeting()}{first ? `, ${first}` : ""}</p>
+            <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight sm:text-[2rem]">
+              {org.name}
+              {verified ? <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium"><BadgeCheck className="size-3.5 text-mint" />Dhow Verified</span> : null}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-white/75">
+              {allDone ? "You're all set. New opportunities are added every week, checked by our team." : "A few quick steps and you'll get the most out of Dhow."}
+            </p>
           </div>
-          <p className="mt-10 text-3xl font-semibold tracking-tight">{verified ? "Dhow Verified" : label(org.verification_status)}</p>
-          <p className="mt-1 text-sm text-muted">
-            {verified && org.verified_until ? `Valid until ${day(org.verified_until)}` : org.verification_status === "pending" ? "We're checking your records." : "Upload your documents, pay, and we check the registry."}
-          </p>
+          {!allDone ? (
+            <div className="flex items-center gap-4">
+              <div className="relative size-20 shrink-0" role="img" aria-label={`${doneCount} of ${steps.length} steps done`}>
+                <svg viewBox="0 0 36 36" className="size-20 -rotate-90">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3.5" />
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-mint)" strokeWidth="3.5" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 97.4} 97.4`} />
+                </svg>
+                <span className="absolute inset-0 grid place-items-center text-sm font-semibold">{doneCount}/{steps.length}</span>
+              </div>
+              <Link href={steps.find((s) => !s.done)!.href} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-navy-900 shadow-sm transition hover:bg-mint-100">
+                Next step <ArrowRight className="size-4" />
+              </Link>
+            </div>
+          ) : (
+            <Link href="/app/opportunities" className="inline-flex items-center gap-2 self-start rounded-full bg-white px-5 py-3 text-sm font-semibold text-navy-900 shadow-sm transition hover:bg-mint-100 sm:self-auto">
+              See open opportunities <ArrowRight className="size-4" />
+            </Link>
+          )}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1.65fr_1fr]">
+        <div className="min-w-0 space-y-6">
+          {/* Getting started */}
+          {!allDone ? (
+            <Card className="p-0">
+              <div className="flex items-center justify-between px-6 pt-6 pb-3">
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight">Get started</h2>
+                  <p className="text-sm text-muted">{steps.length - doneCount} step{steps.length - doneCount === 1 ? "" : "s"} left · about 10 minutes</p>
+                </div>
+              </div>
+              <ol className="divide-y divide-line">
+                {steps.map((s) => (
+                  <li key={s.title}>
+                    <Link href={s.href} className={cn("group flex items-center gap-4 px-6 py-4 transition hover:bg-sunken/60", s.done && "pointer-events-none")}>
+                      <span className={cn("grid size-10 shrink-0 place-items-center rounded-2xl", s.done ? "bg-green text-white" : "bg-navy-50 text-navy-700")}>
+                        {s.done ? <Check className="size-5" /> : <s.icon className="size-5" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className={cn("block font-medium", s.done && "text-muted line-through decoration-line")}>{s.title}</span>
+                        <span className="block text-sm text-muted">{s.why}</span>
+                      </span>
+                      {!s.done ? <ArrowRight className="size-4 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-ink" /> : null}
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          ) : null}
+
+          {/* Opportunities */}
+          <section>
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">Picked for you</h2>
+                <p className="text-sm text-muted">Open to companies in Kenya, checked by the Dhow team.</p>
+              </div>
+              <Link href="/app/opportunities" className="shrink-0 text-sm font-medium text-navy-600 hover:text-navy-900">See all</Link>
+            </div>
+            {opps?.length ? (
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {(opps as CardOpp[]).map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} locked={o.requires_verified && !verified} />)}
+              </div>
+            ) : (
+              <Card className="text-center">
+                <Briefcase className="mx-auto size-6 text-faint" />
+                <p className="mt-2 font-medium">New opportunities are on the way</p>
+                <p className="text-sm text-muted">We check new grants, programmes and tenders every day.</p>
+              </Card>
+            )}
+          </section>
         </div>
 
-        <Card>
-          <CardHeader title="Storage" sub="PDF, PNG and JPG documents" href="/app/documents" />
-          <p className="num text-3xl font-semibold tracking-tight">{bytes(org.storage_used_bytes)}</p>
-          <p className="mt-1 mb-4 text-sm text-muted">of {bytes(cap)} on your plan</p>
-          <Meter value={org.storage_used_bytes} max={cap} label="Storage used" />
-        </Card>
+        <aside className="space-y-6">
+          {/* Verification */}
+          <Card className={verified ? "bg-mint-100/70" : ""}>
+            <div className="flex items-start gap-3">
+              <span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", verified ? "bg-green text-white" : pending ? "bg-amber-100 text-amber-700" : "bg-sunken text-navy-700")}>
+                {verified ? <BadgeCheck className="size-5" /> : <ShieldAlert className="size-5" />}
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold">{verified ? "You're Dhow Verified" : pending ? "Verification in progress" : "Get Dhow Verified"}</p>
+                <p className="mt-0.5 text-sm text-muted">
+                  {verified && org.verified_until ? `Valid until ${day(org.verified_until)}.` : pending ? "We're checking your records with the business registry." : "Show partners and buyers that your company's records check out."}
+                </p>
+              </div>
+            </div>
+            {!verified && !pending ? <Link href="/app/verification" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-navy-600 hover:text-navy-900">Start verification <ArrowRight className="size-4" /></Link> : null}
+          </Card>
 
-        <Card>
-          <CardHeader title="Applications" sub="Where your bids stand" href="/app/applications" />
+          {/* Events */}
+          <Card>
+            <CardHeader title="Upcoming events" href="/app/events" />
+            {events?.length ? (
+              <ul className="space-y-3">
+                {events.map((e) => {
+                  const d = new Date(`${e.starts_on}T12:00:00+03:00`);
+                  return (
+                    <li key={e.id}>
+                      <Link href={`/app/opportunities/${e.id}`} className="flex items-center gap-3 transition hover:opacity-80">
+                        <span className="grid w-12 shrink-0 rounded-2xl bg-sunken py-1.5 text-center leading-tight">
+                          <span className="text-[10px] font-semibold tracking-wide text-muted uppercase">{d.toLocaleString("en-KE", { month: "short", timeZone: "Africa/Nairobi" })}</span>
+                          <span className="text-lg font-semibold text-navy-900">{d.toLocaleString("en-KE", { day: "numeric", timeZone: "Africa/Nairobi" })}</span>
+                        </span>
+                        <span className="min-w-0">
+                          <span className="line-clamp-2 text-sm font-medium">{e.title}</span>
+                          {e.location ? <span className="block truncate text-xs text-muted">{e.location}</span> : null}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : <p className="flex items-center gap-2 text-sm text-muted"><CalendarDays className="size-4" />No events coming up yet.</p>}
+          </Card>
+
+          {/* Applications */}
           {apps?.length ? (
-            <ul className="space-y-3">
-              {(apps as unknown as { id: string; status: string; opportunities: { title: string } }[]).map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate">{a.opportunities?.title}</span>
-                  <StatusBadge status={a.status} />
-                </li>
-              ))}
-            </ul>
-          ) : <p className="text-sm text-muted">No applications yet.</p>}
-        </Card>
-      </div>
+            <Card>
+              <CardHeader title="Your applications" href="/app/applications" />
+              <ul className="space-y-3">
+                {(apps as unknown as { id: string; status: string; opportunities: { title: string } | null }[]).map((a) => (
+                  <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="truncate">{a.opportunities?.title}</span>
+                    <StatusBadge status={a.status} />
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-        <Card>
-          <CardHeader title="Open opportunities" sub="RFPs, grants and events picked for members" href="/app/opportunities" />
-          {opps?.length ? (
-            <ul className="divide-y divide-line">
-              {opps.map((o) => (
-                <li key={o.id}>
-                  <Link href={`/app/opportunities/${o.id}`} className="flex items-center gap-4 py-3.5 transition hover:opacity-80">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-navy-50 text-navy-600"><CalendarClock className="size-4" /></span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{o.title}</span>
-                      <span className="block text-xs text-muted">{label(o.kind)}{o.source ? ` · ${o.source}` : ""}{o.requires_verified ? " · Verified only" : ""}</span>
-                    </span>
-                    {o.deadline ? <span className="text-right text-xs text-muted"><span className="block font-medium text-ink">{day(o.deadline)}</span>{daysUntil(o.deadline)} days left</span> : null}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : <Empty title="No open opportunities right now" sub="We add new ones every week." />}
-        </Card>
-
-        <Card>
-          <CardHeader title="Recent documents" href="/app/documents" />
-          {docs?.length ? (
-            <ul className="space-y-3">
-              {docs.map((d) => (
-                <li key={d.id} className="flex items-center gap-3 text-sm">
-                  <span className="grid size-9 place-items-center rounded-xl bg-sunken"><FileText className="size-4 text-muted" /></span>
-                  <span className="min-w-0 flex-1 truncate">{d.file_name}</span>
-                  <StatusBadge status={d.status} />
-                </li>
-              ))}
-            </ul>
-          ) : <Empty title="No documents yet" sub="Upload your CR12 and KRA PIN certificate to get verified." />}
-        </Card>
+          {/* Talk to Dhow */}
+          <Card className="bg-sunken/70">
+            <p className="font-semibold">Need a hand?</p>
+            <p className="mt-0.5 text-sm text-muted">Talk to the Dhow team about setting up, partners or an opportunity.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {dhow?.booking_link ? <a href={dhow.booking_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white"><PhoneCall className="size-4" />Book a call</a> : null}
+              {wa ? <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium"><MessageCircle className="size-4" />WhatsApp</a> : null}
+              <a href="mailto:hello@dhowpartners.com" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium">Email us</a>
+            </div>
+          </Card>
+        </aside>
       </div>
-    </>
+    </div>
   );
 }

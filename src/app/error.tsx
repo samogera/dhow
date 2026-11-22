@@ -4,7 +4,14 @@ import { CenteredShell } from "@/components/centered-shell";
 import { Button, ButtonLink } from "@/components/ui";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => {
+    console.error(error);
+    fetch("/api/client-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: (error.message || "Error").slice(0, 500), digest: error.digest, path: location.pathname }),
+    }).catch(() => undefined);
+  }, [error]);
   return (
     <CenteredShell>
       <div className="text-center">

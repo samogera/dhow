@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BadgeCheck, CalendarDays, FileText, LayoutDashboard, Send, Settings, Sparkles } from "lucide-react";
+import { BadgeCheck, Briefcase, CalendarDays, FileText, LayoutDashboard, Send, Settings } from "lucide-react";
 import { cn } from "@/lib/format";
 
 const items = [
   { href: "/app", label: "Home", icon: LayoutDashboard, tone: "text-navy-700" },
-  { href: "/app/opportunities", label: "Opportunities", icon: Sparkles, tone: "text-amber-700" },
+  { href: "/app/opportunities", label: "Opportunities", icon: Briefcase, tone: "text-amber-700" },
   { href: "/app/events", label: "Events", icon: CalendarDays, tone: "text-mint-600" },
   { href: "/app/applications", label: "Applications", icon: Send, tone: "text-navy-500" },
   { href: "/app/verification", label: "Verification", icon: BadgeCheck, tone: "text-green" },

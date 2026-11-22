@@ -22,12 +22,17 @@ export async function confirmPaystack(reference: string): Promise<ConfirmResult>
 
 async function confirmVerificationFee(reference: string, tx: Awaited<ReturnType<typeof verifyTransaction>>): Promise<ConfirmResult> {
   const db = createAdminClient();
-  const { data: pay } = await db.from("payments").select("id, amount_kes, status, mpesa_receipt").eq("checkout_request_id", reference).maybeSingle();
+  const { data: pay } = await db.from("payments").select("id, amount_kes, status, mpesa_receipt, reference_id").eq("checkout_request_id", reference).maybeSingle();
   if (!pay) return { state: "unknown", message: "We couldn't find that payment." };
   if (pay.status === "paid") return { state: "paid", message: "Payment received.", receipt: pay.mpesa_receipt ?? undefined };
   if (pay.status !== "pending") return { state: "failed", message: "This payment didn't go through. Please try again." };
 
   if (tx.status === "success") {
+    // Flag a second successful fee for the same verification so finance can refund it.
+    if (pay.reference_id) {
+      const { count } = await db.from("payments").select("id", { count: "exact", head: true }).eq("reference_id", pay.reference_id).eq("status", "paid");
+      if ((count ?? 0) > 0) await notifyStaff(["finance", "admin"], "Possible double verification payment", [`A second verification fee was paid (reference ${reference}).`, "Check it and refund the member if needed."]).catch(() => undefined);
+    }
     if (tx.currency !== "KES" || tx.amount < pay.amount_kes * 100) {
       await db.from("payments").update({ status: "failed", result_desc: `Amount mismatch: ${tx.amount / 100} ${tx.currency}`, raw: tx }).eq("id", pay.id).eq("status", "pending");
       return { state: "failed", message: "The amount paid didn't match. Please contact us." };
@@ -59,7 +64,7 @@ async function confirmInvoicePayment(reference: string, tx: Awaited<ReturnType<t
   const { data: existing } = await db.from("invoice_payments").select("id").eq("reference", receipt).maybeSingle();
   if (existing) return { state: "paid", message: "Payment received. Thank you.", receipt };
 
-  const { data: inv } = await db.from("invoices").select("id, number, status").eq("id", invoiceId).maybeSingle();
+  const { data: inv } = await db.from("invoices").select("id, number, status, total_kes, paid_kes").eq("id", invoiceId).maybeSingle();
   if (!inv) return { state: "unknown", message: "We couldn't find that invoice." };
   const amount = tx.amount / 100;
   const { error } = await db.from("invoice_payments").insert({
@@ -69,6 +74,11 @@ async function confirmInvoicePayment(reference: string, tx: Awaited<ReturnType<t
   // A unique index on Paystack references makes a race between the webhook and the return page harmless.
   if (error && error.code !== "23505") return { state: "pending", message: "Payment received; we're recording it now." };
   if (!error) {
+    // Paid twice (two tabs, or a retry after a dropped connection): tell finance so they can refund.
+    if (Number(inv.paid_kes) >= Number(inv.total_kes)) {
+      await notifyStaff(["finance", "admin"], `Possible double payment on invoice ${inv.number}`, [`A further ${kes(amount)} came in through Paystack after the invoice was already fully paid.`, `Reference: ${receipt}. Check it and refund the client if needed.`],
+        { label: "Open invoice", href: `${appUrl()}/admin/finance/invoices/${inv.id}` }).catch(() => undefined);
+    }
     if (inv.status === "draft") await db.from("invoices").update({ status: "sent" }).eq("id", inv.id).eq("status", "draft");
     await notifyStaff(["finance", "admin"], `Invoice ${inv.number} paid online`, [`${kes(amount)} received by ${channelLabel(tx.channel)} through Paystack.`, `Reference: ${receipt}`],
       { label: "Open invoice", href: `${appUrl()}/admin/finance/invoices/${inv.id}` }).catch(() => undefined);

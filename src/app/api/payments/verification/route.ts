@@ -49,6 +49,17 @@ export async function POST(req: Request) {
   }
   if (!v) return NextResponse.json({ error: "Could not start verification." }, { status: 500 });
 
+  // A second tap must not start a second charge: wait while a payment from the last 3 minutes is still open.
+  const { data: open } = await db
+    .from("payments")
+    .select("id")
+    .eq("reference_id", v.id)
+    .eq("status", "pending")
+    .gte("created_at", new Date(Date.now() - 3 * 60 * 1000).toISOString())
+    .limit(1)
+    .maybeSingle();
+  if (open) return NextResponse.json({ error: "A payment request is already open. Finish it on your phone or in the checkout tab, or try again in 3 minutes." }, { status: 409 });
+
   const { data: pay } = await db
     .from("payments")
     .insert({ org_id: org.id, purpose: "verification", reference_id: v.id, phone, amount_kes: fee, created_by: m.user.id })

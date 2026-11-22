@@ -11,7 +11,7 @@ const safePath = (p: unknown) => (typeof p === "string" && p.startsWith("/") && 
 
 const SignUp = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
-  email: z.string().trim().email("Enter a valid email"),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: z.string().min(10, "Use at least 10 characters").max(128),
 });
 
@@ -19,6 +19,8 @@ export async function signUp(_: ActionState, fd: FormData): Promise<ActionState>
   if (!(await rateLimit("signup", 5, 600))) return { error: "Too many attempts. Try again in 10 minutes." };
   const p = SignUp.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: p.error.issues[0].message };
+  // Per-email limit too, so bots rotating IPs can't flood one inbox with confirmation emails.
+  if (!(await rateLimit(`signup-email:${p.data.email}`, 3, 3600))) return { ok: "Check your email for a link to confirm your account." };
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email: p.data.email,
@@ -30,12 +32,13 @@ export async function signUp(_: ActionState, fd: FormData): Promise<ActionState>
   return { ok: "Check your email for a link to confirm your account." };
 }
 
-const SignIn = z.object({ email: z.string().trim().email(), password: z.string().min(1) });
+const SignIn = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string().min(1) });
 
 export async function signIn(_: ActionState, fd: FormData): Promise<ActionState> {
   if (!(await rateLimit("signin", 10, 300))) return { error: "Too many attempts. Wait 5 minutes and try again." };
   const p = SignIn.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Enter your email and password." };
+  if (!(await rateLimit(`signin-email:${p.data.email}`, 10, 900))) return { error: "Too many attempts for this account. Wait 15 minutes and try again." };
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword(p.data);
   if (error || !data.user) return { error: "That email and password don't match." };
@@ -54,8 +57,10 @@ export async function signOut() {
 
 export async function requestReset(_: ActionState, fd: FormData): Promise<ActionState> {
   if (!(await rateLimit("reset", 5, 600))) return { error: "Too many attempts. Try again later." };
-  const email = z.string().trim().email().safeParse(fd.get("email"));
+  const email = z.string().trim().toLowerCase().email().safeParse(fd.get("email"));
   if (!email.success) return { error: "Enter a valid email." };
+  // At most 3 reset emails an hour to one address, whatever IP asks.
+  if (!(await rateLimit(`reset-email:${email.data}`, 3, 3600))) return { ok: "If that email has an account, a reset link is on its way." };
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email.data, { redirectTo: `${app()}/auth/callback?next=/reset-password` });
   return { ok: "If that email has an account, a reset link is on its way." };

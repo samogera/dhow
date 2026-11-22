@@ -6,7 +6,7 @@ import { ConfirmSubmit } from "@/components/forms";
 import { kes, label } from "@/lib/format";
 import { PLAN_LABEL, PLAN_PRICE_KES } from "@/lib/types";
 import { removeMember } from "@/actions/member";
-import { CompanyForm, CompanyProfileForm, DeleteCompanyForm, InviteForm, ProfileForm } from "./forms";
+import { CompanyForm, CompanyProfileForm, DeleteAccountForm, DeleteCompanyForm, InviteForm, ProfileForm } from "./forms";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -96,6 +96,11 @@ export default async function Settings() {
           <DeleteCompanyForm name={m.org.name} />
         </Card>
       ) : null}
+
+      <Card className="mt-4 border-bad/20 bg-bad/5">
+        <CardHeader title="Delete my account" sub="Remove your login and personal details from Dhow" />
+        <DeleteAccountForm />
+      </Card>
     </>
   );
 }

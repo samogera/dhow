@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { deleteMyCompany, inviteMember, updateOrganization, updateProfile } from "@/actions/member";
+import { deleteMyAccount, deleteMyCompany, inviteMember, updateOrganization, updateProfile } from "@/actions/member";
 import { saveCompanyProfile } from "@/actions/profiles";
 import { ImageInput, SocialFields } from "@/components/profile-bits";
 import { FormMessage, Submit } from "@/components/forms";
@@ -83,6 +83,18 @@ export function CompanyProfileForm({ org, disabled }: { org: Organization; disab
           {!disabled ? <Submit>Save profile</Submit> : <p className="text-sm text-muted">Only owners and admins can edit.</p>}
         </div>
       </fieldset>
+    </form>
+  );
+}
+
+export function DeleteAccountForm() {
+  const [state, action] = useActionState(deleteMyAccount, undefined);
+  return (
+    <form action={action} className="space-y-3">
+      <p className="text-sm text-ink/80">This deletes your login and your personal details. If you are the only owner of a company, that company and its documents are deleted too. It can&apos;t be undone.</p>
+      <Field label="Type DELETE to confirm"><Input name="confirm" autoComplete="off" /></Field>
+      <FormMessage state={state} />
+      <Submit variant="danger" pending="Deleting…">Delete my account</Submit>
     </form>
   );
 }

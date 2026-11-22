@@ -203,6 +203,30 @@ export async function withdrawApplication(fd: FormData) {
   revalidatePath("/app/applications");
 }
 
+/** A member deletes their own login. Companies where they are the only owner are deleted with it, documents included. */
+export async function deleteMyAccount(_: ActionState, fd: FormData): Promise<ActionState> {
+  const s = await requireUser();
+  if (s.profile?.staff_role) return { error: "Staff accounts are removed by a Dhow admin. Email hello@dhowpartners.com." };
+  if (String(fd.get("confirm") ?? "").trim().toUpperCase() !== "DELETE") return { error: "Type DELETE to confirm." };
+  const db = createAdminClient();
+  const { data: owned } = await db.from("memberships").select("org_id, organizations(name)").eq("user_id", s.user.id).eq("role", "owner");
+  for (const row of owned ?? []) {
+    const { count } = await db.from("memberships").select("user_id", { count: "exact", head: true }).eq("org_id", row.org_id).eq("role", "owner").neq("user_id", s.user.id);
+    if ((count ?? 0) > 0) continue; // another owner keeps the company
+    const { data: docs } = await db.from("documents").select("object_key").eq("org_id", row.org_id);
+    await Promise.all((docs ?? []).map((d) => deleteObject(d.object_key).catch(() => null)));
+    const { error } = await db.from("organizations").delete().eq("id", row.org_id);
+    if (error) return { error: "Could not delete your company. Contact hello@dhowpartners.com." };
+    const name = (row.organizations as unknown as { name: string } | null)?.name ?? "A company";
+    await notifyStaff(["admin"], "Member company deleted", [`${name} was deleted when its owner deleted their account.`]).catch(() => null);
+  }
+  const { error } = await db.auth.admin.deleteUser(s.user.id);
+  if (error) return { error: "Could not delete your account. Contact hello@dhowpartners.com." };
+  await s.supabase.auth.signOut().catch(() => null);
+  (await cookies()).delete(ORG_COOKIE);
+  redirect("/login?deleted=1");
+}
+
 /** The company's owner removes their company page and everything it uploaded. The owner keeps their login. */
 export async function deleteMyCompany(_: ActionState, fd: FormData): Promise<ActionState> {
   const m = await memberOrNull();

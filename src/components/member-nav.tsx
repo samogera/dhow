@@ -23,8 +23,8 @@ export function MemberNav({ enterprise = false }: { enterprise?: boolean }) {
         const on = i.href === "/app" ? path === "/app" : path.startsWith(i.href) || ("also" in i && (i.also as string[]).some((a) => path.startsWith(a)));
         return (
           <Link key={i.href} href={i.href} aria-current={on ? "page" : undefined} title={i.label} aria-label={i.label}
-            className={cn("flex items-center gap-2 rounded-full px-3.5 py-2 text-sm whitespace-nowrap transition", on ? "bg-navy-900 font-medium text-white shadow-sm" : "text-ink/75 hover:bg-white")}>
-            <i.icon className={cn("size-[17px]", on ? "text-white" : "text-ink/55")} strokeWidth={1.75} aria-hidden />
+            className={cn("flex items-center gap-2 rounded-full px-3 py-2 text-sm whitespace-nowrap transition 2xl:px-3.5", on ? "bg-navy-900 font-medium text-white shadow-sm" : "text-ink/75 hover:bg-white")}>
+            <i.icon className={cn("hidden size-[17px] 2xl:block", on ? "text-white" : "text-ink/55")} strokeWidth={1.75} aria-hidden />
             <span>{i.label}</span>
           </Link>
         );

@@ -48,7 +48,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                   <span><span className="block font-medium">{t}</span><span className="block text-sm text-muted">{d}</span></span>
                 </a>
               ))}
-              <p className="text-xs text-muted">Each invoice's PDF is on its own page under Download PDF.</p>
+              <p className="text-xs text-muted">Each invoice&apos;s PDF is on its own page under Download PDF.</p>
             </div>
           </Drawer>
           <ButtonLink href="/admin/finance/invoices/new">New invoice</ButtonLink>

@@ -9,7 +9,7 @@ export const PARTNER_DOCS = [
   { key: "agreement", label: "Signed partnership agreement", required: false },
 ] as const;
 
-export const FILE_CATEGORY_KEYS = [...PARTNER_DOCS.map((d) => d.key), "certificate", "registration", "tax", "contract", "other"] as const;
+export const FILE_CATEGORY_KEYS = ["incorporation", "cr12", "kra_pin", "tax_compliance", "company_profile", "license", "agreement", "certificate", "registration", "tax", "contract", "other"] as const;
 export const docLabel = (key: string) => PARTNER_DOCS.find((d) => d.key === key)?.label ?? key.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 
 /** Which required documents are still missing (or expired). */

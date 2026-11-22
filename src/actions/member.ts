@@ -172,7 +172,7 @@ export async function deleteDocument(fd: FormData) {
   const reserved = doc.status === "pending_upload" ? doc.size_bytes : 0;
   await db.rpc("release_storage", { p_org: doc.org_id, p_reserved: reserved, p_used: used });
   await db.from("documents").delete().eq("id", doc.id);
-  revalidatePath("/app/documents");
+  revalidatePath("/app", "layout");
 }
 
 export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -198,13 +198,13 @@ export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<
       // Removed earlier: bring it back with the new stage.
       const { data: back } = await m.supabase.from("applications").update({ status: p.data.stage, note: p.data.note ?? null })
         .eq("org_id", m.org.id).eq("opportunity_id", p.data.opportunity_id).eq("status", "withdrawn").select("id");
-      if (back?.length) { revalidatePath("/app/applications"); return { ok: `Added to My applications as ${p.data.stage}.` }; }
+      if (back?.length) { revalidatePath("/app", "layout"); return { ok: `Added to My applications as ${p.data.stage}.` }; }
       return { error: "It's already in My applications." };
     }
     return { error: m.org.verification_status === "verified" ? "This opportunity is closed." : "This opportunity is for Dhow Verified companies only." };
   }
   tick("insert");
-  revalidatePath("/app/applications");
+  revalidatePath("/app", "layout");
   return { ok: p.data.stage === "submitted" ? "Added as submitted. We'll keep you posted by email." : `Added to My applications as ${p.data.stage}.` };
 }
 
@@ -221,7 +221,7 @@ export async function cancelPlan(fd: FormData) {
     if (m.user.email) await planCancelled(m.user.email, m.profile?.full_name ?? null, tier.name, m.org.plan_until ?? null).catch(() => null);
     await notifyStaff(["admin"], `${m.org.name} cancelled ${tier.name}`, [`${m.org.name} cancelled their ${tier.name} plan${m.org.plan_until ? `. It ends on ${m.org.plan_until}` : ""}.`, "Worth a call to ask why."]).catch(() => null);
   }
-  revalidatePath("/app/plans");
+  revalidatePath("/app", "layout");
 }
 
 export async function setApplicationStage(fd: FormData) {
@@ -230,8 +230,7 @@ export async function setApplicationStage(fd: FormData) {
   const p = z.object({ id: z.string().uuid(), status: z.enum(["interested", "started", "submitted"]) }).safeParse(Object.fromEntries(fd));
   if (!p.success) return;
   await m.supabase.from("applications").update({ status: p.data.status }).eq("id", p.data.id).eq("org_id", m.org.id);
-  revalidatePath("/app/applications");
-  revalidatePath("/app/opportunities/[id]", "page");
+  revalidatePath("/app", "layout");
 }
 
 export async function withdrawApplication(fd: FormData) {
@@ -240,7 +239,7 @@ export async function withdrawApplication(fd: FormData) {
   const id = z.string().uuid().safeParse(fd.get("id"));
   if (!id.success) return;
   await m.supabase.from("applications").update({ status: "withdrawn" }).eq("id", id.data).eq("org_id", m.org.id);
-  revalidatePath("/app/applications");
+  revalidatePath("/app", "layout");
 }
 
 /** A member deletes their own login. Companies where they are the only owner are deleted with it, documents included. */

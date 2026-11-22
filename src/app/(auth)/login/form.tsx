@@ -5,6 +5,7 @@ import { Mail, MailCheck } from "lucide-react";
 import { sendSignInLink, signIn } from "@/actions/auth";
 import { FormMessage, Submit } from "@/components/forms";
 import { PasswordInput } from "@/components/password-input";
+import { CodeEntry } from "@/components/code-entry";
 
 export function LoginForm({ next }: { next?: string }) {
   const [state, action] = useActionState(signIn, undefined);
@@ -17,7 +18,8 @@ export function LoginForm({ next }: { next?: string }) {
       <div className="text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-mint-100 text-green"><MailCheck className="size-6" /></span>
         <p className="mt-4 font-semibold text-navy-900">Check your inbox</p>
-        <p className="mt-1 text-sm text-muted">We sent a sign-in link to <span className="font-medium text-ink">{email}</span>. Open it on this device to sign in. It works for one hour.</p>
+        <p className="mt-1 text-sm text-muted">We sent a sign-in link to <span className="font-medium text-ink">{email}</span>. Open it on this device, or type the code from the email. It works for one hour.</p>
+        <CodeEntry email={email} kind="email" next={next} />
         <button type="button" onClick={() => location.reload()} className="mt-5 text-sm font-medium text-navy-600">Use a different email</button>
       </div>
     );

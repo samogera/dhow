@@ -80,10 +80,28 @@ export async function requestReset(_: ActionState, fd: FormData): Promise<Action
 }
 
 export async function updatePassword(_: ActionState, fd: FormData): Promise<ActionState> {
-  const pw = z.string().min(10, "Use at least 10 characters").max(128).safeParse(fd.get("password"));
+  const pw = z.string().min(8, "Use at least 8 characters").max(128).safeParse(fd.get("password"));
   if (!pw.success) return { error: pw.error.issues[0].message };
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: pw.data });
   if (error) return { error: error.message };
-  redirect("/app");
+  redirect("/");
+}
+
+/** The 6-digit code from the email, typed or filled in by the phone, instead of clicking the link. */
+const CodeIn = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  token: z.string().trim().regex(/^\d{6,8}$/, "Enter the code from the email"),
+  kind: z.enum(["signup", "email", "recovery"]),
+});
+export async function verifyEmailCode(_: ActionState, fd: FormData): Promise<ActionState> {
+  const p = CodeIn.safeParse({ email: fd.get("email"), token: String(fd.get("token") ?? "").replace(/\s/g, ""), kind: fd.get("kind") });
+  if (!p.success) return { error: p.error.issues[0].message };
+  if (!(await rateLimit(`otp:${p.data.email}`, 8, 900))) return { error: "Too many tries. Wait 15 minutes, or use the link in the email." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.verifyOtp({ email: p.data.email, token: p.data.token, type: p.data.kind });
+  if (error || !data.user) return { error: "That code didn't work. Check it, or ask for a new one." };
+  if (p.data.kind === "signup") redirect("/onboarding");
+  if (p.data.kind === "recovery") redirect("/reset-password");
+  redirect(safePath(fd.get("next")) ?? "/");
 }

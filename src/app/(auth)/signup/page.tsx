@@ -5,6 +5,7 @@ import { Check, Mail, MailCheck, User } from "lucide-react";
 import { signUp } from "@/actions/auth";
 import { FormMessage, Submit } from "@/components/forms";
 import { PasswordInput } from "@/components/password-input";
+import { CodeEntry } from "@/components/code-entry";
 
 const GAINS = ["Opportunities picked for companies in Kenya", "Trusted partner firms for setup and growth", "Get Dhow Verified to win trust"];
 
@@ -17,9 +18,10 @@ export default function SignUp() {
       <div className="text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-mint-100 text-green"><MailCheck className="size-6" /></span>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-navy-900">One last step</h1>
-        <p className="mt-2 text-sm text-muted">We sent a link to <span className="font-medium text-ink">{email || "your email"}</span>. Click it to confirm your account and you&apos;re in.</p>
+        <p className="mt-2 text-sm text-muted">We sent an email to <span className="font-medium text-ink">{email || "your email"}</span>. Click the link in it, or type the code below, and you&apos;re in.</p>
+        <CodeEntry email={email} kind="signup" />
         <p className="mt-4 text-xs text-faint">Not there after a minute? Check your spam or promotions folder.</p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
           <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="rounded-full bg-navy-900 px-5 py-2.5 text-sm font-medium text-white">Open Gmail</a>
           <a href="https://outlook.live.com/mail" target="_blank" rel="noopener noreferrer" className="rounded-full border border-line px-5 py-2.5 text-sm font-medium">Open Outlook</a>
         </div>

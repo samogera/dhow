@@ -145,7 +145,7 @@ export function MobileMenu({ investors, work, name, email, plan, staff, avatar }
         {open ? <X className="size-5" /> : <Menu className="size-5" />}
       </button>
       <div className={cn("fixed inset-x-0 top-0 -z-10 h-dvh bg-navy-950/25 backdrop-blur-[2px] transition-opacity", open ? "opacity-100" : "pointer-events-none opacity-0")} aria-hidden />
-      <div className={cn("absolute inset-x-0 top-full mt-2 origin-top rounded-[1.5rem] bg-white p-3 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-200",
+      <div className={cn("absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-6rem)] origin-top overflow-y-auto overscroll-contain rounded-[1.5rem] bg-white p-3 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-200",
         open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0")}>
         <div className="flex items-center gap-3 px-2 pt-1 pb-3">
           <Avatar name={name} email={email} src={avatar} size={40} />

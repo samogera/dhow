@@ -48,8 +48,9 @@ export function AdminMobileNav({ role, account, counts }: { role: "employee" | "
     return () => { document.body.style.overflow = ""; };
   }, [open]);
   return (
-    <div className="sticky top-0 z-40 -mx-4 mb-5 lg:hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-white/70 bg-white/80 px-4 py-2.5 backdrop-blur-xl">
+    <div className="lg:hidden">
+      {/* Fixed bar: always visible, whatever you scroll. The spacer keeps the page below it. */}
+      <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between gap-2 border-b border-line/70 bg-white/90 px-4 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <Logo href="/admin" size="sm" />
         <div className="flex items-center gap-2">
           {account}
@@ -59,11 +60,14 @@ export function AdminMobileNav({ role, account, counts }: { role: "employee" | "
           </button>
         </div>
       </div>
-      {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 top-[4.25rem] bg-navy-950/25 backdrop-blur-[2px]" /> : null}
-      <div className={cn("absolute inset-x-3 top-full mt-2 max-h-[75dvh] overflow-y-auto rounded-[1.5rem] bg-white p-4 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-200",
+      <div className="h-16" aria-hidden />
+      <div className="h-4" aria-hidden />
+      <button type="button" aria-label="Close menu" tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}
+        className={cn("fixed inset-x-0 top-16 bottom-0 z-40 bg-navy-950/25 backdrop-blur-[2px] transition-opacity", open ? "opacity-100" : "pointer-events-none opacity-0")} />
+      <nav aria-label="Menu" className={cn("fixed inset-x-3 top-[4.5rem] z-50 max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] bg-white p-4 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-200",
         open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0")}>
         <AdminNav role={role} counts={counts} />
-      </div>
+      </nav>
     </div>
   );
 }

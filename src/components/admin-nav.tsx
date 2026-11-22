@@ -36,7 +36,7 @@ const groups: { title: string; tone: keyof typeof TONES; items: Item[] }[] = [
   ] },
   { title: "Money", tone: "mint", items: [{ href: "/admin/finance", label: "Finance", icon: Wallet }] },
   { title: "Dhow", tone: "slate", items: [
-    { href: "/admin/company", label: "Profile", logo: "/brand/icon-navy.png" },
+    { href: "/admin/company", label: "Dhow profile", icon: Anchor },
     { href: "/admin/team", label: "Team and access", icon: UserCog },
     { href: "/admin/help", label: "Help and guides", icon: LifeBuoy },
   ] },

@@ -346,6 +346,39 @@ async function visit(page, path, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------------ phone menus, both sides
+{
+  const { ctx, page } = await signIn("owner@acacia.test", { width: 390, height: 844 }, true);
+  await check("member phone menu opens, navigates and closes", async () => {
+    await go(page, `${BASE}/app`);
+    await page.mouse.wheel(0, 1500);
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.getByRole("link", { name: "My applications" }).last().click();
+    await page.waitForURL(/\/app\/applications/);
+    await page.waitForTimeout(400);
+    if (await page.getByRole("link", { name: "Directory" }).last().isVisible()) throw new Error("menu still open after navigating");
+    await page.screenshot({ path: `${OUT}/e2e-55-phone-member-after-menu.png` });
+  });
+  await ctx.close();
+}
+{
+  const { ctx, page } = await signIn("admin@dhow.test", { width: 390, height: 844 }, true);
+  await check("staff phone menu: bar stays on top, menu scrolls, navigates and closes", async () => {
+    await go(page, `${BASE}/admin`);
+    await page.mouse.wheel(0, 2000);
+    await page.waitForTimeout(300);
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${OUT}/e2e-56-phone-staff-menu.png` });
+    await page.getByRole("navigation", { name: "Menu" }).getByRole("link", { name: "Team and access" }).click();
+    await page.waitForURL(/\/admin\/team/);
+    await page.waitForTimeout(400);
+    if (await page.getByRole("navigation", { name: "Menu" }).isVisible()) throw new Error("menu still open after navigating");
+    await page.screenshot({ path: `${OUT}/e2e-57-phone-staff-after-menu.png` });
+  });
+  await ctx.close();
+}
+
 await browser.close();
 const failed = results.filter((r) => r[0] === "FAIL");
 console.log(`\n${results.length - failed.length} passed, ${failed.length} failed`);

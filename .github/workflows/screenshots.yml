@@ -18,6 +18,7 @@ jobs:
         with: { node-version: 22 }
       - uses: supabase/setup-cli@v1
         with: { version: latest }
+        env: { GITHUB_TOKEN: "${{ github.token }}" }
       - name: Start local Supabase (applies migration and seed)
         run: |
           mkdir -p /tmp/out

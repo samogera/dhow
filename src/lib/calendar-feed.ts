@@ -30,7 +30,7 @@ export async function feedEvents(userId: string, canSeeMoney: boolean): Promise<
   const out: IcsEvent[] = [];
   const pname = (id: string | null) => partners.data?.find((p) => p.id === id)?.name;
 
-  for (const t of (tasks.data ?? []) as { id: string; title: string; due_date: string; priority: string; project_id: string | null; projects: { name: string } | null }[]) {
+  for (const t of (tasks.data ?? []) as unknown as { id: string; title: string; due_date: string; priority: string; project_id: string | null; projects: { name: string } | null }[]) {
     const late = t.due_date < today;
     out.push({
       uid: `task-${t.id}`, date: on(t.due_date),
@@ -53,7 +53,7 @@ export async function feedEvents(userId: string, canSeeMoney: boolean): Promise<
       url: f.owner_type === "dhow" ? `${base}/admin/company` : `${base}/admin/partners/${f.owner_id}`, alarms: [30 * 24 * 60 - 9 * 60, WEEK_BEFORE, AM8],
     });
   }
-  for (const i of (invoices.data ?? []) as { id: string; number: string; due_date: string; total_kes: number; paid_kes: number; clients: { name: string } | null }[]) {
+  for (const i of (invoices.data ?? []) as unknown as { id: string; number: string; due_date: string; total_kes: number; paid_kes: number; clients: { name: string } | null }[]) {
     const bal = Number(i.total_kes) - Number(i.paid_kes);
     if (bal <= 0) continue;
     const late = i.due_date < today;

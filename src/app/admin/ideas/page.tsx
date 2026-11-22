@@ -22,8 +22,11 @@ export default async function Ideas({ searchParams }: { searchParams: Promise<{ 
     s.supabase.from("profiles").select("id, full_name").not("staff_role", "is", null),
   ]);
   const who = (id: string | null) => people?.find((p) => p.id === id)?.full_name ?? "Someone";
+  type Vote = { idea_id: string; user_id: string };
+  type Comment = { id: string; idea_id: string; author: string | null; body: string; created_at: string };
+  const V = (votes ?? []) as Vote[], C = (comments ?? []) as Comment[];
   const list = (ideas ?? []).filter((i) => show === "all" || (show === "open" ? !["done", "parked"].includes(i.status) : i.status === show))
-    .map((i) => ({ ...i, votes: (votes ?? []).filter((v) => v.idea_id === i.id), comments: (comments ?? []).filter((c) => c.idea_id === i.id) }))
+    .map((i) => ({ ...i, votes: V.filter((v) => v.idea_id === i.id), comments: C.filter((c) => c.idea_id === i.id) }))
     .sort((a, b) => b.votes.length - a.votes.length || b.created_at.localeCompare(a.created_at));
 
   return (

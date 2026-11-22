@@ -36,7 +36,7 @@ export function Uploader() {
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error);
-      // Straight to Cloudflare R2 with the short-lived link.
+      // Straight to storage with the short-lived link (hosting caps requests at about 4.5 MB).
       const put = await fetch(j.url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
       if (!put.ok) throw new Error("Upload failed. Check your connection and try again.");
       const done = await fetch("/api/uploads/complete", {

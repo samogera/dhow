@@ -101,13 +101,11 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
               const spentIn = (pre: string) => all.filter((b) => Number(b.paid_kes) > 0 && (b.paid_on ?? b.due_date ?? "").startsWith(pre));
               const month = spentIn(ym).reduce((n, b) => n + Number(b.paid_kes), 0);
               const year = spentIn(yr);
-              const byCat = Object.entries(year.reduce<Record<string, number>>((m, b) => { m[b.category] = (m[b.category] ?? 0) + Number(b.paid_kes); return m; }, {})).sort((a, b) => b[1] - a[1]);
               return (
                 <>
-                  <div className="mb-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-sunken/70 p-4"><p className="label">Spent this month</p><p className="num mt-1 text-xl font-semibold">{kes(month)}</p></div>
-                    <div className="rounded-2xl bg-sunken/70 p-4"><p className="label">Spent this year</p><p className="num mt-1 text-xl font-semibold">{kes(year.reduce((n, b) => n + Number(b.paid_kes), 0))}</p></div>
-                    <div className="rounded-2xl bg-sunken/70 p-4"><p className="label">Biggest this year</p>{byCat.length ? <ul className="mt-1 space-y-0.5 text-xs">{byCat.slice(0, 3).map(([c, v]) => <li key={c} className="flex justify-between gap-2"><span>{BILL_CATEGORY_LABEL[c] ?? c}</span><span className="num font-medium">{kes(v)}</span></li>)}</ul> : <p className="mt-1 text-sm text-muted">Nothing yet</p>}</div>
+                  <div className="mb-6 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-sunken/70 px-5 py-4"><p className="label">Spent this month</p><p className="num mt-1 text-2xl font-semibold tracking-tight">{kes(month)}</p></div>
+                    <div className="rounded-2xl bg-sunken/70 px-5 py-4"><p className="label">Spent this year</p><p className="num mt-1 text-2xl font-semibold tracking-tight">{kes(year.reduce((n, b) => n + Number(b.paid_kes), 0))}</p></div>
                   </div>
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-1.5">
@@ -117,30 +115,30 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
                     <p className="text-sm text-muted">Still to pay: <span className="num font-semibold text-ink">{kes(due)}</span></p>
                   </div>
                   {shown.length ? (
-                    <Table head={["Bill or expense", "Date", "Amount", "Still to pay", ""]}>
+                    <Table head={["Bill or expense", "Date", "Amount", "Status", ""]} className="[&_table]:min-w-[640px] [&_th:nth-child(3)]:text-right [&_th:nth-child(4)]:text-right">
                       {shown.map((b) => {
                         const left = Number(b.amount_kes) - Number(b.paid_kes);
                         const late = b.due_date && b.due_date < today && left > 0;
                         return (
                           <tr key={b.id}>
-                            <td>
-                              <p className="font-medium">{b.description}</p>
-                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                            <td className="py-4 pr-4">
+                              <p className="font-medium leading-snug">{b.description}</p>
+                              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
                                 <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${BILL_TONE[b.category] ?? ""}`}>{BILL_CATEGORY_LABEL[b.category] ?? b.category}</span>
                                 {b.payee || (b.partners as unknown as { name: string } | null)?.name ? <span>{b.payee ?? (b.partners as unknown as { name: string }).name}</span> : null}
-                                {b.repeats !== "once" ? <span>· repeats {b.repeats}</span> : null}
+                                {b.repeats !== "once" ? <span className="rounded-full bg-sunken px-2 py-0.5 text-[11px]">Repeats {b.repeats}</span> : null}
                               </p>
                             </td>
-                            <td className={late ? "font-medium text-bad" : "text-muted"}>{b.due_date ? day(b.due_date) : "—"}</td>
-                            <td className="num">{kes(b.amount_kes)}</td>
-                            <td className="num">{left > 0 ? kes(left) : <StatusBadge status="paid" />}</td>
-                            <td>
-                              <div className="flex flex-wrap items-center justify-end gap-1">
+                            <td className={`whitespace-nowrap ${late ? "font-medium text-bad" : "text-muted"}`}>{b.due_date ? day(b.due_date) : "—"}</td>
+                            <td className="num whitespace-nowrap text-right">{kes(b.amount_kes)}</td>
+                            <td className="whitespace-nowrap text-right">{left > 0 ? <span className="num font-medium text-amber-700">{kes(left)}</span> : <StatusBadge status="paid" />}</td>
+                            <td className="pl-4">
+                              <div className="flex items-center justify-end gap-2">
                                 {left > 0 ? (
                                   <form action={payBill} className="flex gap-1">
                                     <input type="hidden" name="id" value={b.id} />
-                                    <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-24 rounded-full bg-sunken px-3 py-1.5 text-xs" />
-                                    <button className="rounded-full bg-green px-3 py-1.5 text-xs font-medium text-white">Paid</button>
+                                    <input name="amount_kes" type="number" min="1" step="any" defaultValue={left} aria-label="Amount paid" className="w-24 rounded-full bg-sunken px-3 py-2 text-xs" />
+                                    <button className="whitespace-nowrap rounded-full bg-green px-3.5 py-2 text-xs font-medium text-white">Mark paid</button>
                                   </form>
                                 ) : null}
                                 <Drawer label="Edit" title="Edit bill or expense" variant="outline" plus={false}>

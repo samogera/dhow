@@ -142,11 +142,11 @@ export function Table({ head, children, className }: { head: string[]; children:
         <thead>
           <tr className="text-xs text-muted">
             {head.map((h) => (
-              <th key={h} className="px-2 pb-3 font-medium">{h}</th>
+              <th key={h} className="px-3 pb-3 font-medium whitespace-nowrap">{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="[&_td]:border-t [&_td]:border-line [&_td]:px-2 [&_td]:py-3.5">{children}</tbody>
+        <tbody className="[&_td]:border-t [&_td]:border-line [&_td]:px-3 [&_td]:py-4 [&_td]:align-middle">{children}</tbody>
       </table>
     </div>
   );

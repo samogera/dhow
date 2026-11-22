@@ -20,6 +20,14 @@ const Body = z.object({
   investors: z.any().optional().transform((v) => v === true || v === "true" || v === "on" || v === "Yes"),
 });
 
+/** Open this address in a browser to check the connection is switched on. It never shows the key. */
+export async function GET() {
+  return NextResponse.json({
+    ready: Boolean(process.env.MEMBERSHIP_INTAKE_KEY),
+    message: process.env.MEMBERSHIP_INTAKE_KEY ? "Ready. Applications from the website will arrive here." : "Not switched on: add MEMBERSHIP_INTAKE_KEY in Vercel, then redeploy.",
+  });
+}
+
 export async function POST(req: Request) {
   const key = process.env.MEMBERSHIP_INTAKE_KEY;
   if (!key || !safeEqual(req.headers.get("x-intake-key") ?? "", key)) return NextResponse.json({ error: "Not allowed" }, { status: 401 });

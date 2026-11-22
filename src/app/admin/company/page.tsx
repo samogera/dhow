@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { VerifiedTick } from "@/components/verified-tick";
 import type { ReactNode } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
@@ -44,7 +45,7 @@ export default async function Company() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <Avatar src={d.logo_url} name={d.trading_name || d.legal_name} size="xl" />
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{d.trading_name || d.legal_name}</h1>
+            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{d.trading_name || d.legal_name}<VerifiedTick size={20} /></h1>
             {d.tagline ? <p className="mt-1 text-muted">{d.tagline}</p> : null}
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               {d.email ? <a href={`mailto:${d.email}`} className="flex items-center gap-1.5 text-navy-600"><Mail className="size-4" />{d.email}</a> : null}

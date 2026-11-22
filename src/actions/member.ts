@@ -13,6 +13,7 @@ import { emailLayout, notifyStaff, sendEmail } from "@/lib/notify";
 import type { ActionState } from "@/components/forms";
 import { appUrl } from "@/lib/app-url";
 import { TIERS, tierOf } from "@/lib/plans";
+import { isFile, uploadImage } from "@/lib/storage";
 import { timer } from "@/lib/timing";
 import { accountDeleted, planCancelled } from "@/lib/member-emails";
 
@@ -109,8 +110,15 @@ export async function updateProfile(_: ActionState, fd: FormData): Promise<Actio
   const rawPhone = String(fd.get("phone") ?? "").trim();
   const phone = rawPhone ? normalizeKenyanPhone(rawPhone) : null;
   if (rawPhone && !phone) return { error: "Enter a Kenyan mobile number like 0712 345 678." };
-  await s.supabase.from("profiles").update({ full_name: name.data, phone }).eq("id", s.user.id);
-  revalidatePath("/app/settings");
+  let avatar_url: string | null | undefined;
+  const photo = fd.get("photo");
+  if (isFile(photo)) {
+    const up = await uploadImage(photo, `avatars/${s.user.id}`);
+    if ("error" in up) return { error: up.error };
+    avatar_url = up.url;
+  } else if (fd.get("remove_photo") === "on") avatar_url = null;
+  await createAdminClient().from("profiles").update({ full_name: name.data, phone, ...(avatar_url !== undefined ? { avatar_url } : {}) }).eq("id", s.user.id);
+  revalidatePath("/", "layout");
   return { ok: "Saved." };
 }
 

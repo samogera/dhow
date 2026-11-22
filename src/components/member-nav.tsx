@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Crown, LifeBuoy, LogOut, Menu, Settings2, Shield, X } from "lucide-react";
+import { ChevronDown, Crown, LifeBuoy, LogOut, Menu, Settings2, Shield, UserRound, X } from "lucide-react";
+import { Avatar } from "@/components/user-menu";
 import { signOut } from "@/actions/auth";
 import { cn } from "@/lib/format";
 
@@ -80,22 +81,21 @@ function useDismiss(open: boolean, close: () => void) {
 }
 
 /** Account menu: who you are, your company and plan, then settings, plan, help and sign out. */
-export function AccountMenu({ name, email, company, plan, staff }: { name: string; email: string; company: string; plan: string; staff: boolean }) {
+export function AccountMenu({ name, email, company, plan, staff, avatar }: { name: string; email: string; company: string; plan: string; staff: boolean; avatar?: string | null }) {
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, () => setOpen(false));
-  const initials = (name || email).split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   const item = "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink/80 transition hover:bg-sunken hover:text-ink";
   return (
     <div ref={ref} className="relative hidden lg:block">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu"
         className="flex items-center gap-2 rounded-full py-1 pr-2.5 pl-1 transition hover:bg-white">
-        <span className="grid size-9 place-items-center rounded-full bg-navy-900 text-sm font-semibold text-white">{initials}</span>
+        <Avatar name={name} email={email} src={avatar} />
         <ChevronDown className={cn("size-4 text-ink/50 transition", open && "rotate-180")} />
       </button>
       <div role="menu" className={cn("absolute right-0 mt-2 w-72 origin-top-right rounded-2xl bg-white p-2 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-150",
         open ? "visible scale-100 opacity-100" : "invisible scale-95 opacity-0")}>
         <div className="flex items-center gap-3 px-3 pt-2 pb-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-navy-900 text-sm font-semibold text-white">{initials}</span>
+          <Avatar name={name} email={email} src={avatar} size={40} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{name || "Your account"}</p>
             <p className="truncate text-xs text-muted">{email}</p>
@@ -106,7 +106,8 @@ export function AccountMenu({ name, email, company, plan, staff }: { name: strin
           <Link href="/app/plans" className="shrink-0 rounded-full bg-white px-2 py-0.5 font-semibold text-navy-700 ring-1 ring-line">{plan}</Link>
         </div>
         {staff ? <Link href="/admin" className={item}><Shield className="size-4" />Dhow workspace</Link> : null}
-        <Link href="/app/settings" className={item}><Settings2 className="size-4" />Settings</Link>
+        <Link href="/app/settings/account" className={item}><UserRound className="size-4" />Your profile</Link>
+        <Link href="/app/settings" className={item}><Settings2 className="size-4" />Company settings</Link>
         <Link href="/app/plans" className={item}><Crown className="size-4" />Plan and billing</Link>
         <Link href="/help" className={item}><LifeBuoy className="size-4" />Help Centre</Link>
         <div className="my-1 border-t border-line" />
@@ -117,7 +118,7 @@ export function AccountMenu({ name, email, company, plan, staff }: { name: strin
 }
 
 /** Phones: a menu button in the header that drops a simple list down from the top. */
-export function MobileMenu({ investors, work, name, email, plan, staff }: Flags & { name: string; email: string; plan: string; staff: boolean }) {
+export function MobileMenu({ investors, work, name, email, plan, staff, avatar }: Flags & { name: string; email: string; plan: string; staff: boolean; avatar?: string | null }) {
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, () => setOpen(false));
   const path = usePathname();
@@ -130,7 +131,8 @@ export function MobileMenu({ investors, work, name, email, plan, staff }: Flags 
       ? [l, { href: "/app/events", label: "Events", match: (p: string) => p.startsWith("/app/events") }, ...(investors ? [{ href: "/app/investors", label: "Investors", match: (p: string) => p.startsWith("/app/investors") }] : [])]
       : [l]),
     [
-      { href: "/app/settings", label: "Settings", match: (p: string) => SETTINGS.some((x) => p.startsWith(x)) && !p.startsWith("/app/plans") },
+      { href: "/app/settings/account", label: "Your profile", match: (p: string) => p.startsWith("/app/settings/account") },
+      { href: "/app/settings", label: "Company settings", match: (p: string) => SETTINGS.some((x) => p.startsWith(x)) && !p.startsWith("/app/plans") && !p.startsWith("/app/settings/account") },
       { href: "/app/plans", label: `Plan · ${plan}`, match: (p: string) => p.startsWith("/app/plans") },
       { href: "/help", label: "Help Centre", match: () => false },
       ...(staff ? [{ href: "/admin", label: "Dhow workspace", match: () => false }] : []),
@@ -146,6 +148,7 @@ export function MobileMenu({ investors, work, name, email, plan, staff }: Flags 
       <div className={cn("absolute inset-x-0 top-full mt-2 origin-top rounded-[1.5rem] bg-white p-3 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-200",
         open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0")}>
         <div className="flex items-center gap-3 px-2 pt-1 pb-3">
+          <Avatar name={name} email={email} src={avatar} size={40} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{name || "Your account"}</p>
             <p className="truncate text-xs text-muted">{email}</p>

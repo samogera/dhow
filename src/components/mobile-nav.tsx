@@ -38,7 +38,7 @@ function TabBar({ tabs, onMore, moreOpen }: { tabs: Tab[]; onMore?: () => void; 
   );
 }
 
-/** Staff workspace on phones and tablets: top bar, bottom tabs, and a slide-up sheet with the full menu. */
+/** Staff workspace on phones and tablets: one top bar, and a menu that drops down from it. */
 export function AdminMobileNav({ role, account, counts }: { role: "employee" | "reviewer" | "finance" | "admin"; account: React.ReactNode; counts?: Record<string, number> }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
@@ -47,36 +47,24 @@ export function AdminMobileNav({ role, account, counts }: { role: "employee" | "
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
-
-  const tabs: Tab[] = [
-    { href: "/admin", label: "Home", icon: LayoutGrid, exact: true },
-    { href: "/admin/clients", label: "Clients", icon: UsersRound },
-    { href: "/admin/projects", label: "Work", icon: Briefcase },
-    role === "admin" || role === "finance" ? { href: "/admin/finance", label: "Money", icon: Receipt } : { href: "/admin/leads", label: "Leads", icon: BadgeCheck },
-  ];
-
   return (
-    <>
-      <div className="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between border-b border-white/70 bg-white/60 px-4 py-3 backdrop-blur-xl lg:hidden">
+    <div className="sticky top-0 z-40 -mx-4 mb-5 lg:hidden">
+      <div className="flex items-center justify-between gap-2 border-b border-white/70 bg-white/80 px-4 py-2.5 backdrop-blur-xl">
         <Logo href="/admin" size="sm" />
-        {account}
-      </div>
-      <TabBar tabs={tabs} onMore={() => setOpen((v) => !v)} moreOpen={open} />
-      {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-          <div className="absolute inset-x-0 bottom-0 max-h-[82dvh] overflow-y-auto rounded-t-[2rem] bg-white px-5 pt-3 pb-8 shadow-2xl"
-            style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-line" />
-            <div className="mb-5 flex items-center justify-between">
-              <p className="text-lg font-semibold">Menu</p>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="grid size-9 place-items-center rounded-full bg-sunken"><X className="size-4" /></button>
-            </div>
-            <AdminNav role={role} counts={counts} />
-          </div>
+        <div className="flex items-center gap-2">
+          {account}
+          <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={open ? "Close menu" : "Open menu"}
+            className="grid size-11 place-items-center rounded-full bg-navy-900 text-white">
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
-      ) : null}
-    </>
+      </div>
+      {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 top-[4.25rem] bg-navy-950/25 backdrop-blur-[2px]" /> : null}
+      <div className={cn("absolute inset-x-3 top-full mt-2 max-h-[75dvh] overflow-y-auto rounded-[1.5rem] bg-white p-4 shadow-[0_24px_60px_-20px_rgba(13,28,41,0.35)] ring-1 ring-line transition duration-200",
+        open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0")}>
+        <AdminNav role={role} counts={counts} />
+      </div>
+    </div>
   );
 }
 

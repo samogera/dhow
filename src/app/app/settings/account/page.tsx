@@ -20,8 +20,8 @@ export default async function Account() {
           <EmailChoicesForm prefs={(p?.email_prefs as Record<string, boolean>) ?? {}} />
         </Card>
         <Card>
-          <CardHeader title="Your profile" sub="Add a phone number to get SMS for urgent updates" />
-          <ProfileForm name={m.profile?.full_name ?? ""} phone={m.profile?.phone ?? ""} />
+          <CardHeader title="Your profile" sub="Your name, photo and phone. A phone number gets you SMS for urgent updates." />
+          <ProfileForm name={m.profile?.full_name ?? ""} phone={m.profile?.phone ?? ""} avatar={m.profile?.avatar_url} />
         </Card>
       </div>
       <Card className="mt-4 border-bad/20 bg-bad/5">

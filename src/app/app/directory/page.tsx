@@ -29,6 +29,8 @@ export default async function Directory({ searchParams }: { searchParams: Promis
   const sectors = [...new Set(all.map((c) => c.sector).filter(Boolean))].sort() as string[];
   const me = all.some((c) => c.id === org.id);
   const { data: open } = await createAdminClient().from("member_requests").select("target_id").eq("org_id", org.id).eq("kind", "member_intro").in("status", ["new", "in_progress"]);
+  const { data: dhow } = await createAdminClient().from("dhow_profile").select("trading_name, legal_name, tagline, about, email, phone, website, logo_url, booking_link, whatsapp").eq("id", 1).maybeSingle();
+  const showDhow = !sp.sector && (!q || "dhow partners".includes(q) || q.includes("dhow"));
   const asked = new Set((open ?? []).map((r) => r.target_id as string));
 
   return (
@@ -58,8 +60,25 @@ export default async function Directory({ searchParams }: { searchParams: Promis
         </div>
       ) : null}
 
-      {list.length ? (
+      {list.length || showDhow ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {showDhow ? (
+            <article className="card flex flex-col gap-4 ring-1 ring-mint/40">
+              <div className="flex items-start gap-3">
+                <img src={dhow?.logo_url || "/brand/app-icon-512.png"} alt="" className="size-14 shrink-0 rounded-2xl object-contain ring-1 ring-line" />
+                <div className="min-w-0 flex-1">
+                  <h2 className="flex items-center gap-1.5 font-semibold text-navy-900"><span className="truncate">{dhow?.trading_name || "Dhow Partners"}</span><VerifiedTick label={false} /></h2>
+                  <p className="truncate text-sm text-muted">Market entry and business services · Kenya</p>
+                </div>
+              </div>
+              <p className="line-clamp-3 text-sm text-ink/80">{dhow?.tagline || dhow?.about || "We help companies set up, get verified and grow in Kenya and East Africa, with trusted partner firms and curated opportunities."}</p>
+              <div className="mt-auto space-y-2 border-t border-line pt-3 text-sm">
+                {dhow?.email ? <a href={`mailto:${dhow.email}`} className="flex items-center gap-2 text-navy-600"><Mail className="size-4" />{dhow.email}</a> : null}
+                {dhow?.phone ? <a href={`tel:${dhow.phone}`} className="flex items-center gap-2 text-navy-600"><Phone className="size-4" />{dhow.phone}</a> : null}
+                <p className="pt-1 text-xs font-medium text-green">The team behind this workspace</p>
+              </div>
+            </article>
+          ) : null}
           {list.map((c) => (
             <article key={c.id} className="card flex flex-col gap-4">
               <div className="flex items-start gap-3">

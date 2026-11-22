@@ -30,7 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {alerts.length ? <span className={`num absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full px-1 text-[11px] font-semibold text-white ${urgent ? "bg-bad" : "bg-amber"}`}>{alerts.length}</span> : null}
     </Link>
   );
-  const account = <div className="flex items-center gap-2">{bell}<UserMenu name={s.profile?.full_name ?? ""} email={s.user.email ?? ""} staff={false} helpHref="/admin/help" /></div>;
+  const account = <div className="flex items-center gap-2">{bell}<UserMenu name={s.profile?.full_name ?? ""} email={s.user.email ?? ""} avatar={s.profile?.avatar_url} staff={false} helpHref="/admin/help" /></div>;
   return (
     <div className="mx-auto flex max-w-[1440px] gap-5 p-4 lg:p-5">
       <aside className="sticky top-5 hidden h-[calc(100dvh-2.5rem)] w-64 shrink-0 flex-col rounded-[2rem] border border-white/80 bg-white/60 p-5 shadow-[0_12px_40px_-24px_rgba(13,28,41,0.25)] backdrop-blur-xl lg:flex">
@@ -45,7 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <AdminMobileNav role={s.staffRole} account={account} counts={counts} />
         <header className="mb-6 hidden items-center justify-between gap-4 lg:flex"><SearchBox />{account}</header>
         <div className="mb-4 lg:hidden"><SearchBox placeholder="Search the workspace" /></div>
-        <main className="pb-32 lg:pb-16">{children}</main>
+        <main className="pb-16">{children}</main>
       </div>
     </div>
   );

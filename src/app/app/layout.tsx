@@ -39,8 +39,8 @@ export default async function MemberLayout({ children }: { children: React.React
           ) : null}
         </div>
         <div className="hidden lg:block"><MemberNav investors={investors} work={work} /></div>
-        <AccountMenu name={name} email={email} company={m.org.name} plan={plan} staff={staff} />
-        <MobileMenu investors={investors} work={work} name={name} email={email} plan={plan} staff={staff} />
+        <AccountMenu name={name} email={email} company={m.org.name} plan={plan} staff={staff} avatar={m.profile?.avatar_url} />
+        <MobileMenu investors={investors} work={work} name={name} email={email} plan={plan} staff={staff} avatar={m.profile?.avatar_url} />
       </header>
       <main className="pt-8 pb-16 sm:pt-10">{children}</main>
     </div>

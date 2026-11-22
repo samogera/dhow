@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { deleteMyAccount, deleteMyCompany, inviteMember, saveEmailChoices, saveInterests, saveListing, updateOrganization, updateProfile } from "@/actions/member";
 import { saveCompanyProfile } from "@/actions/profiles";
 import { ImageInput, SocialFields } from "@/components/profile-bits";
@@ -33,10 +33,26 @@ export function CompanyForm({ org, disabled }: { org: Organization; disabled: bo
   );
 }
 
-export function ProfileForm({ name, phone }: { name: string; phone: string }) {
+export function ProfileForm({ name, phone, avatar }: { name: string; phone: string; avatar?: string | null }) {
   const [state, action] = useActionState(updateProfile, undefined);
+  const [preview, setPreview] = useState<string | null>(avatar ?? null);
+  const initials = (name || "?").split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   return (
     <form action={action} className="grid gap-4 sm:grid-cols-2">
+      <div className="flex items-center gap-4 sm:col-span-2">
+        {preview
+          ? <img src={preview} alt="" className="size-16 rounded-full object-cover ring-1 ring-line" />
+          : <span className="grid size-16 place-items-center rounded-full bg-navy-900 text-lg font-semibold text-white">{initials}</span>}
+        <div className="space-y-1.5">
+          <label className="inline-flex cursor-pointer items-center rounded-full border border-line bg-white px-4 py-2 text-sm font-medium hover:bg-sunken">
+            {preview ? "Change photo" : "Add a photo"}
+            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" className="sr-only"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setPreview(URL.createObjectURL(f)); }} />
+          </label>
+          <p className="text-xs text-muted">PNG, JPG or WebP, up to 3 MB.</p>
+          {avatar ? <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" name="remove_photo" className="size-3.5 accent-navy-900" />Remove photo</label> : null}
+        </div>
+      </div>
       <Field label="Full name"><Input name="full_name" defaultValue={name} required /></Field>
       <Field label="Mobile"><Input name="phone" defaultValue={phone ? `0${phone.slice(3)}` : ""} placeholder="0712 345 678" inputMode="tel" /></Field>
       <div className="space-y-3 sm:col-span-2"><FormMessage state={state} /><Submit variant="outline">Save profile</Submit></div>

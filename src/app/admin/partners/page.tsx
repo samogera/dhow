@@ -7,18 +7,18 @@ import { ActionForm } from "@/components/forms";
 import { Drawer } from "@/components/drawer";
 import { Empty, PageHeader, StatusBadge } from "@/components/ui";
 import { Avatar } from "@/components/profile-bits";
-import { PartnerFields } from "@/components/partner-fields";
+import { CONTRACT_LABEL, CONTRACT_TONE, PartnerFields } from "@/components/partner-fields";
 import { missingDocs, PARTNER_DOCS } from "@/lib/partner-docs";
 import { cn } from "@/lib/format";
 import { savePartnerProfile } from "@/actions/profiles";
 
 export const metadata: Metadata = { title: "Partners" };
 
-export default async function Partners({ searchParams }: { searchParams: Promise<{ q?: string; industry?: string; status?: string; type?: string; docs?: string }> }) {
+export default async function Partners({ searchParams }: { searchParams: Promise<{ q?: string; industry?: string; status?: string; type?: string; docs?: string; contract?: string }> }) {
   const s = await requireStaff();
   const f = await searchParams;
   const [{ data: rows }, { data: files }, { data: reviews }] = await Promise.all([
-    s.supabase.from("partners").select("id, name, industry, discipline, relationship, status, logo_url, agreed_pct, services").order("name"),
+    s.supabase.from("partners").select("id, name, industry, discipline, relationship, status, logo_url, agreed_pct, services, service_rates, contract_status").order("name"),
     s.supabase.from("internal_files").select("owner_id, category, expires_on").eq("owner_type", "partner"),
     s.supabase.from("partner_reviews").select("partner_id, rating"),
   ]);
@@ -31,12 +31,15 @@ export default async function Partners({ searchParams }: { searchParams: Promise
     const rs = (reviews ?? []).filter((r) => r.partner_id === id);
     return { missing: inst(id) ? 0 : missingDocs(fs).length, rating: rs.length ? rs.reduce((n, r) => n + r.rating, 0) / rs.length : null, reviews: rs.length };
   };
+  type R = { service: string; pct: number | null };
+  const rates = (p: (typeof all)[number]): R[] => (Array.isArray(p.service_rates) && p.service_rates.length ? (p.service_rates as R[]) : (p.services ?? []).map((sv: string) => ({ service: sv, pct: null })));
   const q = (f.q ?? "").trim().toLowerCase();
   const list = all.filter((p) =>
     (!q || [p.name, p.industry, p.discipline, ...(p.services ?? [])].some((v) => v?.toLowerCase().includes(q))) &&
     (!f.industry || p.industry === f.industry) && (!f.status || p.status === f.status) && (!f.type || p.relationship === f.type) &&
-    (!f.docs || (f.docs === "complete" ? info(p.id).missing === 0 : info(p.id).missing > 0)));
-  const filtered = Boolean(q || f.industry || f.status || f.type || f.docs);
+    (!f.docs || (f.docs === "complete" ? info(p.id).missing === 0 : info(p.id).missing > 0)) &&
+    (!f.contract || (p.contract_status ?? "none") === f.contract));
+  const filtered = Boolean(q || f.industry || f.status || f.type || f.docs || f.contract);
   const sel = "rounded-full border border-white/80 bg-white/70 px-3.5 py-2 text-sm backdrop-blur";
 
   return (
@@ -56,6 +59,7 @@ export default async function Partners({ searchParams }: { searchParams: Promise
         <select name="status" defaultValue={f.status ?? ""} aria-label="Status" className={sel}><option value="">Any status</option><option value="approved">Verified (approved)</option><option value="vetting">Vetting</option><option value="paused">Paused</option><option value="rejected">Rejected</option></select>
         <select name="type" defaultValue={f.type ?? ""} aria-label="Type" className={sel}><option value="">All types</option><option value="service">Service</option><option value="referral">Referral</option><option value="institution">Chamber or government</option></select>
         <select name="docs" defaultValue={f.docs ?? ""} aria-label="Documents" className={sel}><option value="">Any documents</option><option value="complete">Documents complete</option><option value="missing">Documents missing</option></select>
+        <select name="contract" defaultValue={f.contract ?? ""} aria-label="Contract" className={sel}><option value="">Any contract</option>{Object.entries(CONTRACT_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
         <button className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Filter</button>
         {filtered ? <Link href="/admin/partners" className="text-sm text-muted underline">Clear</Link> : null}
         <span className="ml-auto text-sm text-muted">{list.length} of {all.length}</span>
@@ -75,16 +79,16 @@ export default async function Partners({ searchParams }: { searchParams: Promise
                   </div>
                   <StatusBadge status={p.status} />
                 </div>
-                {p.services?.length ? (
+                {rates(p).length ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {p.services.slice(0, 4).map((sv: string) => <span key={sv} className="rounded-full bg-sunken px-2.5 py-1 text-xs">{sv}</span>)}
-                    {p.services.length > 4 ? <span className="px-1 py-1 text-xs text-muted">+{p.services.length - 4}</span> : null}
+                    {rates(p).slice(0, 4).map((r) => <span key={r.service} className="rounded-full bg-sunken px-2.5 py-1 text-xs">{r.service}{p.relationship !== "institution" && (r.pct ?? p.agreed_pct) != null ? <b className="ml-1 font-semibold text-navy-900">{Number(r.pct ?? p.agreed_pct)}%</b> : null}</span>)}
+                    {rates(p).length > 4 ? <span className="px-1 py-1 text-xs text-muted">+{rates(p).length - 4}</span> : null}
                   </div>
                 ) : null}
                 <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-3 text-xs">
                   {p.relationship === "institution" ? <span className="text-muted">Chamber or government · no documents needed</span> : (
                     <>
-                      <span className="font-semibold text-navy-900">{p.agreed_pct != null ? `${Number(p.agreed_pct)}% agreed` : <span className="font-normal text-muted">No % set</span>}</span>
+                      <span className={cn("rounded-full px-2 py-0.5 font-medium", CONTRACT_TONE[p.contract_status ?? "none"])}>{CONTRACT_LABEL[p.contract_status ?? "none"]}</span>
                       <span className={cn("flex items-center gap-1", i.missing ? "text-amber-700" : "text-green")}><FileCheck2 className="size-3.5" />{i.missing ? `${i.missing} of ${required} documents missing` : "Documents complete"}</span>
                     </>
                   )}

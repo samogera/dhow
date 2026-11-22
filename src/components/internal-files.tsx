@@ -9,7 +9,7 @@ const DHOW_CATEGORIES = [["incorporation", "Certificate of incorporation"], ["cr
 type F = { id: string; label: string; category: string; file_name: string; size_bytes: number; expires_on: string | null; created_at: string; uploaded_via?: string };
 
 /** Staff-only files for a partner or for Dhow: certificates, company profiles, registration and tax papers. */
-export function InternalFiles({ files, ownerType, ownerId }: { files: F[]; ownerType: "partner" | "dhow"; ownerId?: string }) {
+export function InternalFiles({ files, ownerType, ownerId, fixedCategory, empty = "No files yet.", placeholder = "Certificate of incorporation" }: { files: F[]; ownerType: "partner" | "dhow"; ownerId?: string; fixedCategory?: string; empty?: string; placeholder?: string }) {
   const today = new Date().toISOString().slice(0, 10);
   return (
     <div className="space-y-5">
@@ -35,12 +35,12 @@ export function InternalFiles({ files, ownerType, ownerId }: { files: F[]; owner
             );
           })}
         </ul>
-      ) : <p className="text-sm text-muted">No files yet.</p>}
+      ) : <p className="text-sm text-muted">{empty}</p>}
       <ActionForm action={uploadInternalFile} submit="Upload" submitVariant="outline" className="grid gap-3 rounded-3xl bg-sunken/60 p-4 sm:grid-cols-2">
         <input type="hidden" name="owner_type" value={ownerType} />
         {ownerId ? <input type="hidden" name="owner_id" value={ownerId} /> : null}
-        <div className="sm:col-span-2"><Field label="File name"><Input name="label" required placeholder="Certificate of incorporation" /></Field></div>
-        <Field label="Type"><Select name="category" defaultValue={ownerType === "partner" ? "incorporation" : "incorporation"}>{(ownerType === "partner" ? [...PARTNER_DOCS.map((d) => [d.key, d.label] as const), ["other", "Other"] as const] : DHOW_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
+        <div className="sm:col-span-2"><Field label="File name"><Input name="label" required placeholder={placeholder} /></Field></div>
+        {fixedCategory ? <input type="hidden" name="category" value={fixedCategory} /> : <Field label="Type"><Select name="category" defaultValue={ownerType === "partner" ? "incorporation" : "incorporation"}>{(ownerType === "partner" ? [...PARTNER_DOCS.map((d) => [d.key, d.label] as const), ["other", "Other"] as const] : DHOW_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>}
         <Field label="Expires" hint="Optional"><Input name="expires_on" type="date" /></Field>
         <div className="sm:col-span-2">
           <input type="file" name="file" required accept="application/pdf,image/png,image/jpeg"

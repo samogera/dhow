@@ -1,20 +1,8 @@
 "use client";
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Smartphone } from "lucide-react";
-import { requestManualVerification } from "@/actions/member";
-import { FormMessage, Submit } from "@/components/forms";
 import { Button } from "@/components/ui";
-
-export function ManualRequest() {
-  const [state, action] = useActionState(requestManualVerification, undefined);
-  return (
-    <form action={action} className="space-y-3">
-      <FormMessage state={state} />
-      <Submit variant="outline" className="w-full" pending="Submitting…">Request free review</Submit>
-    </form>
-  );
-}
 
 type Phase = "idle" | "sending" | "waiting" | "paid" | "failed";
 

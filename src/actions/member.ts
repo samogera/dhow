@@ -153,29 +153,6 @@ export async function deleteDocument(fd: FormData) {
   revalidatePath("/app/documents");
 }
 
-/** Free route: a Dhow reviewer checks the uploaded documents. */
-export async function requestManualVerification(_: ActionState): Promise<ActionState> {
-  const m = await memberOrNull();
-  if (!m || !isOrgAdmin(m.role)) return { error: "Only owners and admins can request verification." };
-  if (m.org.verification_status === "verified") return { error: "You're already verified." };
-  if (!m.org.brs_number) return { error: "Add your BRS registration number in Settings first." };
-
-  const db = createAdminClient();
-  const { data: docs } = await db.from("documents").select("kind").eq("org_id", m.org.id).in("status", ["uploaded", "approved"]);
-  const kinds = new Set((docs ?? []).map((d) => d.kind));
-  if (!(kinds.has("cr12") || kinds.has("certificate_of_incorporation")) || !kinds.has("kra_pin")) {
-    return { error: "Upload your CR12 (or certificate of incorporation) and KRA PIN certificate first." };
-  }
-  const { data: open } = await db.from("verifications").select("id").eq("org_id", m.org.id).in("status", ["pending", "in_review"]).limit(1);
-  if (open?.length) return { error: "Your verification is already in review." };
-
-  await db.from("verifications").insert({ org_id: m.org.id, tier: "manual", status: "in_review", provider: "manual", requested_by: m.user.id });
-  await db.from("organizations").update({ verification_status: "pending" }).eq("id", m.org.id);
-  await notifyStaff(["reviewer"], `New verification: ${m.org.name}`, [`${m.org.name} asked for free verification. Their documents are ready to review.`], { label: "Open reviews", href: `${app()}/admin/reviews` });
-  revalidatePath("/app", "layout");
-  return { ok: "Submitted. A reviewer will reply within 3 working days." };
-}
-
 export async function applyToOpportunity(_: ActionState, fd: FormData): Promise<ActionState> {
   const m = await memberOrNull();
   if (!m) return { error: "Sign in first." };

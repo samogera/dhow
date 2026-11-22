@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (!m) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   if (!isOrgAdmin(m.role)) return NextResponse.json({ error: "Only company owners and admins can pay." }, { status: 403 });
   const provider = paymentProvider();
-  if (provider === "paystack" ? !paystackConfigured() : !mpesaConfigured()) return NextResponse.json({ error: "Online payments aren't switched on yet. Use free verification for now." }, { status: 503 });
+  if (provider === "paystack" ? !paystackConfigured() : !mpesaConfigured()) return NextResponse.json({ error: "Online payments aren't switched on yet. Please try again later." }, { status: 503 });
   if (!(await rateLimit("pay", 5, 600))) return NextResponse.json({ error: "Too many payment attempts. Try again in 10 minutes." }, { status: 429 });
 
   let phone = "";
@@ -31,6 +31,13 @@ export async function POST(req: Request) {
 
   const db = createAdminClient();
   const fee = Number(process.env.VERIFICATION_FEE_KES ?? 500);
+
+  // Step 1 comes first: the registry check and any follow-up use the uploaded documents.
+  const { data: docs } = await db.from("documents").select("kind").eq("org_id", org.id).in("status", ["uploaded", "approved"]);
+  const kinds = new Set((docs ?? []).map((d) => d.kind));
+  if (!(kinds.has("cr12") || kinds.has("certificate_of_incorporation")) || !kinds.has("kra_pin")) {
+    return NextResponse.json({ error: "Upload your CR12 (or certificate of incorporation) and KRA PIN certificate first." }, { status: 400 });
+  }
 
   // Reuse an open instant request rather than stacking new ones.
   let { data: v } = await db

@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { VerifiedTick } from "@/components/verified-tick";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Circle, Mail, MapPin, Phone, Star } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, FileSignature, Mail, MapPin, Phone, Star } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { Card, CardHeader, StatusBadge } from "@/components/ui";
 import { Avatar, SocialLinks } from "@/components/profile-bits";
 import { InternalFiles } from "@/components/internal-files";
-import { PartnerFields, type PartnerRow } from "@/components/partner-fields";
+import { CONTRACT_LABEL, CONTRACT_TONE, PartnerFields, type PartnerRow } from "@/components/partner-fields";
 import { makePartnerLink, savePartnerProfile } from "@/actions/profiles";
 import { CopyField } from "@/components/copy-field";
 import { PARTNER_DOCS } from "@/lib/partner-docs";
@@ -34,6 +34,11 @@ export default async function Partner({ params }: { params: Promise<{ id: string
   const avg = reviews?.length ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length : null;
   const base = appUrl();
   const institution = partner.relationship === "institution";
+  const rates = partner.service_rates?.length ? partner.service_rates : (partner.services ?? []).map((sv) => ({ service: sv, pct: partner.agreed_pct ?? null }));
+  const isContract = (c: string) => c === "agreement" || c === "contract";
+  const contractFiles = (files ?? []).filter((f) => isContract(f.category));
+  const otherFiles = (files ?? []).filter((f) => !isContract(f.category));
+  const contract = partner.contract_status ?? "none";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -53,12 +58,21 @@ export default async function Partner({ params }: { params: Promise<{ id: string
             <div className="mt-3"><SocialLinks website={partner.website} socials={partner.socials} /></div>
           </div>
           {institution ? null : <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-1 sm:text-right">
-            <div><p className="label">Agreed</p><p className="num text-2xl font-semibold text-navy-900">{partner.agreed_pct != null ? `${Number(partner.agreed_pct)}%` : "—"}</p></div>
+            <div><p className="label">Contract</p><p className="mt-1"><span className={cn("inline-block rounded-full px-3 py-1 text-sm font-medium", CONTRACT_TONE[contract])}>{CONTRACT_LABEL[contract]}</span></p></div>
             <div><p className="label">Client rating</p><p className="flex items-center gap-1 text-2xl font-semibold sm:justify-end">{avg ? <><Star className="size-5 fill-amber text-amber" />{avg.toFixed(1)}</> : "—"}</p></div>
           </div>}
         </div>
-        {partner.services?.length ? <p className="mt-5 label">{institution ? "What we need them for" : "Work they do"}</p> : null}
-        {partner.services?.length ? <div className="mt-2 flex flex-wrap gap-1.5">{partner.services.map((sv) => <span key={sv} className="rounded-full bg-sunken px-3 py-1 text-sm">{sv}</span>)}</div> : null}
+        {rates.length ? <p className="mt-5 label">{institution ? "What we need them for" : "Services and percentage"}</p> : null}
+        {rates.length ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {rates.map((r) => (
+              <span key={r.service} className="inline-flex items-center gap-2 rounded-full bg-sunken py-1 pr-1 pl-3.5 text-sm">
+                {r.service}
+                {institution ? null : <span className="num rounded-full bg-white px-2.5 py-0.5 font-semibold text-navy-900">{r.pct != null ? `${Number(r.pct)}%` : partner.agreed_pct != null ? `${Number(partner.agreed_pct)}%` : "no %"}</span>}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {partner.about ? <p className="mt-5 max-w-3xl whitespace-pre-line border-t border-line pt-5 text-[0.95rem] leading-relaxed text-ink/85">{partner.about}</p> : null}
         {partner.commission_terms ? <p className="mt-3 text-sm text-muted">Terms: {partner.commission_terms}</p> : null}
       </Card>
@@ -97,8 +111,19 @@ export default async function Partner({ params }: { params: Promise<{ id: string
             </div>
           </Card>}
           <Card>
+            <CardHeader title="Contract" sub={partner.contract_date ? `${CONTRACT_LABEL[contract]} · ${day(partner.contract_date)}` : CONTRACT_LABEL[contract]} />
+            <div className="mb-4 flex items-start gap-3 rounded-2xl bg-sunken/60 p-4">
+              <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", CONTRACT_TONE[contract])}><FileSignature className="size-5" /></span>
+              <div className="min-w-0 text-sm">
+                <p className="font-medium">{CONTRACT_LABEL[contract]}</p>
+                <p className="mt-0.5 whitespace-pre-line text-muted">{partner.contract_notes || (contract === "signed" ? "Upload the signed copy below." : "Change the status and add notes in Details. Upload a draft or the signed copy below.")}</p>
+              </div>
+            </div>
+            <InternalFiles files={contractFiles} ownerType="partner" ownerId={partner.id} fixedCategory="agreement" empty="No contract uploaded yet." placeholder="Partnership agreement (signed)" />
+          </Card>
+          <Card>
             <CardHeader title="Files" sub="Staff only" />
-            <InternalFiles files={files ?? []} ownerType="partner" ownerId={partner.id} />
+            <InternalFiles files={otherFiles} ownerType="partner" ownerId={partner.id} />
           </Card>
           {institution ? null : <Card>
             <CardHeader title="Client reviews" sub={reviews?.length ? `${reviews.length} review${reviews.length === 1 ? "" : "s"} · average ${avg?.toFixed(1)} of 5` : "Ask clients how this partner did"} />

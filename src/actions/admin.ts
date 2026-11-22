@@ -734,7 +734,13 @@ export async function assignPartner(_: ActionState, fd: FormData): Promise<Actio
   const p = AssignIn.safeParse(form(fd));
   if (!p.success) return { error: "Choose a partner." };
   let pct = p.data.agreed_pct;
-  if (pct == null) pct = (await s.supabase.from("partners").select("agreed_pct").eq("id", p.data.partner_id).single()).data?.agreed_pct ?? null;
+  if (pct == null) {
+    // The partner's rate for this service if they have one, otherwise their default.
+    const { data: partner } = await s.supabase.from("partners").select("agreed_pct, service_rates").eq("id", p.data.partner_id).single();
+    const wanted = (p.data.service ?? "").trim().toLowerCase();
+    const rate = Array.isArray(partner?.service_rates) ? (partner.service_rates as { service: string; pct: number | null }[]).find((r) => r.service.trim().toLowerCase() === wanted) : undefined;
+    pct = rate?.pct ?? partner?.agreed_pct ?? null;
+  }
   const { error } = await s.supabase.from("client_partners").insert({ ...p.data, agreed_pct: pct });
   if (error) return { error: error.code === "23505" ? "That partner is already on this client for that work." : error.message };
   revalidatePath(`/admin/clients/${p.data.client_id}`);

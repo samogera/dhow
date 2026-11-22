@@ -74,19 +74,36 @@ const PartnerIn = z.object({
   commission_terms: text(300), website: url, email: text(160), phone: text(40), notes: text(4000),
   about: text(3000),
   agreed_pct: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0, "Percentage between 0 and 100").max(100, "Percentage between 0 and 100").nullable()).optional(),
-  services: z.string().max(1000).optional().transform((v) => (v ?? "").split(/[,\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 20)),
+  contract_status: z.enum(["none", "discussed", "sent", "signed", "ended"]).optional(),
+  contract_date: date, contract_notes: text(3000),
 });
+/** Service rows from the form: names with an optional percentage each. */
+function ratesFrom(fd: FormData): { service: string; pct: number | null }[] | { error: string } {
+  const names = fd.getAll("rate_service").map((v) => String(v).trim().slice(0, 120));
+  const pcts = fd.getAll("rate_pct").map((v) => String(v).trim());
+  const out: { service: string; pct: number | null }[] = [];
+  for (let i = 0; i < names.length && out.length < 30; i++) {
+    if (!names[i]) continue;
+    const pct = pcts[i] ? Number(pcts[i]) : null;
+    if (pct != null && (!Number.isFinite(pct) || pct < 0 || pct > 100)) return { error: `Percentage for ${names[i]} must be between 0 and 100.` };
+    if (out.some((r) => r.service.toLowerCase() === names[i].toLowerCase())) continue;
+    out.push({ service: names[i], pct });
+  }
+  return out;
+}
 export async function savePartnerProfile(_: ActionState, fd: FormData): Promise<ActionState> {
   const s = await staffOrNull();
   if (!s) return DENIED;
   const p = PartnerIn.safeParse(form(fd));
   if (!p.success) return first(p.error);
   const { id, ...row } = p.data;
+  const rates = ratesFrom(fd);
+  if ("error" in rates) return rates;
   let current: string | null = null;
   if (id) current = (await s.supabase.from("partners").select("logo_url").eq("id", id).single()).data?.logo_url ?? null;
   const img = await imageField(fd, "partners", current);
   if ("error" in img) return img;
-  const full = { ...row, logo_url: img.url, socials: socialsFrom(fd) };
+  const full = { ...row, service_rates: rates, services: rates.map((r) => r.service), logo_url: img.url, socials: socialsFrom(fd) };
   if (id) {
     const { error } = await s.supabase.from("partners").update(full).eq("id", id);
     if (error) return { error: error.message };

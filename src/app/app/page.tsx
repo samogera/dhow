@@ -36,7 +36,7 @@ export default async function Dashboard() {
           </div>
           <p className="mt-10 text-3xl font-semibold tracking-tight">{verified ? "Dhow Verified" : label(org.verification_status)}</p>
           <p className="mt-1 text-sm text-muted">
-            {verified && org.verified_until ? `Valid until ${day(org.verified_until)}` : org.verification_status === "pending" ? "A reviewer is checking your records." : "Free review, or instant by M-Pesa."}
+            {verified && org.verified_until ? `Valid until ${day(org.verified_until)}` : org.verification_status === "pending" ? "We're checking your records." : "Upload your documents, pay, and we check the registry."}
           </p>
         </div>
 

@@ -28,7 +28,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     db.from("projects").select("id, name, status, due_date, fee_kes").eq("client_id", id).order("created_at", { ascending: false }),
     db.from("contacts").select("id, name, role, email, phone").eq("client_id", id),
     db.from("client_partners").select("id, service, agreed_pct, status, partners(id, name, industry, logo_url)").eq("client_id", id).order("created_at"),
-    db.from("partners").select("id, name, agreed_pct").neq("status", "rejected").order("name"),
+    db.from("partners").select("id, name, agreed_pct, service_rates").neq("status", "rejected").order("name"),
   ]);
   if (!c) notFound();
   const client = c as ClientRow;
@@ -207,9 +207,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
               <input type="hidden" name="client_id" value={client.id} />
               <Field label="Partner"><Select name="partner_id" required defaultValue=""><option value="" disabled>Choose a partner</option>{partners?.map((p) => <option key={p.id} value={p.id}>{p.name}{p.agreed_pct != null ? ` (${Number(p.agreed_pct)}%)` : ""}</option>)}</Select></Field>
               <div className="grid grid-cols-[1fr_6rem] gap-2">
-                <Field label="For what"><Input name="service" placeholder="e.g. Work permits" /></Field>
-                <Field label="%" hint="Default"><Input name="agreed_pct" type="number" min="0" max="100" step="any" placeholder="auto" /></Field>
+                <Field label="For what"><Input name="service" list="partner-services" placeholder="e.g. HR 360" /></Field>
+                <Field label="%" hint="Auto"><Input name="agreed_pct" type="number" min="0" max="100" step="any" placeholder="auto" /></Field>
               </div>
+              <datalist id="partner-services">{[...new Set((partners ?? []).flatMap((p) => (Array.isArray(p.service_rates) ? (p.service_rates as { service: string }[]).map((r) => r.service) : [])))].map((sv) => <option key={sv} value={sv} />)}</datalist>
+              <p className="text-xs text-faint">Leave % on auto to use the partner&apos;s rate for that service, or their default.</p>
             </ActionForm>
           </Card>
 

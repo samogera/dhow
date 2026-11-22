@@ -7,17 +7,17 @@ import type { AnalyticsSummary, Row } from "@/lib/analytics";
 const NAVY = "#00395f", MUTED = "#6b7785", LINE = "#e3e8ed", SOFT = "#f4f7f9", MINT = "#63b8a8", BAR = "#2a6593";
 
 const s = StyleSheet.create({
-  page: { paddingTop: 0, paddingBottom: 56, paddingHorizontal: 44, fontSize: 9, color: "#0d1c29", fontFamily: "Helvetica", lineHeight: 1.4 },
+  page: { paddingTop: 0, paddingBottom: 56, paddingHorizontal: 44, fontSize: 9, color: "#0d1c29", fontFamily: "Helvetica" },
   band: { flexDirection: "row", height: 5, marginHorizontal: -44 },
   head: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 32 },
-  h1: { fontSize: 18, fontFamily: "Helvetica-Bold", color: NAVY, textAlign: "right" },
-  sub: { color: MUTED, textAlign: "right", marginTop: 2 },
+  h1: { fontSize: 18, fontFamily: "Helvetica-Bold", color: NAVY, textAlign: "right", lineHeight: 1.2 },
+  sub: { color: MUTED, textAlign: "right", marginTop: 4 },
   h2: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: NAVY, marginTop: 24, marginBottom: 8 },
   kpis: { flexDirection: "row", flexWrap: "wrap", marginTop: 24, marginHorizontal: -4 },
   kpi: { width: "33.33%", padding: 4 },
   kpiBox: { backgroundColor: SOFT, borderRadius: 6, padding: 10 },
-  kpiLabel: { fontSize: 7.5, color: MUTED, textTransform: "uppercase", letterSpacing: 0.8 },
-  kpiValue: { fontSize: 18, fontFamily: "Helvetica-Bold", marginTop: 4 },
+  kpiLabel: { lineHeight: 1.3, fontSize: 7.5, color: MUTED, textTransform: "uppercase", letterSpacing: 0.8 },
+  kpiValue: { fontSize: 18, fontFamily: "Helvetica-Bold", marginTop: 6, marginBottom: 3, lineHeight: 1.2 },
   kpiNote: { color: MUTED, fontSize: 8 },
   grid: { flexDirection: "row", marginHorizontal: -8 },
   col: { flex: 1, paddingHorizontal: 8 },

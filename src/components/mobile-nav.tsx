@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, Briefcase, CalendarDays, FileText, LayoutGrid, LifeBuoy, Megaphone, Menu, Receipt, Send, Settings, Target, X,
+  BadgeCheck, Briefcase, CalendarDays, FileText, LayoutGrid, LifeBuoy, Megaphone, Menu, Receipt, Send, Settings, UsersRound, X,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { AdminNav } from "@/components/admin-nav";
@@ -50,9 +50,9 @@ export function AdminMobileNav({ role, account, counts }: { role: "reviewer" | "
 
   const tabs: Tab[] = [
     { href: "/admin", label: "Home", icon: LayoutGrid, exact: true },
-    { href: "/admin/reviews", label: "Reviews", icon: BadgeCheck },
-    { href: "/admin/leads", label: "Leads", icon: Target },
-    role === "reviewer" ? { href: "/admin/projects", label: "Projects", icon: Briefcase } : { href: "/admin/finance", label: "Finance", icon: Receipt },
+    { href: "/admin/clients", label: "Clients", icon: UsersRound },
+    { href: "/admin/projects", label: "Work", icon: Briefcase },
+    role === "reviewer" ? { href: "/admin/reviews", label: "Reviews", icon: BadgeCheck } : { href: "/admin/finance", label: "Money", icon: Receipt },
   ];
 
   return (

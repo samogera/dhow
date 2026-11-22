@@ -81,7 +81,7 @@ export default async function Analytics() {
       </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat icon={Building2} label="Member companies" value={O.length} note={`${joins.at(-1)?.value ?? 0} joined this month`} />
+        <Stat icon={Building2} label="Companies" value={O.length} note={`${joins.at(-1)?.value ?? 0} joined this month`} />
         <Stat icon={BadgeCheck} label="Verified" value={verified} note={`${pct(verified, O.length)}% of members · ${pending} in review`} highlight />
         <Stat icon={Send} label="Applied to something" value={applied.size} note={<Link href="/admin/members?f=not_applied" className="underline">{O.length - applied.size} haven&apos;t yet</Link>} />
         <Stat icon={ListChecks} label="Applications tracked" value={A.length} note={`${A.filter((a) => a.status === "won").length} won`} />
@@ -94,10 +94,10 @@ export default async function Analytics() {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card className="p-6">
           <div className="mb-6 flex items-start justify-between gap-4">
-            <div><p className="font-semibold text-navy-900">Member companies</p><p className="text-sm text-muted">Total on Dhow, last 12 months</p></div>
+            <div><p className="font-semibold text-navy-900">Companies</p><p className="text-sm text-muted">Total on Dhow, last 12 months</p></div>
             <div className="text-right"><p className="num text-2xl font-semibold tracking-tight">{O.length}</p><p className="text-xs text-muted">+{joins.at(-1)?.value ?? 0} this month</p></div>
           </div>
-          <AreaChart data={members} unit="companies" label="Member companies over the last 12 months" />
+          <AreaChart data={members} unit="companies" label="Companies over the last 12 months" />
         </Card>
         <Card className="p-6">
           <div className="mb-6 flex items-start justify-between gap-4">

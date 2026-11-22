@@ -10,6 +10,10 @@ import { Avatar } from "@/components/profile-bits";
 import { ClientFields, type ClientRow } from "@/components/client-fields";
 import { cn, day, kes } from "@/lib/format";
 import { assignPartner, saveClient, saveContact, saveProject, updateClientPartner } from "@/actions/admin";
+import { makeClientLink } from "@/actions/profiles";
+import { CopyField } from "@/components/copy-field";
+import { appUrl } from "@/lib/app-url";
+import { Star } from "lucide-react";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -33,6 +37,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     ? await db.from("tasks").select("id, title, status, due_date, project_id, assignee").in("project_id", projectIds).neq("status", "done").order("due_date", { ascending: true, nullsFirst: false })
     : { data: [] as { id: string; title: string; status: string; due_date: string | null; project_id: string; assignee: string | null }[] };
   const { data: staff } = await db.from("profiles").select("id, full_name").not("staff_role", "is", null);
+  const { data: reviews } = await db.from("client_reviews").select("*").eq("client_id", id).order("created_at", { ascending: false });
+  const token = (c as { portal_token?: string | null }).portal_token;
 
   const live = (invoices ?? []).filter((i) => i.status !== "cancelled" && i.status !== "draft");
   const billed = live.reduce((n, i) => n + Number(i.total_kes), 0);
@@ -149,6 +155,31 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="space-y-4">
+          <Card className="border-mint/40 bg-mint-100/50">
+            <CardHeader title="Client page" sub="A private link where they see progress, download and pay invoices, and leave a review. No login." />
+            {token ? (
+              <>
+                <CopyField value={`${appUrl()}/client/${token}`} share={`Hello from Dhow Partners. Follow your project, invoices and payments here:`} />
+                <div className="mt-2 flex gap-4 text-xs">
+                  <a href={`/client/${token}`} target="_blank" className="font-medium text-navy-600">Open it ↗</a>
+                  <form action={makeClientLink}><input type="hidden" name="id" value={client.id} /><input type="hidden" name="reset" value="1" /><button className="text-muted underline">New link (old one stops working)</button></form>
+                </div>
+              </>
+            ) : (
+              <form action={makeClientLink}><input type="hidden" name="id" value={client.id} /><button className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Create client page</button></form>
+            )}
+            {reviews?.length ? (
+              <ul className="mt-5 space-y-2 border-t border-mint/40 pt-4">
+                {reviews.map((r) => (
+                  <li key={r.id} className="text-sm">
+                    <div className="flex items-center justify-between gap-2"><span className="font-medium">{r.reviewer_name}</span><span className="flex">{[1, 2, 3, 4, 5].map((n) => <Star key={n} className={cn("size-3.5", n <= r.rating ? "fill-amber text-amber" : "text-line")} />)}</span></div>
+                    {r.comment ? <p className="mt-1 text-ink/80">{r.comment}</p> : null}
+                    <p className="text-xs text-muted">{day(r.created_at)}{r.may_publish ? " · OK to share publicly" : ""}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </Card>
           <Card>
             <CardHeader title="Partners on this client" sub="Firms doing work for them, and the agreed percentage" />
             {links?.length ? (

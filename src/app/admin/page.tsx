@@ -61,7 +61,8 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         <Stat icon={Target} href="/admin/leads" label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      {/* Charts are for the laptop; phones get the simple view. */}
+      <div className="mt-4 hidden gap-4 sm:grid lg:grid-cols-[1.6fr_1fr]">
         <Card>
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -73,8 +74,8 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           <ColumnChart data={months.map(({ label, value }) => ({ label, value }))} money label="Money received per month" />
         </Card>
         <Card>
-          <CardHeader title="Member companies" sub="By verification status" href="/admin/analytics" />
-          <Donut center={String(orgs.data?.length ?? 0)} sub="companies" empty="No member companies yet." rows={[
+          <CardHeader title="Companies" sub="By verification status" href="/admin/analytics" />
+          <Donut center={String(orgs.data?.length ?? 0)} sub="companies" empty="No companies yet." rows={[
             { label: "Verified", value: vs(["verified"]), color: "var(--color-green)", href: "/admin/members?f=verified" },
             { label: "In review", value: vs(["pending"]), color: "var(--color-amber)", href: "/admin/members?f=pending" },
             { label: "Not verified", value: vs(["unverified", "rejected", "expired"]), color: "var(--color-navy-300)", href: "/admin/members?f=unverified" },

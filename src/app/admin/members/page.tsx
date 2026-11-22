@@ -7,10 +7,12 @@ import { day } from "@/lib/format";
 import { PLAN_LABEL, type PlanTier } from "@/lib/types";
 import { setOrgPlan } from "@/actions/admin";
 
-export const metadata: Metadata = { title: "Member companies" };
+export const metadata: Metadata = { title: "Companies" };
 
 const FILTERS = [
   { key: "all", label: "All" },
+  { key: "members", label: "Members (paid plan)" },
+  { key: "free", label: "Free" },
   { key: "verified", label: "Verified" },
   { key: "pending", label: "In review" },
   { key: "unverified", label: "Not verified" },
@@ -37,6 +39,8 @@ export default async function Members({ searchParams }: { searchParams: Promise<
   }
   const all = orgs ?? [];
   const pick = (key: string) => all.filter((o) => {
+    if (key === "members") return o.plan !== "free";
+    if (key === "free") return o.plan === "free";
     if (key === "verified") return o.verification_status === "verified";
     if (key === "pending") return o.verification_status === "pending";
     if (key === "unverified") return !["verified", "pending"].includes(o.verification_status);
@@ -50,7 +54,7 @@ export default async function Members({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <PageHeader title="Member companies" sub={`${all.length} companies on Dhow`}>
+      <PageHeader title="Companies" sub={`${all.length} companies on Dhow · ${all.filter((o) => o.plan !== "free").length} paying members`}>
         <form className="flex">
           <input type="hidden" name="f" value={f} />
           <input name="q" defaultValue={q} placeholder="Search by name" aria-label="Search companies" className="field w-full rounded-full py-2 sm:w-64" />

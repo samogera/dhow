@@ -10,7 +10,7 @@ import { DOC_KINDS, PLAN_LABEL, type PlanTier } from "@/lib/types";
 import { ConfirmSubmit } from "@/components/forms";
 import { deleteOrganization } from "@/actions/admin";
 
-export const metadata: Metadata = { title: "Member company" };
+export const metadata: Metadata = { title: "Company" };
 
 export default async function Member({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

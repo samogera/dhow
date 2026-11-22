@@ -79,7 +79,7 @@ function Report({ a }: { a: AnalyticsSummary }) {
         </View>
 
         <View style={s.grid}>
-          <View style={s.col}><Text style={s.h2}>New member companies, last 12 months</Text><Months data={a.months} field="members" /></View>
+          <View style={s.col}><Text style={s.h2}>New companies, last 12 months</Text><Months data={a.months} field="members" /></View>
           <View style={s.col}><Text style={s.h2}>Applications, last 12 months</Text><Months data={a.months} field="applications" /></View>
         </View>
 

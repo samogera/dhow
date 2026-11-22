@@ -256,3 +256,34 @@ export async function submitPartnerReview(_: ActionState, fd: FormData): Promise
   revalidatePath(`/admin/partners/${partner.id}`);
   return { ok: "Thank you. Your review has been sent to Dhow Partners." };
 }
+
+// ----------------------------------------------------------------- client page (no login)
+export async function makeClientLink(fd: FormData) {
+  const s = await staffOrNull();
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const { data } = await s.supabase.from("clients").select("portal_token").eq("id", id.data).single();
+  if (fd.get("reset") === "1" || !data?.portal_token) {
+    await s.supabase.from("clients").update({ portal_token: randomBytes(24).toString("base64url") }).eq("id", id.data);
+  }
+  revalidatePath(`/admin/clients/${id.data}`);
+}
+
+const ClientReviewIn = z.object({
+  token, reviewer_name: z.string().trim().min(2, "Enter your name").max(120),
+  rating: z.coerce.number().int().min(1, "Choose a rating").max(5), comment: text(2000),
+  may_publish: z.enum(["on"]).optional().transform((v) => v === "on"),
+});
+export async function submitClientReview(_: ActionState, fd: FormData): Promise<ActionState> {
+  const p = ClientReviewIn.safeParse(form(fd));
+  if (!p.success) return first(p.error);
+  if (!(await rateLimit(`client-review:${p.data.token}`, 5, 3600))) return { error: "Too many reviews. Try later." };
+  const db = createAdminClient();
+  const { data: c } = await db.from("clients").select("id").eq("portal_token", p.data.token).maybeSingle();
+  if (!c) return { error: "This link isn't valid any more." };
+  const { error } = await db.from("client_reviews").insert({ client_id: c.id, reviewer_name: p.data.reviewer_name, rating: p.data.rating, comment: p.data.comment, may_publish: p.data.may_publish });
+  if (error) return { error: "Could not save your review. Try again." };
+  revalidatePath(`/admin/clients/${c.id}`);
+  return { ok: "Thank you for your review." };
+}

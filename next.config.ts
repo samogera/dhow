@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
   // The PDF library loads its built-in fonts by file path at run time, which Vercel's bundler can't see. Ship them explicitly.
   outputFileTracingIncludes: {
     "/api/**/*": ["./node_modules/pdfkit/js/**/*", "./node_modules/@react-pdf/pdfkit/**/*", "./node_modules/@react-pdf/font/**/*"],
+    "/client/**/*": ["./node_modules/pdfkit/js/**/*", "./node_modules/@react-pdf/pdfkit/**/*", "./node_modules/@react-pdf/font/**/*"],
     "/admin/**/*": ["./node_modules/pdfkit/js/**/*", "./node_modules/@react-pdf/pdfkit/**/*", "./node_modules/@react-pdf/font/**/*"],
   },
   experimental: {

@@ -29,7 +29,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       db.from("team_people").select("id, full_name, title, photo_url").ilike("full_name", like).limit(8),
     ]);
     groups.push(
-      { key: "orgs", title: "Member companies", icon: Building2, hits: (orgs.data ?? []).map((o) => ({ id: o.id, title: o.name, sub: [o.sector, label(o.verification_status)].filter(Boolean).join(" · "), href: `/admin/members/${o.id}`, img: o.logo_url })) },
+      { key: "orgs", title: "Companies", icon: Building2, hits: (orgs.data ?? []).map((o) => ({ id: o.id, title: o.name, sub: [o.sector, label(o.verification_status)].filter(Boolean).join(" · "), href: `/admin/members/${o.id}`, img: o.logo_url })) },
       { key: "leads", title: "Leads", icon: Target, hits: (leads.data ?? []).map((l) => ({ id: l.id, title: l.name, sub: [l.company, label(l.status)].filter(Boolean).join(" · "), href: "/admin/leads" })) },
       { key: "clients", title: "Clients", icon: Users, hits: (clients.data ?? []).map((c) => ({ id: c.id, title: c.name, sub: [c.sector, label(c.stage)].filter(Boolean).join(" · "), href: `/admin/clients/${c.id}` })) },
       { key: "partners", title: "Partners", icon: Handshake, hits: (partners.data ?? []).map((p) => ({ id: p.id, title: p.name, sub: [p.industry, label(p.status)].filter(Boolean).join(" · "), href: `/admin/partners/${p.id}`, img: p.logo_url })) },

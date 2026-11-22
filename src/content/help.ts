@@ -232,7 +232,7 @@ Read the full [privacy policy](/privacy).
     body: `
 The staff workspace is at **/admin**. What you see depends on your role:
 
-- **Reviewer**: verification reviews, member companies, opportunities, leads, clients, partners, projects.
+- **Reviewer**: verification reviews, companies, opportunities, leads, clients, partners, projects.
 - **Finance**: everything a reviewer can do, plus **Finance** (invoices, payments and partner bills).
 - **Admin**: everything, plus setting company plans and managing staff roles.
 
@@ -275,10 +275,10 @@ Below that you'll find monthly income, your calendar for the week, your open tas
   },
   {
     slug: "member-companies", audience: "staff", section: "Members",
-    title: "Member companies and plans",
+    title: "Companies and plans",
     summary: "Find a company and change its plan.",
     body: `
-**Member companies** lists every company on Dhow with its sector, join date, verification status and storage used. Search by name at the top.
+**Companies** lists every company on Dhow with its sector, join date, verification status and storage used. Search by name at the top.
 
 Admins can change a company's plan with the drop-down and **Set**. The plan controls storage: Free 50 MB (500 MB once verified), Starter 500 MB, Growth 2 GB, Market Entry 10 GB.
 

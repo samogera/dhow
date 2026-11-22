@@ -61,7 +61,7 @@ export async function analyticsSummary(db: SupabaseClient): Promise<AnalyticsSum
   return {
     generated: dfmt(new Date().toISOString()),
     kpis: [
-      { label: "Member companies", value: String(O.length), note: `${months.at(-1)?.members ?? 0} joined this month` },
+      { label: "Companies", value: String(O.length), note: `${months.at(-1)?.members ?? 0} joined this month` },
       { label: "Verified", value: String(verified), note: `${pct(verified, O.length)} of members` },
       { label: "Applied to something", value: String(applied.size), note: `${O.length - applied.size} not yet` },
       { label: "Applications", value: String(A.length), note: `${A.filter((a) => a.status === "won").length} won` },

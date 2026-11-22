@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { guardMemberSide, requireMember } from "@/lib/auth";
 import { Logo } from "@/components/logo";
 import { MemberNav } from "@/components/member-nav";
 import { MemberTabBar } from "@/components/mobile-nav";
 import { UserMenu } from "@/components/user-menu";
 import { switchOrganization } from "@/actions/member";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   await guardMemberSide();

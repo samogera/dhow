@@ -39,7 +39,9 @@ export function Avatar({ src, name, size = "md", round }: { src?: string | null;
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
   return (
     <div className={cn("grid shrink-0 place-items-center overflow-hidden border border-line bg-white font-semibold text-navy-700", round ? "rounded-full" : "rounded-2xl", dims)}>
-      {src ? <img src={src} alt="" className="size-full object-contain p-1" /> : initials || <Building2 className="size-1/2 text-faint" />}
+      {src ? <img src={src} alt="" className={round ? "size-full object-cover" : "size-full object-contain p-1"} />
+        : round ? <img src="/icons/person.png" alt="" className="size-full object-cover" />
+        : initials || <Building2 className="size-1/2 text-faint" />}
     </div>
   );
 }

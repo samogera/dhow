@@ -21,10 +21,10 @@ export function MemberNav() {
       {items.map((i) => {
         const on = i.href === "/app" ? path === "/app" : path.startsWith(i.href);
         return (
-          <Link key={i.href} href={i.href} aria-current={on ? "page" : undefined}
+          <Link key={i.href} href={i.href} aria-current={on ? "page" : undefined} title={i.label} aria-label={i.label}
             className={cn("flex items-center gap-2 rounded-full px-3.5 py-2 text-sm whitespace-nowrap transition", on ? "bg-navy-900 font-medium text-white shadow-sm" : "text-ink/75 hover:bg-white")}>
             <i.icon className={cn("size-4", on ? "text-white" : i.tone)} />
-            {i.label}
+            <span className={cn(on ? "inline" : "hidden xl:inline")}>{i.label}</span>
           </Link>
         );
       })}

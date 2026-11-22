@@ -51,7 +51,7 @@ export default async function Events() {
           {recommended.length ? (
             <section>
               <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-wide text-amber-700 uppercase"><Star className="size-4 fill-current" />Recommended by Dhow</h2>
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {recommended.map((e) => <OpportunityCard key={e.id} o={e} href={`/app/opportunities/${e.id}`} />)}
               </div>
             </section>

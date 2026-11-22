@@ -56,7 +56,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
       ) : null}
 
       {opps?.length ? (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {opps.map((o) => (
             <OpportunityCard key={o.id} o={o as CardOpp} href={`/app/opportunities/${o.id}`} locked={o.requires_verified && org.verification_status !== "verified"} />
           ))}

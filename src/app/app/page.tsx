@@ -78,7 +78,7 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.65fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.65fr_1fr]">
         <div className="min-w-0 space-y-6">
           {/* Getting started */}
           {!allDone ? (
@@ -118,7 +118,7 @@ export default async function Dashboard() {
               <Link href="/app/opportunities" className="shrink-0 text-sm font-medium text-navy-600 hover:text-navy-900">See all</Link>
             </div>
             {opps?.length ? (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {(opps as CardOpp[]).map((o) => <OpportunityCard key={o.id} o={o} href={`/app/opportunities/${o.id}`} locked={o.requires_verified && !verified} />)}
               </div>
             ) : (

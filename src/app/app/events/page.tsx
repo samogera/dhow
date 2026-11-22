@@ -49,7 +49,7 @@ export default async function Events() {
   return (
     <>
       <PageHeader title="Events" sub="Member events for Dhow members, and open events worth your time, picked by the Dhow team." />
-      <OpportunityTabs />
+      <OpportunityTabs investors={atLeast(org, "premium")} />
       {!events.length ? (
         <Empty title="No upcoming events" sub="The Dhow team adds events here as they are announced." />
       ) : (

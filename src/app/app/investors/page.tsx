@@ -7,6 +7,7 @@ import { Empty, PageHeader } from "@/components/ui";
 import { RequestButton } from "@/components/request-button";
 import { atLeast } from "@/lib/plans";
 import { INVESTOR_KIND } from "@/lib/investors";
+import { OpportunityTabs } from "@/components/member-nav";
 
 export const metadata: Metadata = { title: "Investors" };
 
@@ -25,6 +26,7 @@ export default async function Investors() {
   return (
     <>
       <PageHeader title="Investors" sub="Vetted funds, angels and lenders. Ask and the Dhow team makes a warm introduction." />
+      <OpportunityTabs investors={unlocked} />
       {!unlocked ? (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-3xl bg-navy-900 px-6 py-5 text-white">
           <Lock className="size-5 shrink-0 text-mint-100" />

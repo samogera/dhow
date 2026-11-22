@@ -39,7 +39,7 @@ export default async function ClientPortal({ params }: { params: Promise<{ token
           <div className="mt-5"><ClientReviewForm token={token} /></div>
         </section>
 
-        <section className="card">
+        <div>
           <HelpForm
             side="client"
             token={token}
@@ -48,7 +48,7 @@ export default async function ClientPortal({ params }: { params: Promise<{ token
             title="Need something from us?"
             links={issuer.phone ? [{ label: "WhatsApp", href: `https://wa.me/${issuer.phone.replace(/\D/g, "")}` }, { label: "Call", href: `tel:${issuer.phone}` }] : undefined}
           />
-        </section>
+        </div>
       </main>
     </div>
   );

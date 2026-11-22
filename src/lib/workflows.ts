@@ -114,6 +114,13 @@ export async function dailyMaintenance() {
 
   // 2b. Paid membership past its end date goes back to Free.
   const todayIso = new Date().toISOString().slice(0, 10);
+  const { data: ending } = await db.from("organizations").select("id, plan").in("plan", ["starter", "growth", "market_entry"]).lt("plan_until", todayIso);
+  for (const o of ending ?? []) {
+    const name = o.plan === "market_entry" ? "Enterprise" : o.plan === "starter" ? "Startup" : "Growth";
+    await notifyOrg(o.id, "membership_ended", `Your ${name} plan has ended`,
+      [`Your Dhow ${name} membership has ended, so your company is now on the free plan. Your documents and history are safe.`, "Renew any time to get your member benefits back."],
+      `Your Dhow ${name} plan has ended. Renew at ${appUrl()}/app/plans`, { label: "Renew my plan", href: `${appUrl()}/app/plans` }).catch(() => undefined);
+  }
   await db.from("organizations").update({ plan: "free", plan_period: null, plan_until: null, plan_cancelled_at: null }).in("plan", ["starter", "growth", "market_entry"]).lt("plan_until", todayIso);
 
   // 3. Invoices past due.
@@ -191,11 +198,11 @@ export async function invoiceReminders() {
   return sent;
 }
 
-/** Reminds companies 7 days and 1 day before a paid plan ends, with a link to renew. */
+/** Reminds companies 7, 3 and 1 day before a paid plan ends, with a link to renew. */
 export async function membershipReminders() {
   const db = createAdminClient();
   const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
-  const { data } = await db.from("organizations").select("id, plan, plan_until").in("plan", ["starter", "growth", "market_entry"]).in("plan_until", [day(7), day(1)]).is("plan_cancelled_at", null);
+  const { data } = await db.from("organizations").select("id, plan, plan_until").in("plan", ["starter", "growth", "market_entry"]).in("plan_until", [day(7), day(3), day(1)]).is("plan_cancelled_at", null);
   for (const o of data ?? []) {
     const name = o.plan === "market_entry" ? "Enterprise" : o.plan === "starter" ? "Startup" : "Growth";
     const when = new Date(`${o.plan_until}T12:00:00+03:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "Africa/Nairobi" });

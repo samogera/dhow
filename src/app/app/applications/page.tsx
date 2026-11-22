@@ -45,7 +45,26 @@ export default async function Applications({ searchParams }: { searchParams: Pro
           </Link>
         ))}
       </nav>
-      <Card>
+      {apps.length ? (
+        <ul className="space-y-3 sm:hidden">
+          {apps.map((a) => (
+            <li key={a.id} className="rounded-2xl bg-white p-4 ring-1 ring-line">
+              <Link href={`/app/opportunities/${a.opportunities.id}`} className="line-clamp-2 font-medium text-navy-900">{a.opportunities.title}</Link>
+              <p className="mt-1 text-xs text-muted">Added {day(a.submitted_at)}{a.opportunities.deadline ? ` · closes ${day(a.opportunities.deadline)}` : ""}</p>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                {EDITABLE.includes(a.status) ? <StageSelect id={a.id} status={a.status === "draft" ? "interested" : a.status} /> : <StatusBadge status={a.status} />}
+                {EDITABLE.includes(a.status) ? (
+                  <form action={withdrawApplication}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <ConfirmSubmit variant="ghost" className="px-3 py-1.5 text-xs" message="Remove this from My applications?">Remove</ConfirmSubmit>
+                  </form>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <Card className={apps.length ? "hidden sm:block" : ""}>
         {apps.length ? (
           <Table head={["Opportunity", "Added", "Closes", "Stage", ""]}>
             {apps.map((a) => (

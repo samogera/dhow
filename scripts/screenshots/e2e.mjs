@@ -141,7 +141,7 @@ async function visit(page, path, shotName) {
 
   await check("help form: Other needs a typed message", async () => {
     await go(page, `${BASE}/app`);
-    await page.getByRole("button", { name: "Other" }).click();
+    await page.getByRole("button", { name: "Something else" }).click();
     if (await page.getByRole("button", { name: "Continue" }).isEnabled()) throw new Error("Continue is enabled before typing");
     await page.fill('textarea[aria-label="What you need"]', "Help finding a warehouse in Mombasa");
     if (!(await page.getByRole("button", { name: "Continue" }).isEnabled())) throw new Error("Continue stays disabled after typing");

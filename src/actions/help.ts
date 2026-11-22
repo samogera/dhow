@@ -15,6 +15,7 @@ const Input = z.object({
   email: z.string().trim().max(200).optional().transform((v) => v || null),
   phone: z.string().trim().max(40).optional().transform((v) => v || null),
   note: z.string().trim().max(1000).optional().transform((v) => v || null),
+  extra: z.string().trim().max(600).optional().transform((v) => v || null),
   token: z.string().trim().max(64).optional().transform((v) => v || null),
 });
 
@@ -23,7 +24,7 @@ export async function askForHelp(_: HelpState, fd: FormData): Promise<HelpState>
   if (!(await rateLimit("help", 5, 600))) return { error: "Too many requests. Try again in a few minutes." };
   const p = Input.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: p.error.issues[0]?.message ?? "Check the form and try again." };
-  const v = p.data;
+  const v = { ...p.data, note: [p.data.note, p.data.extra].filter(Boolean).join("\n") || null };
   if (v.email && !z.string().email().safeParse(v.email).success) return { error: "That email doesn't look right." };
   if (!v.email && !v.phone) return { error: "Add an email or phone number so we can reach you." };
 

@@ -196,17 +196,14 @@ export default async function Dashboard() {
       </section>
 
       {/* Talk to Dhow */}
-      <section className="relative overflow-hidden rounded-[2rem] bg-navy-900 p-6 text-white sm:p-8">
-        <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-mint/15 blur-3xl" />
-        <HelpForm
-          dark
+      <HelpForm
           side="member"
           name={profile?.full_name}
           email={user.email}
           phone={profile?.phone}
           links={[...(dhow?.booking_link ? [{ label: "Book a call", href: dhow.booking_link }] : []), ...(wa ? [{ label: "WhatsApp", href: wa }] : [])]}
         />
-      </section>
+
     </div>
   );
 }

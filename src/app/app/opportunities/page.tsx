@@ -11,7 +11,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { OpportunityTabs } from "@/components/member-nav";
 
 export const metadata: Metadata = { title: "Open opportunities" };
-const KINDS = ["all", "grant", "program", "event", "tender", "rfp"] as const;
+const KINDS = ["all", "grant", "program", "tender", "rfp"] as const;
 const plural = (k: string) => (k === "all" ? "For you" : k === "rfp" ? "RFPs" : k === "program" ? "Programmes" : `${label(k)}s`);
 
 export default async function Opportunities({ searchParams }: { searchParams: Promise<{ kind?: string; q?: string; sector?: string }> }) {
@@ -27,7 +27,7 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
     .order("featured", { ascending: false })
     .order("deadline", { ascending: true, nullsFirst: false })
     .limit(120);
-  if (kind !== "all") q = q.eq("kind", kind);
+  q = kind !== "all" ? q.eq("kind", kind) : q.neq("kind", "event");
   if (term) q = q.or(`title.ilike.%${term}%,summary.ilike.%${term}%`);
   if (sp.sector) q = q.contains("sectors", [sp.sector]);
   const { data: raw } = await q;
@@ -43,14 +43,14 @@ export default async function Opportunities({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Open opportunities" sub="Grants, programmes, tenders and events open to businesses in Kenya, checked by the Dhow team.">
+      <PageHeader title="Opportunities" sub="Grants, programmes and tenders open to businesses in Kenya, checked by the Dhow team.">
         <form className="relative w-full sm:w-72">
           {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
           <input name="q" defaultValue={term} placeholder="Search opportunities" aria-label="Search opportunities" className="field rounded-full py-2.5 pl-11" />
         </form>
       </PageHeader>
-      <OpportunityTabs />
+      <OpportunityTabs investors={atLeast(org, "premium")} />
       <Tabs current={qs({ sector: undefined, q: undefined })} items={KINDS.map((x) => ({ href: `/app/opportunities${x === "all" ? "" : `?kind=${x}`}`, label: plural(x) }))} />
       {sectors.length > 1 ? (
         <div className="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">

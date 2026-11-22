@@ -70,8 +70,9 @@ export default async function Directory({ searchParams }: { searchParams: Promis
               <div className="mt-auto space-y-2 border-t border-line pt-3 text-sm">
                 {c.listed_contact && c.email ? <a href={`mailto:${c.email}`} className="flex items-center gap-2 text-navy-600"><Mail className="size-4" />{c.email}</a> : null}
                 {c.listed_contact && c.phone ? <a href={`tel:${c.phone}`} className="flex items-center gap-2 text-navy-600"><Phone className="size-4" />{c.phone}</a> : null}
-                {c.website || c.socials ? <SocialLinks website={c.website} socials={c.socials} /> : null}
-                {!c.listed_contact && !c.website && !c.socials ? <p className="flex items-center gap-2 text-muted"><Globe2 className="size-4" />Contact through Dhow: hello@dhowpartners.com</p> : null}
+                {c.website || Object.keys(c.socials ?? {}).length ? <SocialLinks website={c.website} socials={c.socials} /> : null}
+                {!(c.listed_contact && (c.email || c.phone)) && !c.website && !Object.keys(c.socials ?? {}).length
+                  ? <a href={`mailto:hello@dhowpartners.com?subject=${encodeURIComponent(`Introduction to ${c.name}`)}`} className="flex items-center gap-2 font-medium text-navy-600"><Globe2 className="size-4" />Ask Dhow to introduce you</a> : null}
               </div>
             </article>
           ))}

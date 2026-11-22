@@ -2,40 +2,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Anchor, Bell, ClipboardList, FolderKanban, Handshake, Inbox, LifeBuoy, Lightbulb, Percent, UserCog, Wallet,
+  Anchor, BadgeCheck, BarChart3, Bell, Building2, CalendarDays, ClipboardList, Compass, Landmark, LayoutGrid, Target, Users, FolderKanban, Handshake, Inbox, LifeBuoy, Lightbulb, Percent, UserCog, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/format";
 
-// Each group has its own colour: a soft tile normally, a solid tile when the page is open.
-const TONES = {
-  navy: { tile: "bg-navy-50 text-navy-700", on: "bg-navy-900 text-white" },
-  green: { tile: "bg-mint-100 text-green", on: "bg-green text-white" },
-  amber: { tile: "bg-amber-100 text-amber-700", on: "bg-amber text-navy-950" },
-  mint: { tile: "bg-mint-100 text-mint-600", on: "bg-mint text-navy-950" },
-  slate: { tile: "bg-sunken text-ink/70", on: "bg-navy-700 text-white" },
-} as const;
+// Plain black-and-white icons; the open page gets a dark tile.
+const MONO = { tile: "bg-transparent text-ink/70", on: "bg-navy-900 text-white" };
+const TONES = { navy: MONO, green: MONO, amber: MONO, mint: MONO, slate: MONO } as const;
 
 type Item = { href: string; label: string; icon?: typeof Anchor; img?: string; logo?: string };
 const groups: { title: string; tone: keyof typeof TONES; items: Item[] }[] = [
   { title: "Overview", tone: "navy", items: [
-    { href: "/admin", label: "Dashboard", img: "dashboard" },
+    { href: "/admin", label: "Dashboard", icon: LayoutGrid },
     { href: "/admin/alerts", label: "Alerts", icon: Bell },
-    { href: "/admin/analytics", label: "Analytics", img: "analytics" },
-    { href: "/admin/calendar", label: "Calendar", img: "calendar" },
+    { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+    { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   ] },
   { title: "Companies", tone: "green", items: [
-    { href: "/admin/reviews", label: "Verification", img: "verified" },
-    { href: "/admin/members", label: "Companies", img: "companies" },
-    { href: "/admin/opportunities", label: "Opportunities", img: "opportunities" },
+    { href: "/admin/reviews", label: "Verification", icon: BadgeCheck },
+    { href: "/admin/members", label: "Companies", icon: Building2 },
+    { href: "/admin/opportunities", label: "Opportunities", icon: Compass },
     { href: "/admin/applications", label: "Membership applications", icon: ClipboardList },
     { href: "/admin/requests", label: "Member requests", icon: Inbox },
     { href: "/admin/discounts", label: "Plan discounts", icon: Percent },
-    { href: "/admin/investors", label: "Investors", icon: Handshake },
+    { href: "/admin/investors", label: "Investors", icon: Landmark },
   ] },
   { title: "Clients and work", tone: "amber", items: [
-    { href: "/admin/leads", label: "Leads", img: "leads" },
-    { href: "/admin/clients", label: "Clients", img: "clients" },
-    { href: "/admin/partners", label: "Partners", img: "partners" },
+    { href: "/admin/leads", label: "Leads", icon: Target },
+    { href: "/admin/clients", label: "Clients", icon: Users },
+    { href: "/admin/partners", label: "Partners", icon: Handshake },
     { href: "/admin/projects", label: "Projects", icon: FolderKanban },
     { href: "/admin/ideas", label: "Ideas", icon: Lightbulb },
   ] },
@@ -54,7 +49,7 @@ function NavIcon({ item, cls }: { item: Item; cls: string }) {
     <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl transition", cls)}>
       {item.img ? (
         <span aria-hidden className="size-[18px] bg-current" style={{ WebkitMaskImage: `url(/icons/${item.img}.png)`, maskImage: `url(/icons/${item.img}.png)`, WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center" }} />
-      ) : item.icon ? <item.icon className="size-4" strokeWidth={2} /> : null}
+      ) : item.icon ? <item.icon className="size-[18px]" strokeWidth={1.75} /> : null}
     </span>
   );
 }

@@ -39,6 +39,13 @@ async function signIn(email, viewport = { width: 1440, height: 900 }, mobile = f
   const page = await ctx.newPage();
   current = page;
   page.on("pageerror", (e) => console.log("PAGE ERROR", page.url(), e.message));
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") console.log("CONSOLE", m.type(), m.text().slice(0, 400)); });
+  page.on("requestfinished", async (r) => {
+    if (r.method() !== "POST") return;
+    const t = r.timing(); const res = await r.response().catch(() => null);
+    console.log("POST", r.url().replace(BASE, ""), res?.status(), `${Math.round(t.responseEnd)}ms`);
+  });
+  page.on("requestfailed", (r) => console.log("REQUEST FAILED", r.method(), r.url().replace(BASE, ""), r.failure()?.errorText));
   await go(page, `${BASE}/login`);
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);

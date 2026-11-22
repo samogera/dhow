@@ -22,7 +22,7 @@ export default async function PartnerUpload({ params }: { params: Promise<{ toke
 
   return (
     <CenteredShell wide>
-      <p className="label text-center">Dhow Partners · partner documents</p>
+      <p className="label text-center">Partner documents</p>
       <h1 className="mt-2 text-center text-2xl font-semibold tracking-tight text-navy-900">{p.name}</h1>
       <p className="mt-2 text-center text-sm text-muted">Upload your company documents here. Only the Dhow Partners team can see them.</p>
 

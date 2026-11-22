@@ -183,8 +183,12 @@ async function visit(page, path, shotName) {
 
   await check("account menu opens above the page", async () => {
     await go(page, `${BASE}/app/settings`);
-    await page.locator("summary").first().click();
+    await page.locator('button[aria-haspopup="menu"]').click();
+    await page.getByRole("menu").getByText("Plan and billing").waitFor({ timeout: 5000 });
     await page.screenshot({ path: `${OUT}/e2e-23-account-menu.png` });
+    await page.mouse.click(700, 700);
+    await page.waitForTimeout(400);
+    if (await page.getByRole("menu").isVisible()) throw new Error("menu stays open after tapping elsewhere");
   });
   await ctx.close();
 }
@@ -328,8 +332,8 @@ async function visit(page, path, shotName) {
   }
   await check("phone account menu is readable", async () => {
     await go(page, `${BASE}/app/settings`);
-    await page.locator("summary").first().click();
-    await page.waitForTimeout(300);
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.waitForTimeout(400);
     await page.screenshot({ path: `${OUT}/e2e-54-phone-menu.png` });
   });
   await ctx.close();

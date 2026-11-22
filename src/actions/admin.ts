@@ -394,7 +394,7 @@ export async function recordPayment(_: ActionState, fd: FormData): Promise<Actio
   const p = z.object({
     invoice_id: uuid,
     amount_kes: z.coerce.number().positive("Enter the amount received"),
-    method: z.enum(["M-Pesa", "I&M Bank", "Cash", "Other"]),
+    method: z.enum(["M-Pesa", "I&M Bank", "Airtel Money", "Card (Paystack)", "Cash", "Other"]),
     reference: text(80),
     paid_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   }).safeParse(form(fd));
@@ -406,6 +406,22 @@ export async function recordPayment(_: ActionState, fd: FormData): Promise<Actio
   revalidatePath(`/admin/finance/invoices/${p.data.invoice_id}`);
   revalidatePath("/admin/finance");
   return { ok: `Recorded ${kes(p.data.amount_kes)}.` };
+}
+
+/** One click: records the full balance as paid today. */
+export async function markInvoicePaid(fd: FormData) {
+  const s = await staffOrNull(["finance"]);
+  if (!s) return;
+  const p = z.object({ id: uuid, method: z.enum(["M-Pesa", "I&M Bank", "Airtel Money", "Cash", "Other"]) }).safeParse(form(fd));
+  if (!p.success) return;
+  const { data: inv } = await s.supabase.from("invoices").select("status, total_kes, paid_kes").eq("id", p.data.id).single();
+  if (!inv || inv.status === "cancelled") return;
+  const balance = Number(inv.total_kes) - Number(inv.paid_kes);
+  if (balance <= 0) return;
+  if (inv.status === "draft") await s.supabase.from("invoices").update({ status: "sent" }).eq("id", p.data.id);
+  await s.supabase.from("invoice_payments").insert({ invoice_id: p.data.id, amount_kes: balance, method: p.data.method, paid_on: new Date().toISOString().slice(0, 10) });
+  revalidatePath(`/admin/finance/invoices/${p.data.id}`);
+  revalidatePath("/admin/finance");
 }
 
 export async function cancelInvoice(fd: FormData) {
@@ -696,4 +712,19 @@ export async function setBankBalance(_: ActionState, fd: FormData): Promise<Acti
   if (error) return { error: error.message };
   revalidatePath("/admin/finance");
   return { ok: "Balance updated." };
+}
+
+/** Admins only: removes a member company and everything it uploaded. */
+export async function deleteOrganization(fd: FormData) {
+  const s = await staffOrNull(["admin"]);
+  if (!s) return;
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const db = createAdminClient();
+  const { data: docs } = await db.from("documents").select("object_key").eq("org_id", id.data);
+  const { deleteObject } = await import("@/lib/r2");
+  await Promise.all((docs ?? []).map((d) => deleteObject(d.object_key).catch(() => null)));
+  await db.from("organizations").delete().eq("id", id.data);
+  revalidatePath("/admin/members");
+  redirect("/admin/members");
 }

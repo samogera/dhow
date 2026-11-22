@@ -14,7 +14,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const inv = await loadInvoice(s.supabase, id);
   if (!inv) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  const pdf = await renderInvoicePdf(inv, await loadIssuer(), inv.status !== "draft" && paystackConfigured() ? invoicePayUrl(inv.id) : undefined);
+  let pdf: Buffer;
+  try {
+    pdf = await renderInvoicePdf(inv, await loadIssuer(), inv.status !== "draft" && paystackConfigured() ? invoicePayUrl(inv.id) : undefined);
+  } catch (e) {
+    console.error("invoice pdf failed", e);
+    return new NextResponse(`Could not make the PDF: ${e instanceof Error ? e.message : String(e)}`, { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",

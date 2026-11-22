@@ -82,6 +82,8 @@ async function shotInner(page, path, name, { full = true } = {}) {
   await shot(page, "/admin/projects/c0000000-0000-4000-8000-000000000001", "30d-staff-project-detail");
   try {
     const res = await page.request.get(`${BASE}/api/invoices/d0000000-0000-4000-8000-000000000001/pdf`);
+    console.log("PDF status", res.status(), res.headers()["content-type"]);
+    if (res.status() !== 200) console.log("PDF body", (await res.text()).slice(0, 2000));
     writeFileSync(`${OUT}/30c-invoice.pdf`, await res.body());
   } catch (e) { console.log("pdf failed", e.message); }
   await shot(page, "/admin/wiki", "31-staff-wiki");

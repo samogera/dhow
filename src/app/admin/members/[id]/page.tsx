@@ -7,6 +7,8 @@ import { Card, CardHeader, Stat, StatusBadge } from "@/components/ui";
 import { Avatar, SocialLinks } from "@/components/profile-bits";
 import { day, label } from "@/lib/format";
 import { DOC_KINDS, PLAN_LABEL, type PlanTier } from "@/lib/types";
+import { ConfirmSubmit } from "@/components/forms";
+import { deleteOrganization } from "@/actions/admin";
 
 export const metadata: Metadata = { title: "Member company" };
 
@@ -105,6 +107,13 @@ export default async function Member({ params }: { params: Promise<{ id: string 
           </Card>
         </div>
       </div>
+      {s.staffRole === "admin" ? (
+        <form action={deleteOrganization} className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-bad/20 bg-bad/5 p-5">
+          <input type="hidden" name="id" value={o.id} />
+          <p className="text-sm text-ink/80">Remove this company, its documents, applications and verification history. Its people keep their logins.</p>
+          <ConfirmSubmit variant="danger" message={`Delete ${o.name} and everything it uploaded? This can't be undone.`}>Delete company</ConfirmSubmit>
+        </form>
+      ) : null}
     </div>
   );
 }

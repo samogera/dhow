@@ -4,7 +4,7 @@ import { requireStaff } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { ButtonLink, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Stat, StatusBadge, Table, Tabs } from "@/components/ui";
 import { day, kes } from "@/lib/format";
-import { addBill, payBill, setBankBalance } from "@/actions/admin";
+import { addBill, markInvoicePaid, payBill, setBankBalance } from "@/actions/admin";
 import { Download, Landmark } from "lucide-react";
 import { Drawer } from "@/components/drawer";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,9 +12,9 @@ import { ShareCalculator } from "./calculator";
 
 export const metadata: Metadata = { title: "Finance" };
 
-export default async function Finance({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default async function Finance({ searchParams }: { searchParams: Promise<{ tab?: string; show?: string }> }) {
   const s = await requireStaff(["finance"]);
-  const { tab = "invoices" } = await searchParams;
+  const { tab = "invoices", show = "all" } = await searchParams;
   const [{ data: pos }, { data: invoices }, { data: bills }, { data: partners }, { data: projects }] = await Promise.all([
     s.supabase.from("finance_position").select("*").single(),
     s.supabase.from("invoices").select("id, number, status, issue_date, due_date, total_kes, paid_kes, clients(name)").order("created_at", { ascending: false }).limit(200),
@@ -130,22 +130,59 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
         </div>
       ) : (
         <Card>
-          <CardHeader title="Invoices" sub="Totals include VAT" />
-          {invoices?.length ? (
-            <Table head={["No.", "Client", "Issued", "Due", "Total", "Balance", "Status"]}>
-              {invoices.map((i) => (
-                <tr key={i.id} className="hover:bg-sunken/60">
-                  <td><Link href={`/admin/finance/invoices/${i.id}`} className="font-medium underline-offset-4 hover:underline">#{i.number}</Link></td>
-                  <td>{(i.clients as unknown as { name: string } | null)?.name}</td>
-                  <td className="text-muted">{day(i.issue_date)}</td>
-                  <td className="text-muted">{day(i.due_date)}</td>
-                  <td className="num">{kes(i.total_kes)}</td>
-                  <td className="num">{kes(Number(i.total_kes) - Number(i.paid_kes))}</td>
-                  <td><StatusBadge status={i.status} /></td>
-                </tr>
-              ))}
-            </Table>
-          ) : <Empty title="No invoices yet" sub="Create your first invoice to start tracking what clients owe."><ButtonLink href="/admin/finance/invoices/new">New invoice</ButtonLink></Empty>}
+          {(() => {
+            const bal = (i: { total_kes: number; paid_kes: number }) => Number(i.total_kes) - Number(i.paid_kes);
+            const state = (i: { status: string; due_date: string; total_kes: number; paid_kes: number }) =>
+              i.status === "cancelled" ? "cancelled" : i.status === "draft" ? "draft" : bal(i) <= 0 ? "paid" : i.due_date < today ? "overdue" : Number(i.paid_kes) > 0 ? "part_paid" : "unpaid";
+            const all = invoices ?? [];
+            const groups: Record<string, (i: (typeof all)[number]) => boolean> = {
+              all: () => true, unpaid: (i) => ["unpaid", "part_paid", "overdue"].includes(state(i)), overdue: (i) => state(i) === "overdue",
+              paid: (i) => state(i) === "paid", draft: (i) => state(i) === "draft",
+            };
+            const rows = all.filter(groups[show] ?? groups.all);
+            const owedTotal = all.filter(groups.unpaid).reduce((n, i) => n + bal(i), 0);
+            return (
+              <>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {[["all", "All"], ["unpaid", "Not paid"], ["overdue", "Overdue"], ["paid", "Paid"], ["draft", "Drafts"]].map(([k, l]) => (
+                      <Link key={k} href={`/admin/finance?show=${k}`} className={`rounded-full px-3.5 py-1.5 text-xs font-medium ${show === k ? "bg-navy-900 text-white" : "bg-sunken text-ink/70 hover:text-ink"}`}>
+                        {l} <span className="opacity-60">{all.filter(groups[k]).length}</span>
+                      </Link>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted">Waiting to be paid: <span className="num font-semibold text-ink">{kes(owedTotal)}</span></p>
+                </div>
+                {rows.length ? (
+                  <Table head={["No.", "Client", "Due", "Total", "Still owed", "Status", ""]}>
+                    {rows.map((i) => {
+                      const st = state(i);
+                      return (
+                        <tr key={i.id} className="hover:bg-white/70">
+                          <td><Link href={`/admin/finance/invoices/${i.id}`} className="font-medium hover:text-navy-700">{i.number}</Link></td>
+                          <td>{(i.clients as unknown as { name: string } | null)?.name}</td>
+                          <td className={st === "overdue" ? "font-medium text-bad" : "text-muted"}>{day(i.due_date)}</td>
+                          <td className="num">{kes(i.total_kes)}</td>
+                          <td className="num">{bal(i) > 0 && st !== "cancelled" ? kes(bal(i)) : "—"}</td>
+                          <td><StatusBadge status={st} /></td>
+                          <td>
+                            {["unpaid", "part_paid", "overdue"].includes(st) ? (
+                              <form action={markInvoicePaid} className="flex items-center gap-1">
+                                <input type="hidden" name="id" value={i.id} />
+                                <select name="method" defaultValue="M-Pesa" aria-label="Paid by" className="rounded-full bg-sunken px-2 py-1 text-xs"><option>M-Pesa</option><option>I&amp;M Bank</option><option>Airtel Money</option><option>Cash</option></select>
+                                <button className="whitespace-nowrap rounded-full bg-green px-3 py-1 text-xs font-medium text-white">Mark paid</button>
+                              </form>
+                            ) : null}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </Table>
+                ) : all.length ? <p className="py-8 text-center text-sm text-muted">No invoices here.</p>
+                  : <Empty title="No invoices yet" sub="Create your first invoice to start tracking what clients owe."><ButtonLink href="/admin/finance/invoices/new">New invoice</ButtonLink></Empty>}
+              </>
+            );
+          })()}
         </Card>
       )}
     </>

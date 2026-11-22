@@ -24,10 +24,11 @@ export default async function Partners({ searchParams }: { searchParams: Promise
   const all = rows ?? [];
   const industries = [...new Set(all.map((p) => p.industry).filter(Boolean))].sort() as string[];
   const required = PARTNER_DOCS.filter((d) => d.required).length;
+  const inst = (id: string) => all.find((p) => p.id === id)?.relationship === "institution";
   const info = (id: string) => {
     const fs = (files ?? []).filter((x) => x.owner_id === id);
     const rs = (reviews ?? []).filter((r) => r.partner_id === id);
-    return { missing: missingDocs(fs).length, rating: rs.length ? rs.reduce((n, r) => n + r.rating, 0) / rs.length : null, reviews: rs.length };
+    return { missing: inst(id) ? 0 : missingDocs(fs).length, rating: rs.length ? rs.reduce((n, r) => n + r.rating, 0) / rs.length : null, reviews: rs.length };
   };
   const q = (f.q ?? "").trim().toLowerCase();
   const list = all.filter((p) =>
@@ -52,7 +53,7 @@ export default async function Partners({ searchParams }: { searchParams: Promise
         </div>
         <select name="industry" defaultValue={f.industry ?? ""} aria-label="Industry" className={sel}><option value="">All industries</option>{industries.map((i) => <option key={i}>{i}</option>)}</select>
         <select name="status" defaultValue={f.status ?? ""} aria-label="Status" className={sel}><option value="">Any status</option><option value="approved">Approved</option><option value="vetting">Vetting</option><option value="paused">Paused</option><option value="rejected">Rejected</option></select>
-        <select name="type" defaultValue={f.type ?? ""} aria-label="Type" className={sel}><option value="">All types</option><option value="service">Service</option><option value="referral">Referral</option><option value="institution">Institution</option></select>
+        <select name="type" defaultValue={f.type ?? ""} aria-label="Type" className={sel}><option value="">All types</option><option value="service">Service</option><option value="referral">Referral</option><option value="institution">Chamber or government</option></select>
         <select name="docs" defaultValue={f.docs ?? ""} aria-label="Documents" className={sel}><option value="">Any documents</option><option value="complete">Documents complete</option><option value="missing">Documents missing</option></select>
         <button className="rounded-full bg-navy-900 px-4 py-2 text-sm font-medium text-white">Filter</button>
         {filtered ? <Link href="/admin/partners" className="text-sm text-muted underline">Clear</Link> : null}
@@ -69,7 +70,7 @@ export default async function Partners({ searchParams }: { searchParams: Promise
                   <Avatar src={p.logo_url} name={p.name} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-navy-900">{p.name}</p>
-                    <p className="truncate text-sm text-muted">{p.industry ?? "Industry not set"} · <span className="capitalize">{p.relationship}</span></p>
+                    <p className="truncate text-sm text-muted">{p.industry ?? "Industry not set"} · {p.relationship === "institution" ? "Chamber or government" : <span className="capitalize">{p.relationship}</span>}</p>
                   </div>
                   <StatusBadge status={p.status} />
                 </div>
@@ -80,8 +81,12 @@ export default async function Partners({ searchParams }: { searchParams: Promise
                   </div>
                 ) : null}
                 <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-3 text-xs">
-                  <span className="font-semibold text-navy-900">{p.agreed_pct != null ? `${Number(p.agreed_pct)}% agreed` : <span className="font-normal text-muted">No % set</span>}</span>
-                  <span className={cn("flex items-center gap-1", i.missing ? "text-amber-700" : "text-green")}><FileCheck2 className="size-3.5" />{i.missing ? `${i.missing} of ${required} documents missing` : "Documents complete"}</span>
+                  {p.relationship === "institution" ? <span className="text-muted">Chamber or government · no documents needed</span> : (
+                    <>
+                      <span className="font-semibold text-navy-900">{p.agreed_pct != null ? `${Number(p.agreed_pct)}% agreed` : <span className="font-normal text-muted">No % set</span>}</span>
+                      <span className={cn("flex items-center gap-1", i.missing ? "text-amber-700" : "text-green")}><FileCheck2 className="size-3.5" />{i.missing ? `${i.missing} of ${required} documents missing` : "Documents complete"}</span>
+                    </>
+                  )}
                   {i.rating ? <span className="flex items-center gap-1 text-ink/80"><Star className="size-3.5 fill-amber text-amber" />{i.rating.toFixed(1)} ({i.reviews})</span> : null}
                 </div>
               </Link>

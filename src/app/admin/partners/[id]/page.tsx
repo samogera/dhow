@@ -32,6 +32,7 @@ export default async function Partner({ params }: { params: Promise<{ id: string
   const have = (key: string) => (files ?? []).find((f) => f.category === key && (!f.expires_on || f.expires_on >= today));
   const avg = reviews?.length ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length : null;
   const base = appUrl();
+  const institution = partner.relationship === "institution";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -42,7 +43,7 @@ export default async function Partner({ params }: { params: Promise<{ id: string
           <div className="min-w-0 flex-1">
             <StatusBadge status={partner.status} />
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-navy-900 sm:text-3xl">{partner.name}</h1>
-            <p className="mt-1 text-muted">{[partner.industry, partner.discipline, `${partner.relationship} partner`].filter(Boolean).join(" · ")}</p>
+            <p className="mt-1 text-muted">{[partner.industry, partner.discipline, institution ? "Chamber or government" : `${partner.relationship} partner`].filter(Boolean).join(" · ")}</p>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               {partner.email ? <a href={`mailto:${partner.email}`} className="flex items-center gap-1.5 text-navy-600"><Mail className="size-4" />{partner.email}</a> : null}
               {partner.phone ? <a href={`tel:${partner.phone}`} className="flex items-center gap-1.5 text-navy-600"><Phone className="size-4" />{partner.phone}</a> : null}
@@ -50,12 +51,13 @@ export default async function Partner({ params }: { params: Promise<{ id: string
             </div>
             <div className="mt-3"><SocialLinks website={partner.website} socials={partner.socials} /></div>
           </div>
-          <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-1 sm:text-right">
+          {institution ? null : <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-1 sm:text-right">
             <div><p className="label">Agreed</p><p className="num text-2xl font-semibold text-navy-900">{partner.agreed_pct != null ? `${Number(partner.agreed_pct)}%` : "—"}</p></div>
             <div><p className="label">Client rating</p><p className="flex items-center gap-1 text-2xl font-semibold sm:justify-end">{avg ? <><Star className="size-5 fill-amber text-amber" />{avg.toFixed(1)}</> : "—"}</p></div>
-          </div>
+          </div>}
         </div>
-        {partner.services?.length ? <div className="mt-5 flex flex-wrap gap-1.5">{partner.services.map((sv) => <span key={sv} className="rounded-full bg-sunken px-3 py-1 text-sm">{sv}</span>)}</div> : null}
+        {partner.services?.length ? <p className="mt-5 label">{institution ? "What we need them for" : "Work they do"}</p> : null}
+        {partner.services?.length ? <div className="mt-2 flex flex-wrap gap-1.5">{partner.services.map((sv) => <span key={sv} className="rounded-full bg-sunken px-3 py-1 text-sm">{sv}</span>)}</div> : null}
         {partner.about ? <p className="mt-5 max-w-3xl whitespace-pre-line border-t border-line pt-5 text-[0.95rem] leading-relaxed text-ink/85">{partner.about}</p> : null}
         {partner.commission_terms ? <p className="mt-3 text-sm text-muted">Terms: {partner.commission_terms}</p> : null}
       </Card>
@@ -66,7 +68,7 @@ export default async function Partner({ params }: { params: Promise<{ id: string
           <ActionForm action={savePartnerProfile} submit="Save partner" className="grid gap-4 sm:grid-cols-2"><PartnerFields p={partner} full /></ActionForm>
         </Card>
         <div className="space-y-4">
-          <Card>
+          {institution ? null : <Card>
             <CardHeader title="Required documents" sub="Ticked when a current copy is on file" />
             <ul className="space-y-2.5 text-sm">
               {PARTNER_DOCS.map((d) => {
@@ -92,12 +94,12 @@ export default async function Partner({ params }: { params: Promise<{ id: string
                 <form action={makePartnerLink}><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="upload" /><button className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create upload link</button></form>
               )}
             </div>
-          </Card>
+          </Card>}
           <Card>
             <CardHeader title="Files" sub="Staff only" />
             <InternalFiles files={files ?? []} ownerType="partner" ownerId={partner.id} />
           </Card>
-          <Card>
+          {institution ? null : <Card>
             <CardHeader title="Client reviews" sub={reviews?.length ? `${reviews.length} review${reviews.length === 1 ? "" : "s"} · average ${avg?.toFixed(1)} of 5` : "Ask clients how this partner did"} />
             {reviews?.length ? (
               <ul className="mb-5 space-y-3">
@@ -118,7 +120,7 @@ export default async function Partner({ params }: { params: Promise<{ id: string
             ) : (
               <form action={makePartnerLink}><input type="hidden" name="id" value={partner.id} /><input type="hidden" name="kind" value="review" /><button className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create review link for clients</button></form>
             )}
-          </Card>
+          </Card>}
           {contacts?.length ? (
             <Card>
               <CardHeader title="People" />

@@ -32,7 +32,7 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
     return () => { document.removeEventListener("keydown", esc); document.body.style.overflow = ""; };
   }, [open]);
   return (
-    <section className="rounded-[1.75rem] bg-white p-5 ring-1 ring-line sm:p-7">
+    <section className="rounded-[1.5rem] bg-white p-4 ring-1 ring-line sm:rounded-[1.75rem] sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           {p.logo_url ? <img src={p.logo_url} alt="" className="size-12 rounded-xl object-contain ring-1 ring-line" /> : <span className="grid size-12 place-items-center rounded-xl bg-navy-50 text-lg font-semibold text-navy-700">{p.name[0]}</span>}
@@ -48,12 +48,12 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
       {open ? (
         <div className="fixed inset-0 z-50 flex justify-end">
           <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="absolute inset-0 bg-navy-950/40 backdrop-blur-[2px]" />
-          <div role="dialog" aria-modal="true" aria-label="Edit profile" className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <div role="dialog" aria-modal="true" aria-label="Edit profile" className="relative flex h-dvh w-full max-w-xl flex-col bg-white shadow-2xl sm:rounded-l-[1.5rem]">
+            <div className="flex items-center justify-between border-b border-line px-5 py-3.5 sm:px-6 sm:py-4">
               <h2 className="text-lg font-semibold tracking-tight">Edit profile</h2>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="grid size-9 place-items-center rounded-lg text-muted hover:bg-sunken hover:text-ink"><X className="size-5" /></button>
             </div>
-        <form action={action} className="grid flex-1 content-start gap-3 overflow-y-auto px-6 py-5 sm:grid-cols-2">
+        <form action={action} className="grid flex-1 content-start gap-3 overflow-y-auto overscroll-contain px-5 pt-5 sm:grid-cols-2 sm:px-6">
           <input type="hidden" name="token" value={token} />
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted sm:col-span-2">About {p.name}</p>
           <label className="text-sm">Type of investor<select name="kind" defaultValue={p.kind ?? "fund"} className={`${field} mt-1`}>{Object.entries(INVESTOR_KIND).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
@@ -83,7 +83,7 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
             <p className="text-xs text-muted">Everything also shows under Notifications on this page, as it happens.</p>
           </fieldset>
           {state.error ? <p className="text-sm text-bad sm:col-span-2">{state.error}</p> : null}
-          <div className="sticky bottom-0 -mx-6 mt-2 flex items-center justify-end gap-3 border-t border-line bg-white px-6 py-4 sm:col-span-2">
+          <div className="sticky bottom-0 -mx-5 mt-2 flex items-center justify-end gap-3 border-t border-line bg-white px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:col-span-2 sm:-mx-6 sm:px-6 sm:py-4">
             <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted hover:text-ink">Cancel</button>
             <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60">
               {busy ? <span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : null}{busy ? "Saving" : "Save profile"}

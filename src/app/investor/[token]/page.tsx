@@ -35,7 +35,7 @@ function FocusLabel({ icon: Icon, children }: { icon: LucideIcon; children: Reac
 function CompanyCard({ c, token, current, note, asked }: { c: Co; token: string; current?: "interested" | "not_now" | null; note?: string | null; asked?: string | null }) {
   const initials = c.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   return (
-    <article className={cn("flex flex-col gap-4 rounded-[1.5rem] bg-white p-5 ring-1 transition sm:p-6", current === "interested" ? "ring-2 ring-green/50" : "ring-line")}>
+    <article className={cn("flex flex-col gap-4 rounded-[1.5rem] bg-white p-4 ring-1 transition sm:p-6", current === "interested" ? "ring-2 ring-green/50" : "ring-line")}>
       <div className="flex items-start gap-3">
         {c.logo_url ? <img src={c.logo_url} alt="" className="size-12 shrink-0 rounded-xl bg-white object-contain ring-1 ring-line" />
           : <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-navy-50 font-semibold text-navy-700">{initials}</span>}
@@ -103,13 +103,13 @@ export default async function InvestorPortal({ params, searchParams }: { params:
 
   return (
     <div className="min-h-dvh">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 pt-7">
-        <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="h-6 w-auto" />
-        <Link href={`/investor/${token}/contact`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Contact us</Link>
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pt-5 sm:px-5 sm:pt-7">
+        <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="h-5 w-auto sm:h-6" />
+        <Link href={`/investor/${token}/contact`} className="shrink-0 rounded-xl bg-navy-900 px-3.5 py-2 text-sm font-semibold text-white hover:bg-navy-800 sm:px-4">Contact us</Link>
       </header>
-      <main className="mx-auto max-w-6xl space-y-10 px-5 py-10">
-        <section className="overflow-hidden rounded-[2rem] bg-white shadow-[0_1px_2px_rgba(2,34,58,0.05),0_30px_60px_-30px_rgba(2,34,58,0.25)] ring-1 ring-line">
-          <div className="relative bg-navy-950 px-6 pt-7 pb-10 text-white sm:px-12 sm:pt-10 sm:pb-12">
+      <main className="mx-auto max-w-6xl space-y-6 px-3 py-6 sm:space-y-10 sm:px-5 sm:py-10">
+        <section className="overflow-hidden rounded-[1.5rem] bg-white sm:rounded-[2rem] shadow-[0_1px_2px_rgba(2,34,58,0.05),0_30px_60px_-30px_rgba(2,34,58,0.25)] ring-1 ring-line">
+          <div className="relative bg-navy-950 px-5 pt-6 pb-8 text-white sm:px-12 sm:pt-10 sm:pb-12">
             <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_90%_at_100%_0%,rgba(99,184,168,0.16),transparent_65%)]" />
             <div className="relative flex items-center gap-3">
               {inv.logo_url ? <span className="grid size-10 place-items-center rounded-xl bg-white p-1.5"><img src={inv.logo_url} alt="" className="max-h-full max-w-full object-contain" /></span> : null}
@@ -118,31 +118,31 @@ export default async function InvestorPortal({ params, searchParams }: { params:
                 <p className="mt-0.5 text-[15px] font-medium text-white">{inv.name}</p>
               </div>
             </div>
-            <div className="relative mt-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="relative mt-8 grid gap-6 sm:mt-10 sm:gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
-                <h1 className="max-w-2xl text-[2.1rem] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-5xl">Companies you may want to meet</h1>
-                <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/60">Verified businesses from the Dhow Partners network, matched to your mandate. Say you&apos;re interested and we&apos;ll make a warm introduction. Contact details are shared only when both sides agree.</p>
+                <h1 className="max-w-2xl text-[1.85rem] leading-[1.1] font-semibold tracking-[-0.025em] sm:text-5xl">Companies you may want to meet</h1>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/60 sm:mt-4 sm:text-[15px]">Verified businesses from the Dhow Partners network, matched to your mandate. Say you&apos;re interested and we&apos;ll make a warm introduction. Contact details are shared only when both sides agree.</p>
               </div>
-              <dl className="flex w-fit divide-x divide-white/10 rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
-                <div className="px-6 py-4"><dt className="text-xs text-white/50">Asked to meet you</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{asked.length}</dd></div>
-                <div className="px-6 py-4"><dt className="text-xs text-white/50">You&apos;re interested in</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{interested}</dd></div>
+              <dl className="grid w-full grid-cols-2 divide-x sm:flex sm:w-fit divide-white/10 rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
+                <div className="px-4 py-3.5 sm:px-6 sm:py-4"><dt className="text-xs text-white/50">Asked to meet you</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{asked.length}</dd></div>
+                <div className="px-4 py-3.5 sm:px-6 sm:py-4"><dt className="text-xs text-white/50">You&apos;re interested in</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{interested}</dd></div>
               </dl>
             </div>
           </div>
 
           {hasFocus ? (
-            <div className="px-6 py-7 sm:px-12 sm:py-9">
+            <div className="px-5 py-6 sm:px-12 sm:py-9">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-faint">Your mandate</p>
-              <dl className="mt-6 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,1.2fr)_minmax(0,0.7fr)]">
+              <dl className="mt-4 grid divide-y divide-line sm:mt-6 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-8 sm:divide-y-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,1.2fr)_minmax(0,0.7fr)]">
                 {inv.ticket || kind || instrumentList.length ? (
-                  <div>
+                  <div className="py-4 first:pt-0 last:pb-0 sm:py-0">
                     <dt><FocusLabel icon={Banknote}>Ticket size</FocusLabel></dt>
-                    <dd className="mt-3 text-2xl leading-tight font-semibold tracking-tight text-navy-900 tabular-nums">{inv.ticket ?? "Per deal"}</dd>
+                    <dd className="mt-2 text-xl leading-tight sm:mt-3 sm:text-2xl font-semibold tracking-tight text-navy-900 tabular-nums">{inv.ticket ?? "Per deal"}</dd>
                     {kind || instrumentList.length ? <dd className="mt-2 text-sm text-muted">{[kind, ...instrumentList].filter(Boolean).join(" · ")}</dd> : null}
                   </div>
                 ) : null}
                 {sectorList.length ? (
-                  <div>
+                  <div className="py-4 first:pt-0 last:pb-0 sm:py-0">
                     <dt><FocusLabel icon={Sprout}>Sectors</FocusLabel></dt>
                     <dd className="mt-3 flex flex-wrap gap-1.5">
                       {sectorList.map((s) => <span key={s} className="rounded-full border border-line bg-canvas px-3 py-1 text-[13px] text-ink/85">{s}</span>)}
@@ -150,7 +150,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
                   </div>
                 ) : null}
                 {stageList.length ? (
-                  <div>
+                  <div className="py-4 first:pt-0 last:pb-0 sm:py-0">
                     <dt><FocusLabel icon={TrendingUp}>Stages we support</FocusLabel></dt>
                     <dd className="mt-3">
                       <ol className="relative space-y-2.5 before:absolute before:top-2 before:bottom-2 before:left-[3px] before:w-px before:bg-line">
@@ -160,9 +160,9 @@ export default async function InvestorPortal({ params, searchParams }: { params:
                   </div>
                 ) : null}
                 {countryList.length ? (
-                  <div>
+                  <div className="py-4 first:pt-0 last:pb-0 sm:py-0">
                     <dt><FocusLabel icon={Globe2}>Countries</FocusLabel></dt>
-                    <dd className="mt-3 space-y-2 text-sm text-ink/85">{countryList.map((c) => <p key={c}>{c}</p>)}</dd>
+                    <dd className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-ink/85 sm:block sm:space-y-2">{countryList.map((c) => <p key={c}>{c}</p>)}</dd>
                   </div>
                 ) : null}
               </dl>
@@ -194,13 +194,13 @@ export default async function InvestorPortal({ params, searchParams }: { params:
             </div>
           </div>
           {!isOpen ? (
-            <div className="mt-5 flex flex-col items-start gap-4 rounded-[1.5rem] bg-mint-100/60 p-6 ring-1 ring-mint/30 sm:flex-row sm:items-center sm:p-7">
+            <div className="mt-5 flex flex-col items-start gap-4 rounded-[1.5rem] bg-mint-100/60 p-5 ring-1 ring-mint/30 sm:flex-row sm:items-center sm:p-7">
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-green ring-1 ring-mint/40"><Clock3 className="size-5" /></span>
               <div className="flex-1">
                 <p className="font-semibold text-navy-900">{opensLabel ? `Membership opens ${opensLabel}` : "Membership hasn't started yet"}</p>
                 <p className="mt-1 text-sm text-ink/75">We&apos;re verifying the first member companies now. {opensLabel ? `In ${daysLeft === 1 ? "1 day" : `${daysLeft} days`}, companies` : "When membership opens, companies"} that chose to be found will appear here, in your sectors first{settings?.alert_new_companies === false ? "" : ", and we'll let you know"}.</p>
               </div>
-              <Link href={`/investor/${token}/contact?topic=pipeline`} className="shrink-0 rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium hover:bg-sunken">Ask about the pipeline</Link>
+              <Link href={`/investor/${token}/contact?topic=pipeline`} className="w-full shrink-0 rounded-xl border border-line bg-white px-4 py-2.5 text-center text-sm font-medium hover:bg-sunken sm:w-auto sm:py-2">Ask about the pipeline</Link>
             </div>
           ) : (<>
           {sectors.length > 1 ? (
@@ -224,7 +224,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
           </>)}
         </section>
       </main>
-      <footer className="pb-10 text-center text-xs text-faint">Dhow Partners · Nairobi, Kenya · This page is private to {inv.name}. Please don&apos;t share it.</footer>
+      <footer className="px-5 pb-10 text-center text-xs text-faint">Dhow Partners · Nairobi, Kenya · This page is private to {inv.name}. Please don&apos;t share it.</footer>
     </div>
   );
 }

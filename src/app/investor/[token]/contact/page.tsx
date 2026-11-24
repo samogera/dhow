@@ -19,14 +19,14 @@ export default async function InvestorContact({ params, searchParams }: { params
 
   return (
     <div className="min-h-dvh">
-      <header className="mx-auto flex max-w-3xl items-center justify-between px-5 pt-7">
-        <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="h-6 w-auto" />
+      <header className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 pt-5 sm:px-5 sm:pt-7">
+        <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="h-5 w-auto sm:h-6" />
         <Link href={`/investor/${token}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-navy-600 hover:underline"><ArrowLeft className="size-4" />Back to your page</Link>
       </header>
-      <main className="mx-auto max-w-3xl px-5 py-10">
-        <p className="text-sm text-muted">For {inv.name}</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Talk to Dhow Partners</h1>
-        <p className="mt-2 max-w-xl text-sm text-muted">Questions, challenges or ideas: tell us and the team will get back to you, usually within one working day.</p>
+      <main className="mx-auto max-w-3xl px-3 py-6 sm:px-5 sm:py-10">
+        <p className="px-2 text-sm text-muted sm:px-0">For {inv.name}</p>
+        <h1 className="mt-1 px-2 text-2xl font-semibold tracking-tight sm:px-0 sm:text-3xl">Talk to Dhow Partners</h1>
+        <p className="mt-2 max-w-xl px-2 text-sm text-muted sm:px-0">Questions, challenges or ideas: tell us and the team will get back to you, usually within one working day.</p>
         <ContactForm
           token={token}
           topics={CONTACT_TOPICS}

@@ -34,9 +34,9 @@ export function ContactForm({ token, topics, startTopic, me }: { token: string; 
   }
 
   return (
-    <div className="mt-8 rounded-[1.75rem] bg-white p-5 ring-1 ring-line sm:p-8">
+    <div className="mt-6 rounded-[1.5rem] bg-white p-4 ring-1 ring-line sm:mt-8 sm:rounded-[1.75rem] sm:p-8">
       <ol className="flex items-center gap-3 text-sm">
-        {(["What it's about", "Your details and message"] as const).map((label, i) => (
+        {(["What it's about", "Your details"] as const).map((label, i) => (
           <li key={label} className={cn("flex items-center gap-2", step === i + 1 ? "font-semibold text-navy-900" : "text-muted")}>
             <span className={cn("grid size-6 place-items-center rounded-full text-xs font-semibold", step > i + 1 ? "bg-green text-white" : step === i + 1 ? "bg-navy-900 text-white" : "bg-sunken text-muted")}>{step > i + 1 ? "✓" : i + 1}</span>
             {label}
@@ -54,7 +54,7 @@ export function ContactForm({ token, topics, startTopic, me }: { token: string; 
               const Icon = ICON[k] ?? CircleHelp;
               return (
                 <button key={k} type="button" onClick={() => toggle(k)} aria-pressed={picked.includes(k)}
-                  className={cn("flex items-center gap-3 rounded-2xl border p-4 text-left text-sm transition", picked.includes(k) ? "border-navy-900 bg-navy-50 ring-1 ring-navy-900" : "border-line hover:border-navy-300 hover:bg-sunken")}>
+                  className={cn("flex items-center gap-3 rounded-2xl border p-3.5 text-left text-sm transition sm:p-4", picked.includes(k) ? "border-navy-900 bg-navy-50 ring-1 ring-navy-900" : "border-line hover:border-navy-300 hover:bg-sunken")}>
                   <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", picked.includes(k) ? "bg-navy-900 text-white" : "bg-sunken text-navy-700")}><Icon className="size-4" /></span>
                   <span className="flex-1 font-medium">{label}</span>
                   <span aria-hidden className={cn("grid size-5 place-items-center rounded-md border text-[11px]", picked.includes(k) ? "border-navy-900 bg-navy-900 text-white" : "border-line")}>{picked.includes(k) ? "✓" : ""}</span>
@@ -65,8 +65,8 @@ export function ContactForm({ token, topics, startTopic, me }: { token: string; 
           {picked.includes("other") ? (
             <label className="mt-4 block text-sm">What&apos;s it about?<input value={other} onChange={(e) => setOther(e.target.value)} maxLength={120} autoFocus placeholder="Type your topic" className={field} /></label>
           ) : null}
-          <div className="mt-6 flex justify-end">
-            <button type="button" disabled={!ready} onClick={() => setStep(2)} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-40">
+          <div className="sticky bottom-0 -mx-4 mt-6 flex justify-end border-t border-line bg-white px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:p-0">
+            <button type="button" disabled={!ready} onClick={() => setStep(2)} className="inline-flex w-full items-center justify-center gap-2 sm:w-auto rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-40">
               Next<ArrowRight className="size-4" />
             </button>
           </div>
@@ -100,7 +100,7 @@ export function ContactForm({ token, topics, startTopic, me }: { token: string; 
           {state.error ? <p className="text-sm text-bad sm:col-span-2">{state.error}</p> : null}
           <div className="mt-2 flex items-center justify-between gap-3 sm:col-span-2">
             <button type="button" onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft className="size-4" />Back</button>
-            <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60">
+            <button disabled={busy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-navy-900 px-5 sm:flex-none py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60">
               {busy ? <span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <Send className="size-4" />}{busy ? "Sending" : "Send to Dhow Partners"}
             </button>
           </div>

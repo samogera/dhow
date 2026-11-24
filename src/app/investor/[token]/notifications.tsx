@@ -41,7 +41,7 @@ export function InvestorNotifications({ token, initial, email }: { token: string
 
   const shown = all ? items : items.slice(0, 6);
   return (
-    <section id="notifications" className="rounded-[1.75rem] bg-white px-5 py-6 ring-1 ring-line sm:px-8 sm:py-7">
+    <section id="notifications" className="rounded-[1.5rem] bg-white px-4 py-5 ring-1 sm:rounded-[1.75rem] ring-line sm:px-8 sm:py-7">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex items-center gap-2.5">
           <h2 className="text-lg font-semibold tracking-tight">Notifications</h2>
@@ -57,13 +57,13 @@ export function InvestorNotifications({ token, initial, email }: { token: string
           {shown.map((n) => {
             const Icon = ICON[n.kind as keyof typeof ICON] ?? Bell;
             return (
-              <li key={n.id} className="flex items-start gap-3.5 border-b border-line py-4 last:border-b-0">
+              <li key={n.id} className="flex flex-wrap items-start gap-x-3.5 gap-y-1 border-b border-line py-4 last:border-b-0">
                 <Icon className={cn("mt-0.5 size-4 shrink-0", n.read_at ? "text-faint" : "text-green")} />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-[calc(100%-2rem)] sm:basis-0">
                   <p className={cn("text-sm", n.read_at ? "text-ink/75" : "font-medium text-ink")}>{n.title}</p>
                   {n.body ? <p className="mt-0.5 line-clamp-2 text-sm text-muted">{n.body}</p> : null}
                 </div>
-                <p className="flex shrink-0 items-center gap-1.5 text-xs text-faint">
+                <p className="flex shrink-0 items-center gap-1.5 pl-[1.875rem] text-xs text-faint sm:pl-0">
                   {n.emailed ? <Mail className="size-3" aria-label="Emailed" /> : null}{ago(n.created_at)}
                   {!n.read_at ? <span aria-label="Unread" className="ml-1 size-1.5 rounded-full bg-green" /> : null}
                 </p>

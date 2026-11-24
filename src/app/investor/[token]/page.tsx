@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Building2, CalendarDays, MapPin, Users } from "lucide-react";
+import { Banknote, Building2, CalendarDays, Globe2, Landmark, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { INVESTOR_KIND } from "@/lib/investors";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { shareMeta } from "@/lib/share-meta";
 import { VerifiedTick } from "@/components/verified-tick";
@@ -23,6 +25,10 @@ type Co = {
   founded_year: number | null; team_size: string | null; verification_status: string; website: string | null; interest_sectors?: string[] | null;
 };
 const CO = "id, name, logo_url, sector, country, tagline, about, founded_year, team_size, verification_status, website, interest_sectors";
+
+function FocusLabel({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60"><Icon className="size-3.5 text-mint" />{children}</p>;
+}
 
 function CompanyCard({ c, token, current, note, asked }: { c: Co; token: string; current?: "interested" | "not_now" | null; note?: string | null; asked?: string | null }) {
   const initials = c.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -80,6 +86,11 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const sectors = [...new Set(others.map((c) => c.sector).filter(Boolean))].sort() as string[];
   const shown = others.filter((c) => (!sector || c.sector === sector)).sort((a, b) => Number(fits(b)) - Number(fits(a)));
   const interested = [...answer.values()].filter((v) => v === "interested").length;
+  const sectorList = ((inv.sectors as string[]) ?? []).filter(Boolean);
+  const stageList = ((inv.stages as string[]) ?? []).filter(Boolean);
+  const countryList = (inv.countries ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
+  const kind = inv.kind ? INVESTOR_KIND[inv.kind] ?? null : null;
+  const hasFocus = Boolean(inv.ticket || kind || sectorList.length || stageList.length || countryList.length);
 
   return (
     <div className="min-h-dvh">
@@ -101,12 +112,44 @@ export default async function InvestorPortal({ params, searchParams }: { params:
               <div><p className="text-3xl font-semibold">{interested}</p><p className="text-white/70">you liked</p></div>
             </div>
           </div>
-          {wants.length || inv.ticket ? (
-            <p className="relative mt-6 flex flex-wrap gap-2 text-xs">
-              {inv.ticket ? <span className="rounded-full bg-white/10 px-3 py-1">Ticket {inv.ticket}</span> : null}
-              {((inv.sectors as string[]) ?? []).map((s) => <span key={s} className="rounded-full bg-white/10 px-3 py-1">{s}</span>)}
-              {((inv.stages as string[]) ?? []).map((s) => <span key={s} className="rounded-full bg-white/10 px-3 py-1">{s}</span>)}
-            </p>
+          {hasFocus ? (
+            <div className="relative mt-8 flex flex-col gap-px overflow-hidden rounded-[1.5rem] bg-white/15 ring-1 ring-white/15 lg:flex-row">
+              {inv.ticket || kind ? (
+                <div className="bg-navy-900/95 p-5 lg:flex-[1.1]">
+                  <FocusLabel icon={Banknote}>Ticket size</FocusLabel>
+                  {inv.ticket ? <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">{inv.ticket}</p> : <p className="mt-2 text-sm text-white/60">Discussed per deal</p>}
+                  {kind ? <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber/15 px-2.5 py-0.5 text-[11px] font-medium text-amber ring-1 ring-amber/30"><Landmark className="size-3" />{kind}</p> : null}
+                </div>
+              ) : null}
+              {sectorList.length ? (
+                <div className="bg-navy-900/95 p-5 lg:flex-[2]">
+                  <FocusLabel icon={Sprout}>Sectors <span className="text-white/40">· {sectorList.length}</span></FocusLabel>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {sectorList.map((s) => <span key={s} className="rounded-lg bg-mint/15 px-2.5 py-1 text-xs font-medium text-mint-100 ring-1 ring-mint/30">{s}</span>)}
+                  </div>
+                </div>
+              ) : null}
+              {stageList.length ? (
+                <div className="bg-navy-900/95 p-5 lg:flex-[1.3]">
+                  <FocusLabel icon={TrendingUp}>Stages supported</FocusLabel>
+                  <ol className="mt-3 space-y-1.5">
+                    {stageList.map((s, n) => (
+                      <li key={s} className="flex items-center gap-2.5 text-sm text-white/90">
+                        <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white text-[10px] font-semibold text-navy-900">{n + 1}</span>{s}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+              {countryList.length ? (
+                <div className="bg-navy-900/95 p-5 lg:flex-[0.9]">
+                  <FocusLabel icon={Globe2}>Countries</FocusLabel>
+                  <ul className="mt-3 space-y-1.5">
+                    {countryList.map((c) => <li key={c} className="flex items-center gap-2 text-sm text-white/90"><MapPin className="size-3.5 text-mint" />{c}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </section>
 

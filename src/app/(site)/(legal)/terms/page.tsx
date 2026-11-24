@@ -73,9 +73,10 @@ const sections: Section[] = [
     ],
   },
   {
-    id: "links", title: "Partner and client links",
+    id: "links", title: "Partner, client and investor links",
     body: [
-      "Private links let partners upload documents, clients follow their projects, pay invoices and leave reviews, and anyone we invite leave a review, without an account. Anyone holding a link can use it, so keep it private and do not forward it. Tell us if a link has been shared by mistake and we will replace it; the old link then stops working.",
+      "Private links let partners upload documents, clients follow their projects, pay invoices and leave reviews, investors see companies and respond to introduction requests, and anyone we invite leave a review, without an account. Anyone holding a link can use it, so keep it private and do not forward it. Tell us if a link has been shared by mistake and we will replace it; the old link then stops working.",
+      "Introductions to investors are not investment advice, and Dhow does not arrange, recommend or guarantee any investment. Investors and companies do their own checks and make their own decisions. Company information shown to investors comes from the company and our verification, and Dhow is not responsible for decisions made on it.",
       "When you upload through a link, you confirm that you are authorised to share those documents with Dhow and that they are genuine and current.",
       "Reviews must be honest and based on your own experience. Do not post anything false, offensive, or that reveals someone else's personal or confidential information. We may decline or remove reviews that break these rules. We publish a client's review outside the Platform only if the client agreed to that when submitting it.",
     ],
@@ -186,7 +187,7 @@ const sections: Section[] = [
 
 export default function Terms() {
   return (
-    <LegalDoc title="Terms of use" updated="22 November 2026" sections={sections} intro={[
+    <LegalDoc title="Terms of use" updated="24 November 2026" sections={sections} intro={[
       "Please read these terms carefully. They explain how you can use Dhow Partners, what we do for you, what we ask of you, and what happens if something goes wrong.",
     ]} />
   );

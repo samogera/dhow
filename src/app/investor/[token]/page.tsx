@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Banknote, Building2, Clock3, CalendarDays, Globe2, Lock, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { Banknote, Building2, Clock3, CalendarDays, Globe2, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { INVESTOR_KIND, membershipOpen, membershipOpensAt } from "@/lib/investors";
 import { InvestorNotifications } from "./notifications";
 import { InvestorCard } from "@/components/investor-card";
@@ -119,14 +119,10 @@ export default async function InvestorPortal({ params, searchParams }: { params:
       <main className="mx-auto max-w-6xl space-y-6 px-3 py-6 sm:space-y-10 sm:px-5 sm:py-10">
         <section className="overflow-hidden rounded-[1.5rem] bg-white sm:rounded-[2rem] shadow-[0_1px_2px_rgba(2,34,58,0.05),0_30px_60px_-30px_rgba(2,34,58,0.25)] ring-1 ring-line">
           <div className="relative overflow-hidden bg-[linear-gradient(135deg,#f9fbfc_0%,#eef4f8_55%,#e7f3ef_100%)] px-5 pt-7 pb-8 sm:px-12 sm:pt-11 sm:pb-12">
-            <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-navy-900 via-navy-500 to-green" />
             <span aria-hidden className="pointer-events-none absolute -top-32 -right-24 size-[26rem] rounded-full bg-mint/15 blur-3xl" />
-            <div className="relative flex flex-wrap items-center justify-between gap-3">
-              <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-navy-700">
-                <span aria-hidden className="h-px w-7 bg-navy-700/40" />Prepared for {inv.name}
-              </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-navy-700 ring-1 ring-navy-100"><Lock className="size-3" />Private briefing</span>
-            </div>
+            <p className="relative flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-navy-700">
+              <span aria-hidden className="h-px w-7 bg-navy-700/40" />Prepared for {inv.name}
+            </p>
             <div className="relative mt-8 grid gap-6 sm:mt-10 sm:gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
                 <h1 className="max-w-2xl text-[1.85rem] leading-[1.1] font-semibold tracking-[-0.025em] text-navy-950 sm:text-5xl">Companies you may want to meet</h1>

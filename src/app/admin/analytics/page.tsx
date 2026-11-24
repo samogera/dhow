@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, Building2, Download, CalendarDays, CreditCard, Inbox, ListChecks, Megaphone, Send } from "lucide-react";
+import { BadgeCheck, Bell, Building2, Handshake, Landmark, ThumbsUp, Download, CalendarDays, CreditCard, Inbox, ListChecks, Megaphone, Send } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { AreaChart, BarList, ColumnChart } from "@/components/charts";
 import { Card, CardHeader, PageHeader, Stat, Table } from "@/components/ui";
 import { label } from "@/lib/format";
 import { kindLabel } from "@/lib/opportunity-display";
 import { PLAN_LABEL, type PlanTier } from "@/lib/types";
+import { INVESTOR_KIND } from "@/lib/investors";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -23,11 +24,29 @@ const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 export default async function Analytics() {
   const s = await requireStaff();
   const today = new Date().toISOString().slice(0, 10);
-  const [{ data: orgs }, { data: apps }, { data: opps }] = await Promise.all([
+  const [{ data: orgs }, { data: apps }, { data: opps }, { data: invs }, { data: intros }, { data: likes }, { data: notes }] = await Promise.all([
     s.supabase.from("organizations").select("id, created_at, verification_status, plan, sector, country").limit(5000),
     s.supabase.from("applications").select("org_id, opportunity_id, status, submitted_at").neq("status", "draft").limit(10000),
     s.supabase.from("opportunities").select("id, title, kind, published, deadline, starts_on, imported_at, source, dismissed_at").order("created_at", { ascending: false }).limit(3000),
+    s.supabase.from("investors").select("id, name, kind, active, deletion_requested_at, email, about, ticket, sectors, stages, countries, logo_url, updated_by_investor_at").order("name").limit(1000),
+    s.supabase.from("member_requests").select("target_id, status").eq("kind", "investor_intro").limit(5000),
+    s.supabase.from("investor_interest").select("investor_id, response").limit(10000),
+    s.supabase.from("investor_notifications").select("investor_id, emailed").limit(20000),
   ]);
+  const I = (invs ?? []) as { id: string; name: string; kind: string; active: boolean; deletion_requested_at: string | null; email: string | null; about: string | null; ticket: string | null; sectors: string[] | null; stages: string[] | null; countries: string | null; logo_url: string | null; updated_by_investor_at: string | null }[];
+  const IR = (intros ?? []) as { target_id: string; status: string }[];
+  const IL = (likes ?? []) as { investor_id: string; response: string }[];
+  const IN = (notes ?? []) as { investor_id: string; emailed: boolean }[];
+  const complete = (i: (typeof I)[number]) => Boolean(i.about && i.ticket && i.sectors?.length && i.stages?.length && i.countries && i.logo_url);
+  const liveInv = I.filter((i) => i.active && !i.deletion_requested_at);
+  const invRows = I.map((i) => ({
+    ...i,
+    asks: IR.filter((r) => r.target_id === i.id && r.status !== "declined").length,
+    made: IR.filter((r) => r.target_id === i.id && r.status === "done").length,
+    liked: IL.filter((l) => l.investor_id === i.id && l.response === "interested").length,
+    sent: IN.filter((n) => n.investor_id === i.id && n.emailed).length,
+  }));
+  const invKindRows = Object.entries(INVESTOR_KIND).map(([k, v]) => ({ label: v, value: liveInv.filter((i) => i.kind === k).length })).filter((r) => r.value);
   const O = orgs ?? [], A = apps ?? [], P = opps ?? [];
 
   const verified = O.filter((o) => o.verification_status === "verified").length;
@@ -135,6 +154,37 @@ export default async function Analytics() {
           <Card><CardHeader title="What members apply to" /><BarList rows={kindRows} total={A.length} empty="No applications yet." /></Card>
           <Card><CardHeader title="Countries" /><BarList rows={tally(O.map((o) => o.country))} total={O.length} empty="No companies yet." /></Card>
         </div>
+      </div>
+
+      <div className="mt-8 mb-3 flex items-end justify-between gap-3">
+        <div><h2 className="text-lg font-semibold tracking-tight text-navy-900">Investors</h2><p className="text-sm text-muted">Who we can introduce members to, and how introductions are going.</p></div>
+        <Link href="/admin/investors" className="text-sm font-medium text-navy-600 hover:underline">Manage investors</Link>
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat icon={Landmark} label="Investors listed" value={liveInv.length} note={`${I.length - liveInv.length} paused or leaving · ${liveInv.filter(complete).length} full profiles`} highlight />
+        <Stat icon={Handshake} label="Introductions asked" value={IR.filter((r) => r.status !== "declined").length} note={`${IR.filter((r) => r.status === "done").length} made · ${IR.filter((r) => r.status === "new" || r.status === "in_progress").length} open`} />
+        <Stat icon={ThumbsUp} label="Investor interest" value={IL.filter((l) => l.response === "interested").length} note={`${IL.filter((l) => l.response === "not_now").length} not now`} />
+        <Stat icon={Bell} label="Alerts emailed" value={IN.filter((n) => n.emailed).length} note={`${liveInv.filter((i) => i.email).length} of ${liveInv.length} have an alert email`} />
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <Card>
+          <CardHeader title="By investor" sub="Requests from members, introductions made and companies they like" />
+          {invRows.length ? (
+            <Table head={["Investor", "Type", "Asked", "Made", "Liked", "Profile"]}>
+              {invRows.map((i) => (
+                <tr key={i.id}>
+                  <td><Link href="/admin/investors" className="font-medium hover:text-navy-700">{i.name}</Link>{!i.active || i.deletion_requested_at ? <span className="ml-2 text-xs text-muted">{i.deletion_requested_at ? "Leaving" : "Paused"}</span> : null}</td>
+                  <td className="text-muted">{INVESTOR_KIND[i.kind] ?? i.kind}</td>
+                  <td className="num">{i.asks}</td>
+                  <td className="num">{i.made}</td>
+                  <td className="num">{i.liked}</td>
+                  <td className={complete(i) ? "text-green" : "text-muted"}>{complete(i) ? "Complete" : "Incomplete"}</td>
+                </tr>
+              ))}
+            </Table>
+          ) : <p className="py-8 text-center text-sm text-muted">No investors yet. <Link href="/admin/investors" className="underline">Add the first one</Link>.</p>}
+        </Card>
+        <Card><CardHeader title="Investor types" /><BarList rows={invKindRows} total={liveInv.length} empty="No investors yet." /></Card>
       </div>
     </>
   );

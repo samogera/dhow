@@ -37,10 +37,12 @@ function InvestorForm({ i }: { i?: Inv }) {
 
 export default async function Investors() {
   const s = await requireStaff();
-  const [{ data }, { data: interest }] = await Promise.all([
+  const [{ data }, { data: interest }, { data: settings }] = await Promise.all([
     s.supabase.from("investors").select("*").order("name"),
     s.supabase.from("investor_interest").select("id, investor_id, response, note, seen_by_staff, updated_at, organizations(id, name)").order("updated_at", { ascending: false }),
+    s.supabase.from("investor_settings").select("investor_id, phone"),
   ]);
+  const phone = new Map((settings ?? []).map((x) => [x.investor_id as string, x.phone as string | null]));
   const list = (data ?? []) as Inv[];
   const answers = (interest ?? []) as unknown as { id: string; investor_id: string; response: string; note: string | null; seen_by_staff: boolean; updated_at: string; organizations: { id: string; name: string } | null }[];
   return (
@@ -59,6 +61,11 @@ export default async function Investors() {
                 <div className="min-w-0"><p className="truncate font-semibold">{i.name}</p><p className="text-xs text-muted">{INVESTOR_KIND[i.kind] ?? i.kind}{i.ticket ? ` · ${i.ticket}` : ""}</p></div>
               </div>
               {i.about ? <p className="line-clamp-3 text-sm text-ink/80">{i.about}</p> : null}
+              {i.contact_name || i.email || phone.get(i.id) ? (
+                <p className="text-xs text-muted">
+                  {[i.contact_name && `${i.contact_name}${(i as Inv & { contact_role?: string | null }).contact_role ? `, ${(i as Inv & { contact_role?: string | null }).contact_role}` : ""}`, i.email, phone.get(i.id)].filter(Boolean).join(" · ")}
+                </p>
+              ) : null}
               {answers.filter((a) => a.investor_id === i.id).length ? (
                 <ul className="space-y-1.5 rounded-xl bg-sunken/60 p-3 text-sm">
                   {answers.filter((a) => a.investor_id === i.id).slice(0, 6).map((a) => (

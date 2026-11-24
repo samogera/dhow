@@ -24,6 +24,7 @@ const sections: Section[] = [
         "Documents: certificates of incorporation, CR12, tax compliance and KRA PIN certificates, licences, company profiles, agreements and other files you or a partner upload.",
         "Verification results: the outcome of registry checks, dates and reviewer notes.",
         "Payments: amounts, dates, references, the phone number used for M-Pesa, and invoice records. Card and M-Pesa PIN details go directly to the payment provider; we never see or store them.",
+        "Investor details: for funds, angels, lenders and other investors we list, the organisation's name, type, focus, ticket size and logo, the contact person's name, role, email and phone, alert settings, which companies they are interested in, and messages they send us.",
         "Work and communications: projects, tasks, notes, leads and messages that Dhow staff record about the work we do with you, and reviews that clients and partners submit.",
         "Technical data: IP address, browser type, the pages you use and error reports, kept to run the Platform securely and to prevent abuse.",
       ] },
@@ -38,6 +39,7 @@ const sections: Section[] = [
         "To check company records with the official business registry and decide on the Dhow Verified badge. Basis: our contract with you, and our legitimate interest in keeping the badge trustworthy.",
         "To take payments, issue receipts and keep accounting and tax records. Basis: contract and legal obligation.",
         "To introduce you to a partner firm for a service you want. Basis: your consent or our contract with you; we tell you which partner before we share your details.",
+        "To list investors for our members and arrange introductions between investors and member companies, and to send investors the alerts they choose. Basis: our legitimate interest in running the introductions service, and the investor's agreement when they join; investors can change their alerts or ask to be deleted from their private page.",
         "To send service messages by email and SMS, such as payment confirmations, verification results and deadline reminders. Basis: contract.",
         "To send news about opportunities and events. Basis: consent, which you can withdraw at any time using the unsubscribe link or by emailing us.",
         "To keep the Platform secure, prevent fraud and misuse, and fix problems. Basis: legitimate interest and legal obligation.",
@@ -61,6 +63,7 @@ const sections: Section[] = [
         "A buyer or successor if Dhow's business is sold or reorganised, who must protect your data as this policy describes.",
       ] },
       "Members of your own company workspace can see your company's documents and records. Dhow staff see them only as their role requires.",
+      "Investor introductions: Growth and Enterprise members see an investor's name, type, focus, ticket size, countries and logo. Investors see the profiles of verified companies that chose to be found or asked to meet them. Neither side's email or phone number is shared until both agree to the introduction.",
     ],
   },
   {
@@ -77,7 +80,7 @@ const sections: Section[] = [
         "Documents are kept in private storage. Downloads use short-lived links that expire within minutes.",
         "Access is limited by role, and each company sees only its own records.",
         "Changes to company, verification, payment and document records are logged.",
-        "Private links for partners and clients use long random codes and can be replaced at any time.",
+        "Private links for partners, clients and investors use long random codes and can be replaced at any time.",
       ] },
       "No system is completely secure. If a breach of personal data is likely to put your rights at risk, we will notify the Data Protection Commissioner within 72 hours of becoming aware of it, as the law requires, and tell affected people without undue delay, with steps they can take.",
     ],
@@ -90,6 +93,7 @@ const sections: Section[] = [
         "Verification records: for as long as the badge is valid, then up to 2 years so we can answer questions about past checks.",
         "Invoices, payments and other accounting records: 7 years, as required by Kenyan tax law.",
         "Partner and client documents: for as long as we work together, then up to 2 years unless a contract or the law requires longer.",
+        "Investor profiles, alerts and messages: while the investor is listed. If an investor asks to be deleted, we hide them straight away and delete their profile within 30 days.",
         "Technical and error logs: up to 12 months.",
       ] },
       "When data is no longer needed, we delete it or anonymise it so it can no longer identify you.",
@@ -138,7 +142,7 @@ const sections: Section[] = [
 
 export default function Privacy() {
   return (
-    <LegalDoc title="Privacy policy" updated="22 November 2026" sections={sections} intro={[
+    <LegalDoc title="Privacy policy" updated="24 November 2026" sections={sections} intro={[
       "Your trust matters to us. This policy explains, in plain language, what personal data Dhow Partners collects, why, who we share it with, how we protect it, and the rights you have.",
     ]} />
   );

@@ -12,7 +12,11 @@ type Me = { organisation: string; name: string; role: string; email: string; pho
 
 /** Step 1: what it's about. Step 2: their details, already filled in and editable, plus the message. */
 export function ContactForm({ token, topics, startTopic, me }: { token: string; topics: Record<string, string>; startTopic: string | null; me: Me }) {
-  const [topic, setTopic] = useState<string | null>(startTopic);
+  const [picked, setPicked] = useState<string[]>(startTopic ? [startTopic] : []);
+  const [other, setOther] = useState("");
+  const toggle = (k: string) => setPicked((xs) => (xs.includes(k) ? xs.filter((x) => x !== k) : [...xs, k]));
+  const ready = picked.length > 0 && (!picked.includes("other") || other.trim().length > 1);
+  const summary = picked.map((k) => (k === "other" ? `Other: ${other.trim()}` : topics[k])).join(" · ");
   const [step, setStep] = useState<1 | 2>(startTopic ? 2 : 1);
   const [replyBy, setReplyBy] = useState<"email" | "phone" | "whatsapp">("email");
   const [state, action, busy] = useActionState<InvestorState, FormData>(sendInvestorMessage, {});
@@ -44,20 +48,25 @@ export function ContactForm({ token, topics, startTopic, me }: { token: string; 
       {step === 1 ? (
         <div className="mt-6">
           <h2 className="text-lg font-semibold tracking-tight">What would you like help with?</h2>
+          <p className="mt-1 text-sm text-muted">Pick as many as apply.</p>
           <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
             {Object.entries(topics).map(([k, label]) => {
               const Icon = ICON[k] ?? CircleHelp;
               return (
-                <button key={k} type="button" onClick={() => setTopic(k)}
-                  className={cn("flex items-center gap-3 rounded-2xl border p-4 text-left text-sm transition", topic === k ? "border-navy-900 bg-navy-50 ring-1 ring-navy-900" : "border-line hover:border-navy-300 hover:bg-sunken")}>
-                  <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", topic === k ? "bg-navy-900 text-white" : "bg-sunken text-navy-700")}><Icon className="size-4" /></span>
-                  <span className="font-medium">{label}</span>
+                <button key={k} type="button" onClick={() => toggle(k)} aria-pressed={picked.includes(k)}
+                  className={cn("flex items-center gap-3 rounded-2xl border p-4 text-left text-sm transition", picked.includes(k) ? "border-navy-900 bg-navy-50 ring-1 ring-navy-900" : "border-line hover:border-navy-300 hover:bg-sunken")}>
+                  <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", picked.includes(k) ? "bg-navy-900 text-white" : "bg-sunken text-navy-700")}><Icon className="size-4" /></span>
+                  <span className="flex-1 font-medium">{label}</span>
+                  <span aria-hidden className={cn("grid size-5 place-items-center rounded-md border text-[11px]", picked.includes(k) ? "border-navy-900 bg-navy-900 text-white" : "border-line")}>{picked.includes(k) ? "✓" : ""}</span>
                 </button>
               );
             })}
           </div>
+          {picked.includes("other") ? (
+            <label className="mt-4 block text-sm">What&apos;s it about?<input value={other} onChange={(e) => setOther(e.target.value)} maxLength={120} autoFocus placeholder="Type your topic" className={field} /></label>
+          ) : null}
           <div className="mt-6 flex justify-end">
-            <button type="button" disabled={!topic} onClick={() => setStep(2)} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-40">
+            <button type="button" disabled={!ready} onClick={() => setStep(2)} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-40">
               Next<ArrowRight className="size-4" />
             </button>
           </div>
@@ -65,9 +74,10 @@ export function ContactForm({ token, topics, startTopic, me }: { token: string; 
       ) : (
         <form action={action} className="mt-6 grid gap-3 sm:grid-cols-2">
           <input type="hidden" name="token" value={token} />
-          <input type="hidden" name="topic" value={topic ?? "other"} />
+          {picked.map((k) => <input key={k} type="hidden" name="topic" value={k} />)}
+          <input type="hidden" name="other_topic" value={other} />
           <div className="flex items-center justify-between gap-3 rounded-2xl bg-sunken px-4 py-3 text-sm sm:col-span-2">
-            <span><span className="text-muted">About: </span><b>{topic ? topics[topic] : ""}</b></span>
+            <span><span className="text-muted">About: </span><b>{summary}</b></span>
             <button type="button" onClick={() => setStep(1)} className="text-navy-600 hover:underline">Change</button>
           </div>
           <p className="mt-2 text-xs text-muted sm:col-span-2">We&apos;ve filled in your details. Change anything that&apos;s not right.</p>

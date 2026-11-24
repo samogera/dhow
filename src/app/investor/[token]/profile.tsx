@@ -1,6 +1,7 @@
 "use client";
-import { useActionState, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Pencil, Trash2, X } from "lucide-react";
 import { INVESTOR_KIND, INSTRUMENT_HINT } from "@/lib/investors";
 import { requestInvestorDeletion, saveInvestorProfile, type InvestorState } from "@/actions/investor-portal";
 
@@ -14,6 +15,22 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
   const [del, delAction, deleting] = useActionState<InvestorState, FormData>(requestInvestorDeletion, {});
   const [confirmDel, setConfirmDel] = useState(false);
   const field = "field bg-white";
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+  // After a save: close the panel, pull the new details into the page, and say so briefly.
+  useEffect(() => {
+    if (!state.ok) return;
+    setOpen(false); setSaved(true); router.refresh();
+    const t = setTimeout(() => setSaved(false), 4000);
+    return () => clearTimeout(t);
+  }, [state, router]);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", esc);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", esc); document.body.style.overflow = ""; };
+  }, [open]);
   return (
     <section className="rounded-[1.75rem] bg-white p-5 ring-1 ring-line sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -24,11 +41,19 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
             <p className="text-sm text-muted">{p.email ? `We email ${p.email} when a company asks to meet you.` : "Add an email and we'll tell you when a company asks to meet you."}</p>
           </div>
         </div>
+        {saved ? <span className="inline-flex items-center gap-1.5 text-sm text-green"><CheckCircle2 className="size-4" />Saved</span> : null}
         {!open ? <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-medium hover:bg-sunken"><Pencil className="size-4" />Edit profile</button> : null}
       </div>
 
       {open ? (
-        <form action={action} className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="absolute inset-0 bg-navy-950/40 backdrop-blur-[2px]" />
+          <div role="dialog" aria-modal="true" aria-label="Edit profile" className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line px-6 py-4">
+              <h2 className="text-lg font-semibold tracking-tight">Edit profile</h2>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="grid size-9 place-items-center rounded-lg text-muted hover:bg-sunken hover:text-ink"><X className="size-5" /></button>
+            </div>
+        <form action={action} className="grid flex-1 content-start gap-3 overflow-y-auto px-6 py-5 sm:grid-cols-2">
           <input type="hidden" name="token" value={token} />
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted sm:col-span-2">About {p.name}</p>
           <label className="text-sm">Type of investor<select name="kind" defaultValue={p.kind ?? "fund"} className={`${field} mt-1`}>{Object.entries(INVESTOR_KIND).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
@@ -57,14 +82,16 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
             ))}
             <p className="text-xs text-muted">Everything also shows under Notifications on this page, as it happens.</p>
           </fieldset>
-          {state.error ? <p className="text-sm text-bad sm:col-span-2">{state.error}</p> : state.ok ? <p className="text-sm text-green sm:col-span-2">{state.ok}</p> : null}
-          <div className="flex items-center justify-end gap-3 sm:col-span-2">
-            <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted hover:text-ink">Close</button>
+          {state.error ? <p className="text-sm text-bad sm:col-span-2">{state.error}</p> : null}
+          <div className="sticky bottom-0 -mx-6 mt-2 flex items-center justify-end gap-3 border-t border-line bg-white px-6 py-4 sm:col-span-2">
+            <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted hover:text-ink">Cancel</button>
             <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60">
               {busy ? <span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : null}{busy ? "Saving" : "Save profile"}
             </button>
           </div>
         </form>
+          </div>
+        </div>
       ) : null}
 
       <div className="mt-5 border-t border-line pt-4">

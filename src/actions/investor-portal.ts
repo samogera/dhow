@@ -93,7 +93,6 @@ export async function saveInvestorProfile(_: InvestorState, fd: FormData): Promi
   if (error) return { error: "Couldn't save. Try again." };
   const { error: setErr } = await db.from("investor_settings").upsert({ investor_id: inv.id, phone, alert_new_request, alert_intro_update, alert_new_companies, updated_at: new Date().toISOString() });
   if (setErr) return { error: "Saved your profile, but not your alert settings. Try again." };
-  after(() => notifyInvestor(inv.id, { kind: "profile", title: "You updated your profile", body: p.data.email ? `Email alerts go to ${p.data.email}.` : "Add an email to get alerts by email." }).catch(() => null));
   after(() => notifyStaff(["admin"], `${inv.name} updated their investor profile`, [`${inv.name} changed their details on their private page.`], { label: "Open investors", href: `${appUrl()}/admin/investors` }).catch(() => null));
   return { ok: "Saved. Thank you." };
 }
@@ -141,7 +140,8 @@ export async function markInvestorFeedRead(token: string) {
 
 const ContactIn = z.object({
   token: Token,
-  topic: z.enum(Object.keys(CONTACT_TOPICS) as [keyof typeof CONTACT_TOPICS, ...(keyof typeof CONTACT_TOPICS)[]]),
+  topics: z.array(z.enum(Object.keys(CONTACT_TOPICS) as [keyof typeof CONTACT_TOPICS, ...(keyof typeof CONTACT_TOPICS)[]])).min(1, "Pick at least one topic.").max(8),
+  other_topic: opt(120),
   organisation: z.string().trim().min(2, "Add your organisation's name.").max(160),
   name: z.string().trim().min(2, "Add your name.").max(120),
   role: opt(120),
@@ -153,15 +153,16 @@ const ContactIn = z.object({
 
 /** An investor writes to the team from their private page. It lands in the Dhow inbox with their details attached. */
 export async function sendInvestorMessage(_: InvestorState, fd: FormData): Promise<InvestorState> {
-  const values = Object.fromEntries(fd);
+  const values = { ...Object.fromEntries(fd), topics: fd.getAll("topic").map(String) };
   const p = ContactIn.safeParse(values);
   if (!p.success) return { error: p.error.issues[0]?.message ?? "Check the form and try again." };
+  if (p.data.topics.includes("other") && !p.data.other_topic) return { error: "Tell us what 'Other' is about." };
   if (!(await rateLimit(`investor-contact:${p.data.token.slice(0, 12)}`, 8, 3600))) return { error: "You've sent a few messages already. Try again in an hour, or email hello@dhowpartners.com." };
   const db = createAdminClient();
   const { data: inv } = await db.from("investors").select("id, name").eq("portal_token", p.data.token).eq("active", true).maybeSingle();
   if (!inv) return { error: "This link is no longer active. Email hello@dhowpartners.com." };
   const d = p.data;
-  const topic = CONTACT_TOPICS[d.topic];
+  const topic = d.topics.map((t) => (t === "other" ? `Other: ${d.other_topic}` : CONTACT_TOPICS[t])).join("; ");
   const reply = d.reply_by === "email" ? `email (${d.email})` : `${d.reply_by === "phone" ? "phone" : "WhatsApp"} (${d.phone ?? "no number given"})`;
   const { emailLayout, sendEmail } = await import("@/lib/notify");
   await sendEmail({

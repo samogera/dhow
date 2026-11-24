@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Banknote, Building2, Clock3, CalendarDays, Globe2, Landmark, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
-import { INVESTOR_KIND, MEMBERSHIP_OPEN } from "@/lib/investors";
+import { Banknote, Building2, Clock3, CalendarDays, Globe2, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { INVESTOR_KIND, membershipOpen, membershipOpensAt } from "@/lib/investors";
 import { InvestorNotifications } from "./notifications";
 import type { InvestorNotice } from "@/actions/investor-portal";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -29,7 +29,7 @@ type Co = {
 const CO = "id, name, logo_url, sector, country, tagline, about, founded_year, team_size, verification_status, website, interest_sectors";
 
 function FocusLabel({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
-  return <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60"><Icon className="size-3.5 text-mint" />{children}</p>;
+  return <span className="flex items-center gap-1.5 text-xs font-medium text-muted"><Icon className="size-3.5 text-green" />{children}</span>;
 }
 
 function CompanyCard({ c, token, current, note, asked }: { c: Co; token: string; current?: "interested" | "not_now" | null; note?: string | null; asked?: string | null }) {
@@ -95,6 +95,10 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const countryList: string[] = String(inv.countries ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
   const kind = inv.kind ? INVESTOR_KIND[inv.kind] ?? null : null;
   const instrumentList = ((inv.instruments as string[] | null) ?? []).filter(Boolean);
+  const isOpen = membershipOpen();
+  const opensAt = membershipOpensAt();
+  const opensLabel = opensAt ? opensAt.toLocaleString("en-GB", { timeZone: "Africa/Nairobi", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }) : null;
+  const daysLeft = opensAt ? Math.max(0, Math.ceil((opensAt.getTime() - Date.now()) / 86_400_000)) : null;
   const hasFocus = Boolean(inv.ticket || kind || sectorList.length || stageList.length || countryList.length);
 
   return (
@@ -104,57 +108,64 @@ export default async function InvestorPortal({ params, searchParams }: { params:
         <Link href={`/investor/${token}/contact`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Contact us</Link>
       </header>
       <main className="mx-auto max-w-6xl space-y-10 px-5 py-10">
-        <section className="relative overflow-hidden rounded-[2rem] bg-navy-900 px-6 py-8 text-white sm:px-10 sm:py-10">
-          <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-mint/20 blur-3xl" />
-          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm text-white/70">Prepared for <span className="font-semibold text-white">{inv.name}</span></p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Companies you may want to meet</h1>
-              <p className="mt-2 max-w-2xl text-sm text-white/75">Verified businesses in Kenya, from the Dhow Partners network. Tap <b>I&apos;m interested</b> and we&apos;ll make a warm introduction. Contact details are shared once both sides agree.</p>
+        <section className="overflow-hidden rounded-[2rem] bg-white shadow-[0_1px_2px_rgba(2,34,58,0.05),0_30px_60px_-30px_rgba(2,34,58,0.25)] ring-1 ring-line">
+          <div className="relative bg-navy-950 px-6 pt-7 pb-10 text-white sm:px-12 sm:pt-10 sm:pb-12">
+            <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_90%_at_100%_0%,rgba(99,184,168,0.16),transparent_65%)]" />
+            <div className="relative flex items-center gap-3">
+              {inv.logo_url ? <span className="grid size-10 place-items-center rounded-xl bg-white p-1.5"><img src={inv.logo_url} alt="" className="max-h-full max-w-full object-contain" /></span> : null}
+              <div className="leading-tight">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/45">Prepared for</p>
+                <p className="mt-0.5 text-[15px] font-medium text-white">{inv.name}</p>
+              </div>
             </div>
-            <div className="flex gap-6 text-sm">
-              <div><p className="text-3xl font-semibold">{asked.length}</p><p className="text-white/70">asked for you</p></div>
-              <div><p className="text-3xl font-semibold">{interested}</p><p className="text-white/70">you liked</p></div>
+            <div className="relative mt-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <h1 className="max-w-2xl text-[2.1rem] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-5xl">Companies you may want to meet</h1>
+                <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/60">Verified businesses from the Dhow Partners network, matched to your mandate. Say you&apos;re interested and we&apos;ll make a warm introduction. Contact details are shared only when both sides agree.</p>
+              </div>
+              <dl className="flex w-fit divide-x divide-white/10 rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
+                <div className="px-6 py-4"><dt className="text-xs text-white/50">Asked to meet you</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{asked.length}</dd></div>
+                <div className="px-6 py-4"><dt className="text-xs text-white/50">You&apos;re interested in</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{interested}</dd></div>
+              </dl>
             </div>
           </div>
+
           {hasFocus ? (
-            <div className="relative mt-8 flex flex-col gap-px overflow-hidden rounded-[1.5rem] bg-white/15 ring-1 ring-white/15 lg:flex-row">
-              {inv.ticket || kind ? (
-                <div className="bg-navy-900/95 p-5 lg:flex-[1.1]">
-                  <FocusLabel icon={Banknote}>Ticket size</FocusLabel>
-                  {inv.ticket ? <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">{inv.ticket}</p> : <p className="mt-2 text-sm text-white/60">Discussed per deal</p>}
-                  {instrumentList.length ? <p className="mt-1.5 text-sm text-white/75">{instrumentList.join(" · ")}</p> : null}
-                  {kind ? <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber/15 px-2.5 py-0.5 text-[11px] font-medium text-amber ring-1 ring-amber/30"><Landmark className="size-3" />{kind}</p> : null}
-                </div>
-              ) : null}
-              {sectorList.length ? (
-                <div className="bg-navy-900/95 p-5 lg:flex-[2]">
-                  <FocusLabel icon={Sprout}>Sectors <span className="text-white/40">· {sectorList.length}</span></FocusLabel>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {sectorList.map((s) => <span key={s} className="rounded-lg bg-mint/15 px-2.5 py-1 text-xs font-medium text-mint-100 ring-1 ring-mint/30">{s}</span>)}
+            <div className="px-6 py-7 sm:px-12 sm:py-9">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-faint">Your mandate</p>
+              <dl className="mt-6 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,1.2fr)_minmax(0,0.7fr)]">
+                {inv.ticket || kind || instrumentList.length ? (
+                  <div>
+                    <dt><FocusLabel icon={Banknote}>Ticket size</FocusLabel></dt>
+                    <dd className="mt-3 text-2xl leading-tight font-semibold tracking-tight text-navy-900 tabular-nums">{inv.ticket ?? "Per deal"}</dd>
+                    {kind || instrumentList.length ? <dd className="mt-2 text-sm text-muted">{[kind, ...instrumentList].filter(Boolean).join(" · ")}</dd> : null}
                   </div>
-                </div>
-              ) : null}
-              {stageList.length ? (
-                <div className="bg-navy-900/95 p-5 lg:flex-[1.3]">
-                  <FocusLabel icon={TrendingUp}>Stages supported</FocusLabel>
-                  <ol className="mt-3 space-y-1.5">
-                    {stageList.map((s, n) => (
-                      <li key={s} className="flex items-center gap-2.5 text-sm text-white/90">
-                        <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white text-[10px] font-semibold text-navy-900">{n + 1}</span>{s}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ) : null}
-              {countryList.length ? (
-                <div className="bg-navy-900/95 p-5 lg:flex-[0.9]">
-                  <FocusLabel icon={Globe2}>Countries</FocusLabel>
-                  <ul className="mt-3 space-y-1.5">
-                    {countryList.map((c) => <li key={c} className="flex items-center gap-2 text-sm text-white/90"><MapPin className="size-3.5 text-mint" />{c}</li>)}
-                  </ul>
-                </div>
-              ) : null}
+                ) : null}
+                {sectorList.length ? (
+                  <div>
+                    <dt><FocusLabel icon={Sprout}>Sectors</FocusLabel></dt>
+                    <dd className="mt-3 flex flex-wrap gap-1.5">
+                      {sectorList.map((s) => <span key={s} className="rounded-full border border-line bg-canvas px-3 py-1 text-[13px] text-ink/85">{s}</span>)}
+                    </dd>
+                  </div>
+                ) : null}
+                {stageList.length ? (
+                  <div>
+                    <dt><FocusLabel icon={TrendingUp}>Stages we support</FocusLabel></dt>
+                    <dd className="mt-3">
+                      <ol className="relative space-y-2.5 before:absolute before:top-2 before:bottom-2 before:left-[3px] before:w-px before:bg-line">
+                        {stageList.map((s) => <li key={s} className="relative flex items-center gap-3 text-sm text-ink/85"><span className="size-[7px] shrink-0 rounded-full bg-green ring-4 ring-white" />{s}</li>)}
+                      </ol>
+                    </dd>
+                  </div>
+                ) : null}
+                {countryList.length ? (
+                  <div>
+                    <dt><FocusLabel icon={Globe2}>Countries</FocusLabel></dt>
+                    <dd className="mt-3 space-y-2 text-sm text-ink/85">{countryList.map((c) => <p key={c}>{c}</p>)}</dd>
+                  </div>
+                ) : null}
+              </dl>
             </div>
           ) : null}
         </section>
@@ -182,12 +193,12 @@ export default async function InvestorPortal({ params, searchParams }: { params:
               <p className="mt-1 text-sm text-muted">Businesses that are Dhow Verified and chose to be found.</p>
             </div>
           </div>
-          {!MEMBERSHIP_OPEN ? (
+          {!isOpen ? (
             <div className="mt-5 flex flex-col items-start gap-4 rounded-[1.5rem] bg-mint-100/60 p-6 ring-1 ring-mint/30 sm:flex-row sm:items-center sm:p-7">
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-green ring-1 ring-mint/40"><Clock3 className="size-5" /></span>
               <div className="flex-1">
-                <p className="font-semibold text-navy-900">Membership hasn&apos;t started yet</p>
-                <p className="mt-1 text-sm text-ink/75">We&apos;re verifying the first member companies now. When membership opens, companies that chose to be found will appear here, in your sectors first{settings?.alert_new_companies === false ? "" : ", and we'll let you know"}.</p>
+                <p className="font-semibold text-navy-900">{opensLabel ? `Membership opens ${opensLabel}` : "Membership hasn't started yet"}</p>
+                <p className="mt-1 text-sm text-ink/75">We&apos;re verifying the first member companies now. {opensLabel ? `In ${daysLeft === 1 ? "1 day" : `${daysLeft} days`}, companies` : "When membership opens, companies"} that chose to be found will appear here, in your sectors first{settings?.alert_new_companies === false ? "" : ", and we'll let you know"}.</p>
               </div>
               <Link href={`/investor/${token}/contact?topic=pipeline`} className="shrink-0 rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium hover:bg-sunken">Ask about the pipeline</Link>
             </div>

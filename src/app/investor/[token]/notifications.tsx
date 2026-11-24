@@ -41,42 +41,38 @@ export function InvestorNotifications({ token, initial, email }: { token: string
 
   const shown = all ? items : items.slice(0, 6);
   return (
-    <section id="notifications" className="rounded-[1.75rem] bg-white p-5 ring-1 ring-line sm:p-7">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="relative grid size-10 place-items-center rounded-xl bg-navy-50 text-navy-700">
-            <Bell className="size-5" />
-            {unread ? <span className="absolute -top-1.5 -right-1.5 grid min-w-5 place-items-center rounded-full bg-green px-1 text-[10px] font-semibold text-white">{unread}</span> : null}
-          </span>
-          <div>
-            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">Notifications
-              <span className="inline-flex items-center gap-1 rounded-full bg-mint-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-green"><span className="size-1.5 animate-pulse rounded-full bg-green" />Live</span>
-            </h2>
-            <p className="text-sm text-muted">{email ? <>Also emailed to {email}, as they happen. Change this in Edit profile.</> : "Add an email in Edit profile to get these by email too."}</p>
-          </div>
+    <section id="notifications" className="rounded-[1.75rem] bg-white px-5 py-6 ring-1 ring-line sm:px-8 sm:py-7">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg font-semibold tracking-tight">Notifications</h2>
+          <span title="Updates by itself while this page is open" className="relative flex size-2"><span className="absolute inline-flex size-full animate-ping rounded-full bg-green/50" /><span className="relative inline-flex size-2 rounded-full bg-green" /></span>
+          {unread ? <span className="rounded-full bg-navy-900 px-2 py-0.5 text-[11px] font-semibold text-white tabular-nums">{unread} new</span> : null}
         </div>
-        {unread ? <button type="button" onClick={markRead} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-medium hover:bg-sunken"><CheckCheck className="size-4" />Mark all read</button> : null}
+        {unread ? <button type="button" onClick={markRead} className="inline-flex items-center gap-1.5 text-sm font-medium text-navy-600 hover:text-navy-900"><CheckCheck className="size-4" />Mark all read</button> : null}
       </div>
+      <p className="mt-1 text-sm text-muted">{email ? <>Shown here as they happen, and emailed to {email}.</> : "Shown here as they happen. Add an email in Edit profile to get them by email too."}</p>
 
       {items.length ? (
-        <ul className="mt-5 divide-y divide-line">
+        <ul className="mt-5 border-t border-line">
           {shown.map((n) => {
             const Icon = ICON[n.kind as keyof typeof ICON] ?? Bell;
             return (
-              <li key={n.id} className="flex gap-3 py-3.5">
-                <span className={cn("mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg", n.read_at ? "bg-sunken text-muted" : "bg-mint-100 text-green")}><Icon className="size-4" /></span>
+              <li key={n.id} className="flex items-start gap-3.5 border-b border-line py-4 last:border-b-0">
+                <Icon className={cn("mt-0.5 size-4 shrink-0", n.read_at ? "text-faint" : "text-green")} />
                 <div className="min-w-0 flex-1">
-                  <p className={cn("text-sm", n.read_at ? "text-ink/80" : "font-semibold text-ink")}>{n.title}</p>
+                  <p className={cn("text-sm", n.read_at ? "text-ink/75" : "font-medium text-ink")}>{n.title}</p>
                   {n.body ? <p className="mt-0.5 line-clamp-2 text-sm text-muted">{n.body}</p> : null}
-                  <p className="mt-1 flex items-center gap-2 text-xs text-faint">{ago(n.created_at)}{n.emailed ? <span className="inline-flex items-center gap-1"><Mail className="size-3" />emailed</span> : null}</p>
                 </div>
-                {!n.read_at ? <span aria-label="Unread" className="mt-2 size-2 shrink-0 rounded-full bg-green" /> : null}
+                <p className="flex shrink-0 items-center gap-1.5 text-xs text-faint">
+                  {n.emailed ? <Mail className="size-3" aria-label="Emailed" /> : null}{ago(n.created_at)}
+                  {!n.read_at ? <span aria-label="Unread" className="ml-1 size-1.5 rounded-full bg-green" /> : null}
+                </p>
               </li>
             );
           })}
         </ul>
-      ) : <p className="mt-5 rounded-2xl border border-dashed border-line px-6 py-6 text-center text-sm text-muted">Nothing yet. When a company asks to meet you or we make an introduction, it shows here straight away.</p>}
-      {items.length > 6 ? <button type="button" onClick={() => setAll((v) => !v)} className="mt-2 text-sm font-medium text-navy-600 hover:underline">{all ? "Show fewer" : `Show all ${items.length}`}</button> : null}
+      ) : <p className="mt-5 border-t border-line pt-5 text-sm text-muted">Nothing yet. When a company asks to meet you or we make an introduction, you&apos;ll see it here straight away.</p>}
+      {items.length > 6 ? <button type="button" onClick={() => setAll((v) => !v)} className="mt-3 text-sm font-medium text-navy-600 hover:underline">{all ? "Show fewer" : `Show all ${items.length}`}</button> : null}
     </section>
   );
 }

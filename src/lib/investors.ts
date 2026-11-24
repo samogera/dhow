@@ -1,5 +1,17 @@
-/** Flip to true when member companies can be found by investors. Until then investor pages say membership hasn't started. */
-export const MEMBERSHIP_OPEN = false;
+/**
+ * When investors start seeing member companies. Set MEMBERSHIP_OPENS_AT in Vercel (or here),
+ * e.g. "2027-01-15T09:00:00+03:00". Pages switch over by themselves at that moment. Empty = not scheduled yet.
+ */
+const OPENS_AT_DEFAULT = "";
+export function membershipOpensAt(): Date | null {
+  const raw = (process.env.MEMBERSHIP_OPENS_AT ?? OPENS_AT_DEFAULT).trim();
+  const t = raw ? Date.parse(raw) : NaN;
+  return Number.isNaN(t) ? null : new Date(t);
+}
+export function membershipOpen(now = Date.now()) {
+  const at = membershipOpensAt();
+  return Boolean(at && now >= at.getTime());
+}
 
 export const INSTRUMENT_HINT = "Equity, Debt, Revenue-based, Grant";
 
@@ -16,5 +28,5 @@ export const CONTACT_TOPICS = {
   partner: "Partnering or co-investing with Dhow",
   call: "Booking a call with the team",
   problem: "Something isn't working on this page",
-  other: "Something else",
+  other: "Other",
 } as const;

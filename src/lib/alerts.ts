@@ -19,11 +19,12 @@ export async function loadAlerts(db: SupabaseClient, userId: string, canSeeMoney
     db.from("verifications").select("id", { count: "exact", head: true }).eq("status", "in_review"),
     db.from("leads").select("id, name, company, next_step, next_step_date, status").not("status", "in", "(won,lost)").not("next_step_date", "is", null).lte("next_step_date", today),
   ]);
-  const [asks, apps, help, liked] = await Promise.all([
+  const [asks, apps, help, liked, leaving] = await Promise.all([
     db.from("member_requests").select("id, kind, target_name, created_at, organizations(name)").eq("status", "new").order("created_at").limit(50),
     db.from("membership_applications").select("id, name, company, plan, created_at").eq("status", "new").order("created_at").limit(50),
     db.from("leads").select("id, name, company, next_step, created_at").eq("status", "new").in("source", ["Member workspace", "Client portal"]).order("created_at").limit(50),
     db.from("investor_interest").select("id, updated_at, investors(name), organizations(name)").eq("response", "interested").eq("seen_by_staff", false).limit(50),
+    db.from("investors").select("id, name, deletion_requested_at").not("deletion_requested_at", "is", null).limit(50),
   ]);
   const out: Alert[] = [];
   const pname = (id: string | null) => partners.data?.find((p) => p.id === id)?.name;
@@ -75,6 +76,9 @@ export async function loadAlerts(db: SupabaseClient, userId: string, canSeeMoney
   }
   for (const l of (liked.data ?? []) as unknown as { id: string; updated_at: string; investors: { name: string } | null; organizations: { name: string } | null }[]) {
     out.push({ id: `v${l.id}`, level: "urgent", kind: "request", title: `${l.investors?.name ?? "An investor"} wants to meet ${l.organizations?.name ?? "a company"}`, detail: "Make the introduction", href: "/admin/investors", date: l.updated_at.slice(0, 10) });
+  }
+  for (const i of leaving.data ?? []) {
+    out.push({ id: `x${i.id}`, level: "soon", kind: "request", title: `${i.name} asked to be deleted`, detail: "Delete their investor profile within 30 days", href: "/admin/investors", date: String(i.deletion_requested_at).slice(0, 10) });
   }
   return out.sort((a, b) => (a.level === b.level ? (a.date ?? "9").localeCompare(b.date ?? "9") : a.level === "urgent" ? -1 : 1));
 }

@@ -4,7 +4,7 @@ import { isOrgAdmin, memberOrNull } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { initializeTransaction, paystackConfigured } from "@/lib/paystack";
-import { priceOf, TIERS } from "@/lib/plans";
+import { membershipOpen, priceOf, TIERS } from "@/lib/plans";
 import { appUrl } from "@/lib/app-url";
 
 const Body = z.object({ tier: z.enum(["basic", "premium"]), period: z.enum(["monthly", "yearly"]) });
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   const m = await memberOrNull();
   if (!m) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   if (!isOrgAdmin(m.role)) return NextResponse.json({ error: "Only company owners and admins can change the plan." }, { status: 403 });
+  if (!membershipOpen()) return NextResponse.json({ error: "Paid membership hasn't started yet. We'll email you when it opens." }, { status: 403 });
   if (!paystackConfigured()) return NextResponse.json({ error: "Online payments aren't switched on yet. Ask the Dhow team to upgrade you." }, { status: 503 });
   if (!(await rateLimit("pay", 5, 600))) return NextResponse.json({ error: "Too many payment attempts. Try again in 10 minutes." }, { status: 429 });
   const p = Body.safeParse(await req.json().catch(() => null));

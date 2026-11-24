@@ -20,6 +20,7 @@ const InvestorIn = z.object({
   countries: text(120),
   website: z.string().trim().url("Use a full web address, like https://…").optional().or(z.literal("")).transform((v) => v || null),
   contact_name: text(120),
+  email: z.string().trim().email("That email doesn't look right.").max(200).optional().or(z.literal("")).transform((v) => v || null),
   active: z.enum(["on"]).optional().transform((v) => v === "on"),
 });
 
@@ -37,7 +38,7 @@ export async function saveInvestor(_: ActionState, fd: FormData): Promise<Action
     if ("error" in up) return { error: up.error };
     logo_url = up.url;
   }
-  const data = { ...row, ...(logo_url ? { logo_url } : {}) };
+  const data = { ...row, ...(logo_url ? { logo_url } : {}), ...(row.active ? { deletion_requested_at: null } : {}) };
   const { error } = id ? await s.supabase.from("investors").update(data).eq("id", id) : await s.supabase.from("investors").insert(data);
   if (error) return { error: "Couldn't save the investor. Try again." };
   revalidatePath("/admin/investors");
@@ -90,5 +91,16 @@ export async function markInvestorInterestSeen(fd: FormData) {
   const id = z.string().uuid().safeParse(fd.get("id"));
   if (!id.success) return;
   await s.supabase.from("investor_interest").update({ seen_by_staff: true }).eq("id", id.data);
+  revalidatePath("/admin/investors");
+}
+
+/** Admins delete an investor and everything linked to them (answers, requests). */
+export async function deleteInvestor(fd: FormData) {
+  const s = await staffOrNull(["admin"]);
+  if (!s) return;
+  const id = z.string().uuid().safeParse(fd.get("id"));
+  if (!id.success) return;
+  await s.supabase.from("member_requests").delete().eq("kind", "investor_intro").eq("target_id", id.data);
+  await s.supabase.from("investors").delete().eq("id", id.data);
   revalidatePath("/admin/investors");
 }

@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
-import { ActionForm } from "@/components/forms";
+import { ActionForm, ConfirmSubmit } from "@/components/forms";
 import { Drawer } from "@/components/drawer";
 import { Card, Empty, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 import Link from "next/link";
-import { makeInvestorLink, markInvestorInterestSeen, saveInvestor } from "@/actions/investors";
+import { deleteInvestor, makeInvestorLink, markInvestorInterestSeen, saveInvestor } from "@/actions/investors";
 import { CopyField } from "@/components/copy-field";
 import { SubmitButton } from "@/components/submit-button";
 import { appUrl } from "@/lib/app-url";
 import { INVESTOR_KIND } from "@/lib/investors";
-import { cn } from "@/lib/format";
+import { cn, day } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Investors" };
 
-type Inv = { id: string; name: string; contact_name: string | null; portal_token: string | null; kind: string; about: string | null; sectors: string[]; stages: string[]; ticket: string | null; countries: string | null; website: string | null; logo_url: string | null; active: boolean };
+type Inv = { id: string; name: string; contact_name: string | null; email: string | null; deletion_requested_at: string | null; updated_by_investor_at: string | null; portal_token: string | null; kind: string; about: string | null; sectors: string[]; stages: string[]; ticket: string | null; countries: string | null; website: string | null; logo_url: string | null; active: boolean };
 
 function InvestorForm({ i }: { i?: Inv }) {
   return (
@@ -27,6 +27,7 @@ function InvestorForm({ i }: { i?: Inv }) {
       <Field label="Countries"><Input name="countries" defaultValue={i?.countries ?? ""} placeholder="Kenya, East Africa" /></Field>
       <Field label="Website"><Input name="website" type="url" defaultValue={i?.website ?? ""} placeholder="https://" /></Field>
       <Field label="Contact person" hint="Shown on their private page"><Input name="contact_name" defaultValue={i?.contact_name ?? ""} placeholder="e.g. Jane Mwangi" /></Field>
+      <Field label="Email for alerts" hint="We email them when a company asks to meet them"><Input name="email" type="email" defaultValue={i?.email ?? ""} placeholder="jane@fund.com" /></Field>
       <div className="sm:col-span-2"><Field label="What they look for"><Textarea name="about" rows={4} defaultValue={i?.about ?? ""} /></Field></div>
       <Field label="Logo" hint="PNG or JPG, up to 3 MB"><input type="file" name="logo" accept="image/png,image/jpeg,image/webp" className="block w-full text-sm text-muted" /></Field>
       <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" name="active" defaultChecked={i?.active ?? true} className="size-4 accent-navy-900" />Show to members</label>
@@ -86,9 +87,18 @@ export default async function Investors() {
                   <form action={makeInvestorLink}><input type="hidden" name="id" value={i.id} /><SubmitButton className="rounded-full bg-navy-900 px-4 py-2 text-xs font-medium text-white">Create their page</SubmitButton></form>
                 )}
               </div>
-              <div className="mt-auto flex items-center justify-between">
-                <span className="text-xs text-muted">{i.active ? "Shown to members" : "Hidden"}</span>
-                <Drawer label="Edit" title={i.name} variant="outline" plus={false}><InvestorForm i={i} /></Drawer>
+              {i.deletion_requested_at ? (
+                <p className="rounded-xl bg-bad/10 px-3 py-2 text-xs font-medium text-bad">Asked to be deleted on {day(i.deletion_requested_at)}. Delete within 30 days.</p>
+              ) : i.updated_by_investor_at ? <p className="text-xs text-muted">They updated their profile on {day(i.updated_by_investor_at)}.</p> : null}
+              <div className="mt-auto flex items-center justify-between gap-2">
+                <span className="text-xs text-muted">{i.active ? "Shown to members" : "Hidden"}{i.email ? " · alerts on" : ""}</span>
+                <div className="flex items-center gap-2">
+                  <form action={deleteInvestor}>
+                    <input type="hidden" name="id" value={i.id} />
+                    <ConfirmSubmit variant="ghost" className="px-3 py-1.5 text-xs text-bad" message={`Delete ${i.name}? Their page, answers and introduction requests are removed for good.`}>Delete</ConfirmSubmit>
+                  </form>
+                  <Drawer label="Edit" title={i.name} variant="outline" plus={false}><InvestorForm i={i} /></Drawer>
+                </div>
               </div>
             </Card>
           ))}

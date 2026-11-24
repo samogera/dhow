@@ -42,3 +42,57 @@ export async function respondAsInvestor(_: InvestorState, fd: FormData): Promise
   }
   return { ok: p.data.response === "interested" ? "Noted. Dhow Partners will set up the introduction." : "Noted. We won't suggest this one again.", response: p.data.response };
 }
+
+const list = z.string().optional().transform((v) => (v ?? "").split(",").map((x) => x.trim()).filter(Boolean).slice(0, 10));
+const opt = (max: number) => z.string().trim().max(max).optional().transform((v) => v || null);
+const ProfileIn = z.object({
+  token: z.string().regex(/^[A-Za-z0-9_-]{24,64}$/),
+  contact_name: opt(120),
+  email: z.string().trim().email("That email doesn't look right.").max(200).optional().or(z.literal("")).transform((v) => v || null),
+  about: opt(1200),
+  ticket: opt(80),
+  countries: opt(120),
+  website: z.string().trim().max(300).optional().transform((v) => (v ? (v.startsWith("http") ? v : `https://${v}`) : null)),
+  sectors: list,
+  stages: list,
+});
+
+/** The investor updates their own profile from their private page. */
+export async function saveInvestorProfile(_: InvestorState, fd: FormData): Promise<InvestorState> {
+  const values = Object.fromEntries(fd);
+  const p = ProfileIn.safeParse(values);
+  if (!p.success) return { error: p.error.issues[0]?.message ?? "Check the form and try again." };
+  if (!(await rateLimit(`investor-profile:${p.data.token.slice(0, 12)}`, 20, 600))) return { error: "Too many saves. Try again in a few minutes." };
+  const db = createAdminClient();
+  const { data: inv } = await db.from("investors").select("id, name").eq("portal_token", p.data.token).maybeSingle();
+  if (!inv) return { error: "This link is no longer active." };
+  const { token, ...row } = p.data;
+  void token;
+  let logo_url: string | undefined;
+  const logo = fd.get("logo");
+  if (logo instanceof File && logo.size > 0) {
+    const { uploadImage } = await import("@/lib/storage");
+    const up = await uploadImage(logo, "investors");
+    if ("error" in up) return { error: up.error };
+    logo_url = up.url;
+  }
+  const { error } = await db.from("investors").update({ ...row, ...(logo_url ? { logo_url } : {}), updated_by_investor_at: new Date().toISOString() }).eq("id", inv.id);
+  if (error) return { error: "Couldn't save. Try again." };
+  after(() => notifyStaff(["admin"], `${inv.name} updated their investor profile`, [`${inv.name} changed their details on their private page.`], { label: "Open investors", href: `${appUrl()}/admin/investors` }).catch(() => null));
+  return { ok: "Saved. Thank you." };
+}
+
+/** The investor asks Dhow to delete their profile. The team confirms and deletes it in admin. */
+export async function requestInvestorDeletion(_: InvestorState, fd: FormData): Promise<InvestorState> {
+  const token = z.string().regex(/^[A-Za-z0-9_-]{24,64}$/).safeParse(fd.get("token"));
+  if (!token.success) return { error: "This link is no longer active." };
+  const db = createAdminClient();
+  const { data: inv } = await db.from("investors").select("id, name, deletion_requested_at").eq("portal_token", token.data).maybeSingle();
+  if (!inv) return { error: "This link is no longer active." };
+  if (!inv.deletion_requested_at) {
+    await db.from("investors").update({ deletion_requested_at: new Date().toISOString(), active: false }).eq("id", inv.id);
+    after(() => notifyStaff(["admin"], `${inv.name} asked to delete their investor profile`, [`${inv.name} asked Dhow Partners to delete their profile. They're hidden from members now.`, "Delete them in Investors within 30 days."],
+      { label: "Open investors", href: `${appUrl()}/admin/investors` }).catch(() => null));
+  }
+  return { ok: "Request received. Your profile is hidden now, and we'll delete it within 30 days." };
+}

@@ -5,7 +5,7 @@ import { TIERS, TIER_ORDER, type Period, type Tier } from "@/lib/plans";
 import { applyForEnterprise } from "@/actions/help";
 import { cn, kes } from "@/lib/format";
 
-export function PlanPicker({ current, canPay, until, off, cancelled }: { current: Tier; canPay: boolean; until: string | null; off: Record<string, { events: number; services: number }>; cancelled: boolean }) {
+export function PlanPicker({ open = true, current, canPay, until, off, cancelled }: { open?: boolean; current: Tier; canPay: boolean; until: string | null; off: Record<string, { events: number; services: number }>; cancelled: boolean }) {
   const [period, setPeriod] = useState<Period>("monthly");
   const [busy, setBusy] = useState<Tier | null>(null);
   const [msg, setMsg] = useState<{ ok?: string; error?: string }>({});
@@ -58,7 +58,8 @@ export function PlanPicker({ current, canPay, until, off, cancelled }: { current
           const featured = t === "premium";
           const btn = "w-full rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60";
           let action: React.ReactNode = null;
-          if (t === "free") action = <p className="py-2.5 text-center text-sm text-muted">{isCurrent ? "You're on this plan" : "Always available"}</p>;
+          if (!open && t !== "free" && !isCurrent) action = <a href="https://dhowpartners.com/apply" target="_blank" rel="noopener noreferrer" className="block w-full rounded-full border border-line px-4 py-2.5 text-center text-sm font-semibold text-ink/70 hover:bg-sunken">Starting soon · Apply</a>;
+          else if (t === "free") action = <p className="py-2.5 text-center text-sm text-muted">{isCurrent ? "You're on this plan" : "Always available"}</p>;
           else if (!canPay) action = <p className="py-2.5 text-center text-sm text-muted">{isCurrent ? "Your current plan" : "Ask a company admin to change the plan."}</p>;
           else if (t === "enterprise") action = isCurrent
             ? <p className="py-2.5 text-center text-sm text-muted">Your current plan</p>

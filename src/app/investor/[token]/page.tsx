@@ -7,6 +7,7 @@ import { shareMeta } from "@/lib/share-meta";
 import { VerifiedTick } from "@/components/verified-tick";
 import { cn, day } from "@/lib/format";
 import { InvestorChoice } from "./choice";
+import { InvestorProfile } from "./profile";
 
 const valid = (t: string) => /^[A-Za-z0-9_-]{24,64}$/.test(t);
 
@@ -53,8 +54,17 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const { sector } = await searchParams;
   if (!valid(token)) notFound();
   const db = createAdminClient();
-  const { data: inv } = await db.from("investors").select("id, name, kind, sectors, stages, ticket, countries, logo_url, contact_name, active").eq("portal_token", token).maybeSingle();
-  if (!inv || !inv.active) notFound();
+  const { data: inv } = await db.from("investors").select("id, name, kind, sectors, stages, ticket, countries, logo_url, contact_name, email, about, website, active, deletion_requested_at").eq("portal_token", token).maybeSingle();
+  if (!inv) notFound();
+  if (inv.deletion_requested_at || !inv.active) {
+    return (
+      <main className="mx-auto max-w-lg px-5 py-24 text-center">
+        <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="mx-auto h-6 w-auto" />
+        <h1 className="mt-10 text-2xl font-semibold tracking-tight">{inv.deletion_requested_at ? "Your profile is being deleted" : "This page is paused"}</h1>
+        <p className="mt-2 text-sm text-muted">{inv.deletion_requested_at ? "We received your request and will delete your profile within 30 days. Changed your mind? Email hello@dhowpartners.com." : "Dhow Partners has paused this page. Email hello@dhowpartners.com if you'd like it back."}</p>
+      </main>
+    );
+  }
 
   const [{ data: asks }, { data: listed }, { data: answers }] = await Promise.all([
     db.from("member_requests").select(`note, created_at, organizations(${CO})`).eq("kind", "investor_intro").eq("target_id", inv.id).neq("status", "declined").order("created_at", { ascending: false }),
@@ -100,6 +110,8 @@ export default async function InvestorPortal({ params, searchParams }: { params:
           ) : null}
         </section>
 
+        <InvestorProfile token={token} p={{ name: inv.name, contact_name: inv.contact_name, email: inv.email, about: inv.about, ticket: inv.ticket, countries: inv.countries, website: inv.website, sectors: (inv.sectors as string[]) ?? [], stages: (inv.stages as string[]) ?? [], logo_url: inv.logo_url }} />
+
         <section>
           <h2 className="text-xl font-semibold tracking-tight">Asked to meet you</h2>
           <p className="mt-1 text-sm text-muted">These companies asked Dhow Partners for an introduction to {inv.name}.</p>
@@ -107,7 +119,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {asked.map((a) => <CompanyCard key={a.organizations!.id} c={a.organizations!} token={token} current={answer.get(a.organizations!.id)} note={a.note} asked={day(a.created_at)} />)}
             </div>
-          ) : <p className="mt-5 rounded-[1.5rem] border border-dashed border-line px-6 py-8 text-center text-sm text-muted">No requests yet. When a company asks to meet you, it shows here.</p>}
+          ) : <p className="mt-5 rounded-[1.5rem] border border-dashed border-line px-6 py-8 text-center text-sm text-muted">No requests yet. When a company asks to meet you, it shows here{inv.email ? " and we email you" : ""}.</p>}
         </section>
 
         <section>

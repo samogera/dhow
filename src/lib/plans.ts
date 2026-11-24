@@ -38,6 +38,9 @@ export const TIERS: Record<Tier, {
   },
 };
 
+/** Paid membership opens when MEMBERSHIP_PAYMENTS_OPEN=1 is set in Vercel. Until then plans show "Starting soon". */
+export const membershipOpen = () => process.env.MEMBERSHIP_PAYMENTS_OPEN === "1";
+
 export const TIER_ORDER: Tier[] = ["free", "basic", "premium", "enterprise"];
 export const PAYABLE = ["basic", "premium"] as const;
 export type Payable = (typeof PAYABLE)[number];

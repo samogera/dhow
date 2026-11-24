@@ -62,8 +62,31 @@ export async function makeRequest(_: RequestState, fd: FormData): Promise<Reques
       `Reach them at ${m.user.email ?? "-"}${m.profile?.phone ? ` or ${m.profile.phone}` : ""}.`,
     ], { label: "Open requests", href: `${appUrl()}/admin/requests` }),
   }));
+  if (p.data.kind === "investor_intro") after(() => emailInvestor(p.data.target_id, m.org.name).catch(() => null));
   after(() => notifyStaff(["admin"], `${m.org.name}: ${k.title.toLowerCase()}`, [`${who} at ${m.org.name} asked for ${k.title.toLowerCase()}: ${targetName}.`, ...(p.data.note ? [`"${p.data.note}"`] : [])],
     { label: "Open requests", href: `${appUrl()}/admin/requests` }).catch(() => null));
   tick("done");
   return { ok: k.done };
+}
+
+/** Tells an investor (if we have their email) that a verified company asked to meet them, with a link to their private page. */
+async function emailInvestor(investorId: string, company: string) {
+  const db = createAdminClient();
+  const { data: inv } = await db.from("investors").select("id, name, email, contact_name, portal_token, active").eq("id", investorId).maybeSingle();
+  if (!inv?.email || !inv.active) return;
+  let token = inv.portal_token as string | null;
+  if (!token) {
+    const { randomBytes } = await import("node:crypto");
+    token = randomBytes(24).toString("base64url");
+    await db.from("investors").update({ portal_token: token }).eq("id", inv.id);
+  }
+  const first = (inv.contact_name ?? "").split(" ")[0] || "there";
+  await sendEmail({
+    template: "investor_intro_request", to: inv.email, replyTo: process.env.HELP_INBOX ?? "hello@dhowpartners.com",
+    subject: `${company} would like to meet ${inv.name}`,
+    html: emailLayout(`Hello ${first}`, [
+      `${company}, a company in the Dhow Partners network, asked us to introduce them to ${inv.name}.`,
+      "Open your private page to see their profile and note, then tap I'm interested or Not now. We make the introduction when you're ready.",
+    ], { label: "See the company", href: `${appUrl()}/investor/${token}` }),
+  });
 }

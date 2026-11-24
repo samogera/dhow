@@ -3,7 +3,7 @@ import { isOrgAdmin, requireMember } from "@/lib/auth";
 import { confirmPaystack } from "@/lib/payments";
 import { Meter, PageHeader } from "@/components/ui";
 import { SettingsShell } from "@/components/settings-tabs";
-import { TIERS, tierOf } from "@/lib/plans";
+import { TIERS, membershipOpen, tierOf } from "@/lib/plans";
 import { bytes, cn, day } from "@/lib/format";
 import { PlanPicker } from "./picker";
 import { cancelPlan } from "@/actions/member";
@@ -78,11 +78,20 @@ export default async function Plans({ searchParams }: { searchParams: Promise<{ 
         </div>
       </section>
 
+      {!membershipOpen() ? (
+        <div className="mb-6 flex flex-wrap items-center gap-4 rounded-[1.5rem] bg-navy-900 px-6 py-5 text-white">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold tracking-wide text-mint uppercase">Membership is starting soon</p>
+            <p className="mt-1 text-sm text-white/80">Paid plans open after this round of applications. Apply now and accepted members get their next steps by email. Everything on the free plan works today.</p>
+          </div>
+          <a href="https://dhowpartners.com/apply" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-navy-900 hover:bg-mint-100">Apply for membership</a>
+        </div>
+      ) : null}
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-semibold tracking-tight">Membership plans</h2>
         <p className="mt-1 text-sm text-muted">Pay by M-Pesa or card, monthly or yearly. No auto-renewal: we remind you before it ends.</p>
       </div>
-      <PlanPicker current={current} canPay={isOrgAdmin(role)} until={org.plan_until ?? null} off={off} cancelled={Boolean(org.plan_cancelled_at)} />
+      <PlanPicker open={membershipOpen()} current={current} canPay={isOrgAdmin(role)} until={org.plan_until ?? null} off={off} cancelled={Boolean(org.plan_cancelled_at)} />
       </SettingsShell>
     </>
   );

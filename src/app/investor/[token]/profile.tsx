@@ -1,7 +1,7 @@
 "use client";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Pencil, Trash2, X } from "lucide-react";
+import { CheckCircle2, Eye, Pencil, Trash2, X } from "lucide-react";
 import { INVESTOR_KIND, INSTRUMENT_HINT } from "@/lib/investors";
 import { requestInvestorDeletion, saveInvestorProfile, type InvestorState } from "@/actions/investor-portal";
 
@@ -9,7 +9,8 @@ type P = { name: string; kind: string | null; contact_role: string | null; instr
   contact_name: string | null; email: string | null; about: string | null; ticket: string | null; countries: string | null; website: string | null; sectors: string[]; stages: string[]; logo_url: string | null };
 
 /** The investor keeps their own profile current, and can ask us to delete it. */
-export function InvestorProfile({ token, p }: { token: string; p: P }) {
+export function InvestorProfile({ token, p, preview, missing }: { token: string; p: P; preview: ReactNode; missing: string[] }) {
+  const [peek, setPeek] = useState(false);
   const [open, setOpen] = useState(false);
   const [state, action, busy] = useActionState<InvestorState, FormData>(saveInvestorProfile, {});
   const [del, delAction, deleting] = useActionState<InvestorState, FormData>(requestInvestorDeletion, {});
@@ -24,6 +25,12 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
     const t = setTimeout(() => setSaved(false), 4000);
     return () => clearTimeout(t);
   }, [state, router]);
+  useEffect(() => {
+    if (!peek) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setPeek(false); };
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [peek]);
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -44,6 +51,35 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
         {saved ? <span className="inline-flex items-center gap-1.5 text-sm text-green"><CheckCircle2 className="size-4" />Saved</span> : null}
         {!open ? <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-medium hover:bg-sunken"><Pencil className="size-4" />Edit profile</button> : null}
       </div>
+
+      {missing.length ? (
+        <div className="mt-5 rounded-2xl bg-sunken px-4 py-3.5 text-sm">
+          <p className="font-medium text-ink">Finish your profile so companies can see you clearly</p>
+          <p className="mt-0.5 text-muted">Still to add: {missing.join(", ")}.</p>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setPeek(true)} className="mt-5 flex w-full items-center justify-between gap-3 rounded-2xl bg-navy-50 px-4 py-3.5 text-left text-sm ring-1 ring-navy-100 transition hover:bg-navy-100/60">
+          <span className="flex items-center gap-3"><Eye className="size-4 text-navy-700" /><span><span className="font-medium text-navy-900">See how companies see you</span><span className="block text-muted">Your card on the members&apos; Investors page</span></span></span>
+          <span className="text-navy-600">Preview →</span>
+        </button>
+      )}
+
+      {peek ? (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <button type="button" aria-label="Close" onClick={() => setPeek(false)} className="absolute inset-0 bg-navy-950/50 backdrop-blur-[2px]" />
+          <div role="dialog" aria-modal="true" aria-label="How companies see you" className="relative w-full max-w-md rounded-[1.75rem] bg-canvas p-4 shadow-2xl sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3 px-1">
+              <div>
+                <p className="font-semibold tracking-tight">How companies see you</p>
+                <p className="text-sm text-muted">Growth members see this card and can ask for an introduction. Your email and phone stay private.</p>
+              </div>
+              <button type="button" onClick={() => setPeek(false)} aria-label="Close" className="grid size-9 shrink-0 place-items-center rounded-lg text-muted hover:bg-white hover:text-ink"><X className="size-5" /></button>
+            </div>
+            {preview}
+            <button type="button" onClick={() => { setPeek(false); setOpen(true); }} className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-medium hover:bg-sunken"><Pencil className="size-4" />Edit what they see</button>
+          </div>
+        </div>
+      ) : null}
 
       {open ? (
         <div className="fixed inset-0 z-50 flex justify-end">

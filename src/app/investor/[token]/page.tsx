@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Banknote, Building2, Clock3, CalendarDays, Globe2, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { Banknote, Building2, Clock3, CalendarDays, Globe2, Lock, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { INVESTOR_KIND, membershipOpen, membershipOpensAt } from "@/lib/investors";
 import { InvestorNotifications } from "./notifications";
+import { InvestorCard } from "@/components/investor-card";
 import type { InvestorNotice } from "@/actions/investor-portal";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { shareMeta } from "@/lib/share-meta";
@@ -95,6 +96,14 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const countryList: string[] = String(inv.countries ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
   const kind = inv.kind ? INVESTOR_KIND[inv.kind] ?? null : null;
   const instrumentList = ((inv.instruments as string[] | null) ?? []).filter(Boolean);
+  const missing = [
+    !inv.about && "what you look for", !inv.ticket && "ticket size", !sectorList.length && "sectors",
+    !stageList.length && "stages", !countryList.length && "countries", !inv.logo_url && "logo",
+  ].filter(Boolean) as string[];
+  const preview = (
+    <InvestorCard i={{ name: inv.name, kind: inv.kind, about: inv.about, sectors: sectorList, stages: stageList, instruments: instrumentList, ticket: inv.ticket, countries: inv.countries, logo_url: inv.logo_url }}
+      footer={<span className="flex w-full items-center justify-center rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">Ask for an introduction</span>} />
+  );
   const isOpen = membershipOpen();
   const opensAt = membershipOpensAt();
   const opensLabel = opensAt ? opensAt.toLocaleString("en-GB", { timeZone: "Africa/Nairobi", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }) : null;
@@ -109,29 +118,29 @@ export default async function InvestorPortal({ params, searchParams }: { params:
       </header>
       <main className="mx-auto max-w-6xl space-y-6 px-3 py-6 sm:space-y-10 sm:px-5 sm:py-10">
         <section className="overflow-hidden rounded-[1.5rem] bg-white sm:rounded-[2rem] shadow-[0_1px_2px_rgba(2,34,58,0.05),0_30px_60px_-30px_rgba(2,34,58,0.25)] ring-1 ring-line">
-          <div className="relative bg-navy-950 px-5 pt-6 pb-8 text-white sm:px-12 sm:pt-10 sm:pb-12">
-            <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_90%_at_100%_0%,rgba(99,184,168,0.16),transparent_65%)]" />
-            <div className="relative flex items-center gap-4">
-              {inv.logo_url ? <span className="flex h-12 shrink-0 items-center rounded-xl bg-white px-3 sm:h-14 sm:px-4"><img src={inv.logo_url} alt={`${inv.name} logo`} className="h-7 w-auto max-w-[8.5rem] object-contain sm:h-8 sm:max-w-[10rem]" /></span> : null}
-              <div className="leading-tight">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/45">Prepared for</p>
-                <p className="mt-1 text-[15px] font-medium text-white sm:text-base">{inv.name}</p>
-              </div>
+          <div className="relative overflow-hidden bg-[linear-gradient(135deg,#f9fbfc_0%,#eef4f8_55%,#e7f3ef_100%)] px-5 pt-7 pb-8 sm:px-12 sm:pt-11 sm:pb-12">
+            <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-navy-900 via-navy-500 to-green" />
+            <span aria-hidden className="pointer-events-none absolute -top-32 -right-24 size-[26rem] rounded-full bg-mint/15 blur-3xl" />
+            <div className="relative flex flex-wrap items-center justify-between gap-3">
+              <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-navy-700">
+                <span aria-hidden className="h-px w-7 bg-navy-700/40" />Prepared for {inv.name}
+              </p>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-navy-700 ring-1 ring-navy-100"><Lock className="size-3" />Private briefing</span>
             </div>
             <div className="relative mt-8 grid gap-6 sm:mt-10 sm:gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
-                <h1 className="max-w-2xl text-[1.85rem] leading-[1.1] font-semibold tracking-[-0.025em] sm:text-5xl">Companies you may want to meet</h1>
-                <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/60 sm:mt-4 sm:text-[15px]">Verified businesses from the Dhow Partners network, matched to your mandate. Say you&apos;re interested and we&apos;ll make a warm introduction. Contact details are shared only when both sides agree.</p>
+                <h1 className="max-w-2xl text-[1.85rem] leading-[1.1] font-semibold tracking-[-0.025em] text-navy-950 sm:text-5xl">Companies you may want to meet</h1>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink/65 sm:mt-4 sm:text-[15px]">Verified businesses from the Dhow Partners network, matched to your mandate. Say you&apos;re interested and we&apos;ll make a warm introduction. Contact details are shared only when both sides agree.</p>
               </div>
-              <dl className="grid w-full grid-cols-2 divide-x sm:flex sm:w-fit divide-white/10 rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
-                <div className="px-4 py-3.5 sm:px-6 sm:py-4"><dt className="text-xs text-white/50">Asked to meet you</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{asked.length}</dd></div>
-                <div className="px-4 py-3.5 sm:px-6 sm:py-4"><dt className="text-xs text-white/50">You&apos;re interested in</dt><dd className="mt-1 text-3xl font-semibold tabular-nums">{interested}</dd></div>
+              <dl className="grid w-full grid-cols-2 divide-x divide-navy-100 rounded-2xl bg-white/80 shadow-[0_1px_2px_rgba(2,34,58,0.04)] ring-1 ring-navy-100 backdrop-blur-sm sm:flex sm:w-fit">
+                <div className="px-4 py-3.5 sm:px-6 sm:py-4"><dt className="text-xs text-muted">Asked to meet you</dt><dd className="mt-1 text-3xl font-semibold text-navy-900 tabular-nums">{asked.length}</dd></div>
+                <div className="px-4 py-3.5 sm:px-6 sm:py-4"><dt className="text-xs text-muted">You&apos;re interested in</dt><dd className="mt-1 text-3xl font-semibold text-navy-900 tabular-nums">{interested}</dd></div>
               </dl>
             </div>
           </div>
 
           {hasFocus ? (
-            <div className="px-5 py-6 sm:px-12 sm:py-9">
+            <div className="border-t border-line px-5 py-6 sm:px-12 sm:py-9">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-faint">Your mandate</p>
               <dl className="mt-4 grid divide-y divide-line sm:mt-6 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-8 sm:divide-y-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,1.2fr)_minmax(0,0.7fr)]">
                 {inv.ticket || kind || instrumentList.length ? (
@@ -172,7 +181,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
 
         <InvestorNotifications token={token} initial={(feed ?? []) as InvestorNotice[]} email={inv.email} />
 
-        <InvestorProfile token={token} p={{ name: inv.name, kind: inv.kind, contact_role: inv.contact_role, instruments: instrumentList, phone: settings?.phone ?? null,
+        <InvestorProfile token={token} preview={preview} missing={missing} p={{ name: inv.name, kind: inv.kind, contact_role: inv.contact_role, instruments: instrumentList, phone: settings?.phone ?? null,
           alerts: { alert_new_request: settings?.alert_new_request ?? true, alert_intro_update: settings?.alert_intro_update ?? true, alert_new_companies: settings?.alert_new_companies ?? true },
           contact_name: inv.contact_name, email: inv.email, about: inv.about, ticket: inv.ticket, countries: inv.countries, website: inv.website, sectors: (inv.sectors as string[]) ?? [], stages: (inv.stages as string[]) ?? [], logo_url: inv.logo_url }} />
 

@@ -111,11 +111,11 @@ export default async function InvestorPortal({ params, searchParams }: { params:
         <section className="overflow-hidden rounded-[1.5rem] bg-white sm:rounded-[2rem] shadow-[0_1px_2px_rgba(2,34,58,0.05),0_30px_60px_-30px_rgba(2,34,58,0.25)] ring-1 ring-line">
           <div className="relative bg-navy-950 px-5 pt-6 pb-8 text-white sm:px-12 sm:pt-10 sm:pb-12">
             <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_90%_at_100%_0%,rgba(99,184,168,0.16),transparent_65%)]" />
-            <div className="relative flex items-center gap-3">
-              {inv.logo_url ? <span className="grid size-10 place-items-center rounded-xl bg-white p-1.5"><img src={inv.logo_url} alt="" className="max-h-full max-w-full object-contain" /></span> : null}
+            <div className="relative flex items-center gap-4">
+              {inv.logo_url ? <span className="flex h-12 shrink-0 items-center rounded-xl bg-white px-3 sm:h-14 sm:px-4"><img src={inv.logo_url} alt={`${inv.name} logo`} className="h-7 w-auto max-w-[8.5rem] object-contain sm:h-8 sm:max-w-[10rem]" /></span> : null}
               <div className="leading-tight">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/45">Prepared for</p>
-                <p className="mt-0.5 text-[15px] font-medium text-white">{inv.name}</p>
+                <p className="mt-1 text-[15px] font-medium text-white sm:text-base">{inv.name}</p>
               </div>
             </div>
             <div className="relative mt-8 grid gap-6 sm:mt-10 sm:gap-8 lg:grid-cols-[1fr_auto] lg:items-end">

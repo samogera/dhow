@@ -92,7 +92,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const interested = [...answer.values()].filter((v) => v === "interested").length;
   const sectorList = ((inv.sectors as string[]) ?? []).filter(Boolean);
   const stageList = ((inv.stages as string[]) ?? []).filter(Boolean);
-  const countryList = (inv.countries ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
+  const countryList: string[] = String(inv.countries ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
   const kind = inv.kind ? INVESTOR_KIND[inv.kind] ?? null : null;
   const instrumentList = ((inv.instruments as string[] | null) ?? []).filter(Boolean);
   const hasFocus = Boolean(inv.ticket || kind || sectorList.length || stageList.length || countryList.length);

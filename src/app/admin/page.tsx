@@ -32,6 +32,9 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const vs = (k: string[]) => (orgs.data ?? []).filter((o) => k.includes(o.verification_status)).length;
 
   const p = pos.data ?? { received_kes: 0, owed_by_clients_kes: 0, paid_out_kes: 0, owed_to_partners_kes: 0 };
+  // Say which bill is next, so a repeating salary created for next month isn't a surprise.
+  const { data: nextBill } = await db.from("bills").select("description, payee, due_date, amount_kes, paid_kes").neq("status", "paid").order("due_date", { ascending: true, nullsFirst: false }).limit(1).maybeSingle();
+  const billNote = nextBill ? `Next: ${nextBill.description}${nextBill.due_date ? `, due ${day(nextBill.due_date)}` : ""}` : "Nothing to pay";
   const net = Number(p.received_kes) + Number(p.owed_by_clients_kes) - Number(p.paid_out_kes) - Number(p.owed_to_partners_kes);
   const pipeline = (leads.data ?? []).reduce((sum, l) => sum + Number(l.est_value_kes ?? 0), 0);
 
@@ -58,7 +61,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Stat highlight icon={Scale} label="Net position" value={kes(net)} note="After what we owe and are owed" />
         <Stat icon={HandCoins} href="/admin/finance" label="Owed to us" value={kes(p.owed_by_clients_kes)} note="Unpaid client invoices" />
-        <Stat icon={Wallet} href="/admin/finance" label="Bills to pay" value={kes(p.owed_to_partners_kes)} note="Expenses not yet paid" />
+        <Stat icon={Wallet} href="/admin/finance?tab=bills" label="Bills to pay" value={kes(p.owed_to_partners_kes)} note={billNote} />
         <Stat icon={Target} href="/admin/leads" label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />
       </div>
 

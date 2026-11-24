@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Banknote, Building2, CalendarDays, Globe2, Landmark, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
-import { INVESTOR_KIND } from "@/lib/investors";
+import { Banknote, Building2, Clock3, CalendarDays, Globe2, Landmark, MapPin, Sprout, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { INVESTOR_KIND, MEMBERSHIP_OPEN } from "@/lib/investors";
+import { InvestorNotifications } from "./notifications";
+import type { InvestorNotice } from "@/actions/investor-portal";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { shareMeta } from "@/lib/share-meta";
 import { VerifiedTick } from "@/components/verified-tick";
@@ -60,7 +62,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const { sector } = await searchParams;
   if (!valid(token)) notFound();
   const db = createAdminClient();
-  const { data: inv } = await db.from("investors").select("id, name, kind, sectors, stages, ticket, countries, logo_url, contact_name, email, about, website, active, deletion_requested_at").eq("portal_token", token).maybeSingle();
+  const { data: inv } = await db.from("investors").select("id, name, kind, sectors, stages, ticket, countries, instruments, contact_role, logo_url, contact_name, email, about, website, active, deletion_requested_at").eq("portal_token", token).maybeSingle();
   if (!inv) notFound();
   if (inv.deletion_requested_at || !inv.active) {
     return (
@@ -72,10 +74,12 @@ export default async function InvestorPortal({ params, searchParams }: { params:
     );
   }
 
-  const [{ data: asks }, { data: listed }, { data: answers }] = await Promise.all([
+  const [{ data: asks }, { data: listed }, { data: answers }, { data: settings }, { data: feed }] = await Promise.all([
     db.from("member_requests").select(`note, created_at, organizations(${CO})`).eq("kind", "investor_intro").eq("target_id", inv.id).neq("status", "declined").order("created_at", { ascending: false }),
     db.from("organizations").select(CO).eq("listed", true).eq("verification_status", "verified").order("name").limit(300),
     db.from("investor_interest").select("org_id, response").eq("investor_id", inv.id),
+    db.from("investor_settings").select("phone, alert_new_request, alert_intro_update, alert_new_companies").eq("investor_id", inv.id).maybeSingle(),
+    db.from("investor_notifications").select("id, kind, title, body, emailed, read_at, created_at").eq("investor_id", inv.id).order("created_at", { ascending: false }).limit(50),
   ]);
   const answer = new Map((answers ?? []).map((a) => [a.org_id as string, a.response as "interested" | "not_now"]));
   const asked = ((asks ?? []) as unknown as { note: string | null; created_at: string; organizations: Co | null }[]).filter((a) => a.organizations);
@@ -90,20 +94,21 @@ export default async function InvestorPortal({ params, searchParams }: { params:
   const stageList = ((inv.stages as string[]) ?? []).filter(Boolean);
   const countryList = (inv.countries ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
   const kind = inv.kind ? INVESTOR_KIND[inv.kind] ?? null : null;
+  const instrumentList = ((inv.instruments as string[] | null) ?? []).filter(Boolean);
   const hasFocus = Boolean(inv.ticket || kind || sectorList.length || stageList.length || countryList.length);
 
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 pt-7">
         <img src="/brand/wordmark-navy.png" alt="Dhow Partners" className="h-6 w-auto" />
-        <a href="mailto:hello@dhowpartners.com" className="text-sm font-medium text-navy-600">Contact us</a>
+        <Link href={`/investor/${token}/contact`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Contact us</Link>
       </header>
       <main className="mx-auto max-w-6xl space-y-10 px-5 py-10">
         <section className="relative overflow-hidden rounded-[2rem] bg-navy-900 px-6 py-8 text-white sm:px-10 sm:py-10">
           <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-mint/20 blur-3xl" />
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm text-white/70">Prepared for {inv.contact_name ? `${inv.contact_name}, ` : ""}{inv.name}</p>
+              <p className="text-sm text-white/70">Prepared for <span className="font-semibold text-white">{inv.name}</span></p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Companies you may want to meet</h1>
               <p className="mt-2 max-w-2xl text-sm text-white/75">Verified businesses in Kenya, from the Dhow Partners network. Tap <b>I&apos;m interested</b> and we&apos;ll make a warm introduction. Contact details are shared once both sides agree.</p>
             </div>
@@ -118,6 +123,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
                 <div className="bg-navy-900/95 p-5 lg:flex-[1.1]">
                   <FocusLabel icon={Banknote}>Ticket size</FocusLabel>
                   {inv.ticket ? <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">{inv.ticket}</p> : <p className="mt-2 text-sm text-white/60">Discussed per deal</p>}
+                  {instrumentList.length ? <p className="mt-1.5 text-sm text-white/75">{instrumentList.join(" · ")}</p> : null}
                   {kind ? <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber/15 px-2.5 py-0.5 text-[11px] font-medium text-amber ring-1 ring-amber/30"><Landmark className="size-3" />{kind}</p> : null}
                 </div>
               ) : null}
@@ -153,7 +159,11 @@ export default async function InvestorPortal({ params, searchParams }: { params:
           ) : null}
         </section>
 
-        <InvestorProfile token={token} p={{ name: inv.name, contact_name: inv.contact_name, email: inv.email, about: inv.about, ticket: inv.ticket, countries: inv.countries, website: inv.website, sectors: (inv.sectors as string[]) ?? [], stages: (inv.stages as string[]) ?? [], logo_url: inv.logo_url }} />
+        <InvestorNotifications token={token} initial={(feed ?? []) as InvestorNotice[]} email={inv.email} />
+
+        <InvestorProfile token={token} p={{ name: inv.name, kind: inv.kind, contact_role: inv.contact_role, instruments: instrumentList, phone: settings?.phone ?? null,
+          alerts: { alert_new_request: settings?.alert_new_request ?? true, alert_intro_update: settings?.alert_intro_update ?? true, alert_new_companies: settings?.alert_new_companies ?? true },
+          contact_name: inv.contact_name, email: inv.email, about: inv.about, ticket: inv.ticket, countries: inv.countries, website: inv.website, sectors: (inv.sectors as string[]) ?? [], stages: (inv.stages as string[]) ?? [], logo_url: inv.logo_url }} />
 
         <section>
           <h2 className="text-xl font-semibold tracking-tight">Asked to meet you</h2>
@@ -172,6 +182,16 @@ export default async function InvestorPortal({ params, searchParams }: { params:
               <p className="mt-1 text-sm text-muted">Businesses that are Dhow Verified and chose to be found.</p>
             </div>
           </div>
+          {!MEMBERSHIP_OPEN ? (
+            <div className="mt-5 flex flex-col items-start gap-4 rounded-[1.5rem] bg-mint-100/60 p-6 ring-1 ring-mint/30 sm:flex-row sm:items-center sm:p-7">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-green ring-1 ring-mint/40"><Clock3 className="size-5" /></span>
+              <div className="flex-1">
+                <p className="font-semibold text-navy-900">Membership hasn&apos;t started yet</p>
+                <p className="mt-1 text-sm text-ink/75">We&apos;re verifying the first member companies now. When membership opens, companies that chose to be found will appear here, in your sectors first{settings?.alert_new_companies === false ? "" : ", and we'll let you know"}.</p>
+              </div>
+              <Link href={`/investor/${token}/contact?topic=pipeline`} className="shrink-0 rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium hover:bg-sunken">Ask about the pipeline</Link>
+            </div>
+          ) : (<>
           {sectors.length > 1 ? (
             <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5 sm:mx-0 sm:flex-wrap sm:px-0">
               <Link href={`/investor/${token}`} className={cn("shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium", !sector ? "border-navy-900 bg-navy-900 text-white" : "border-line bg-white text-ink/70")}>All</Link>
@@ -190,6 +210,7 @@ export default async function InvestorPortal({ params, searchParams }: { params:
               <p className="mt-2 text-sm text-muted">New verified companies join every week. Check back soon.</p>
             </div>
           )}
+          </>)}
         </section>
       </main>
       <footer className="pb-10 text-center text-xs text-faint">Dhow Partners · Nairobi, Kenya · This page is private to {inv.name}. Please don&apos;t share it.</footer>

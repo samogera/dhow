@@ -4,6 +4,7 @@ import { z } from "zod";
 import { staffOrNull } from "@/lib/auth";
 import { friendlyError } from "@/lib/form-errors";
 import { isFile, uploadImage } from "@/lib/storage";
+import { notifyInvestor } from "@/lib/investor-notify";
 import type { ActionState } from "@/components/forms";
 
 const text = (max = 500) => z.string().trim().max(max).optional().transform((v) => v || null);
@@ -51,7 +52,17 @@ export async function setRequestStatus(fd: FormData) {
   if (!s) return;
   const p = z.object({ id: z.string().uuid(), status: z.enum(["new", "in_progress", "done", "declined"]), staff_note: text(1000) }).safeParse(Object.fromEntries(fd));
   if (!p.success) return;
+  const { data: before } = await s.supabase.from("member_requests").select("kind, status, target_id, org_id, organizations(name)").eq("id", p.data.id).maybeSingle();
   await s.supabase.from("member_requests").update({ status: p.data.status, ...(p.data.staff_note !== null ? { staff_note: p.data.staff_note } : {}) }).eq("id", p.data.id);
+  // Tell the investor when we've made their introduction.
+  if (before?.kind === "investor_intro" && p.data.status === "done" && before.status !== "done") {
+    const company = (before as unknown as { organizations: { name: string } | null }).organizations?.name ?? "The company";
+    await notifyInvestor(before.target_id as string, {
+      kind: "intro", title: `Introduction made: ${company}`, orgId: before.org_id as string, body: p.data.staff_note,
+      email: { alert: "alert_intro_update", subject: `Your introduction to ${company}`, cta: "Open your page",
+        paragraphs: [`We've introduced you to ${company}. Look out for an email from us with both sides' contact details.`, ...(p.data.staff_note ? [p.data.staff_note] : [])] },
+    }).catch(() => null);
+  }
   revalidatePath("/admin/requests");
 }
 

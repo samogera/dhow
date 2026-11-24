@@ -1,9 +1,11 @@
 "use client";
 import { useActionState, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { INVESTOR_KIND, INSTRUMENT_HINT } from "@/lib/investors";
 import { requestInvestorDeletion, saveInvestorProfile, type InvestorState } from "@/actions/investor-portal";
 
-type P = { name: string; contact_name: string | null; email: string | null; about: string | null; ticket: string | null; countries: string | null; website: string | null; sectors: string[]; stages: string[]; logo_url: string | null };
+type P = { name: string; kind: string | null; contact_role: string | null; instruments: string[]; phone: string | null; alerts: { alert_new_request: boolean; alert_intro_update: boolean; alert_new_companies: boolean };
+  contact_name: string | null; email: string | null; about: string | null; ticket: string | null; countries: string | null; website: string | null; sectors: string[]; stages: string[]; logo_url: string | null };
 
 /** The investor keeps their own profile current, and can ask us to delete it. */
 export function InvestorProfile({ token, p }: { token: string; p: P }) {
@@ -28,15 +30,33 @@ export function InvestorProfile({ token, p }: { token: string; p: P }) {
       {open ? (
         <form action={action} className="mt-5 grid gap-3 sm:grid-cols-2">
           <input type="hidden" name="token" value={token} />
-          <label className="text-sm">Contact person<input name="contact_name" defaultValue={p.contact_name ?? ""} className={`${field} mt-1`} /></label>
-          <label className="text-sm">Email for alerts<input name="email" type="email" defaultValue={p.email ?? ""} placeholder="you@fund.com" className={`${field} mt-1`} /></label>
-          <label className="text-sm">Ticket size<input name="ticket" defaultValue={p.ticket ?? ""} placeholder="USD 50k to 500k" className={`${field} mt-1`} /></label>
-          <label className="text-sm">Where you invest<input name="countries" defaultValue={p.countries ?? ""} placeholder="Kenya, East Africa" className={`${field} mt-1`} /></label>
-          <label className="text-sm">Sectors <span className="text-muted">(separate with commas)</span><input name="sectors" defaultValue={p.sectors.join(", ")} className={`${field} mt-1`} /></label>
-          <label className="text-sm">Stages <span className="text-muted">(separate with commas)</span><input name="stages" defaultValue={p.stages.join(", ")} placeholder="Early, Growth" className={`${field} mt-1`} /></label>
-          <label className="text-sm sm:col-span-2">Website<input name="website" defaultValue={p.website ?? ""} placeholder="https://" className={`${field} mt-1`} /></label>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted sm:col-span-2">About {p.name}</p>
+          <label className="text-sm">Type of investor<select name="kind" defaultValue={p.kind ?? "fund"} className={`${field} mt-1`}>{Object.entries(INVESTOR_KIND).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+          <label className="text-sm">Website<input name="website" defaultValue={p.website ?? ""} placeholder="https://" className={`${field} mt-1`} /></label>
           <label className="text-sm sm:col-span-2">What you look for<textarea name="about" rows={3} maxLength={1200} defaultValue={p.about ?? ""} className={`${field} mt-1 min-h-0`} /></label>
           <label className="text-sm sm:col-span-2">Logo <span className="text-muted">(PNG or JPG, up to 3 MB)</span><input type="file" name="logo" accept="image/png,image/jpeg,image/webp" className="mt-1 block w-full text-sm text-muted" /></label>
+
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted sm:col-span-2">How you invest</p>
+          <label className="text-sm">Ticket size<input name="ticket" defaultValue={p.ticket ?? ""} placeholder="USD 50k to 500k" className={`${field} mt-1`} /></label>
+          <label className="text-sm">How you fund <span className="text-muted">(separate with commas)</span><input name="instruments" defaultValue={p.instruments.join(", ")} placeholder={INSTRUMENT_HINT} className={`${field} mt-1`} /></label>
+          <label className="text-sm">Sectors <span className="text-muted">(separate with commas)</span><input name="sectors" defaultValue={p.sectors.join(", ")} className={`${field} mt-1`} /></label>
+          <label className="text-sm">Stages <span className="text-muted">(separate with commas)</span><input name="stages" defaultValue={p.stages.join(", ")} placeholder="Early, Growth" className={`${field} mt-1`} /></label>
+          <label className="text-sm sm:col-span-2">Where you invest <span className="text-muted">(separate with commas)</span><input name="countries" defaultValue={p.countries ?? ""} placeholder="Kenya, Uganda" className={`${field} mt-1`} /></label>
+
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted sm:col-span-2">Your contact <span className="normal-case tracking-normal font-normal">· only Dhow Partners sees these</span></p>
+          <label className="text-sm">Contact person<input name="contact_name" defaultValue={p.contact_name ?? ""} className={`${field} mt-1`} /></label>
+          <label className="text-sm">Role<input name="contact_role" defaultValue={p.contact_role ?? ""} placeholder="Investment manager" className={`${field} mt-1`} /></label>
+          <label className="text-sm">Email for alerts<input name="email" type="email" defaultValue={p.email ?? ""} placeholder="you@fund.com" className={`${field} mt-1`} /></label>
+          <label className="text-sm">Phone<input name="phone" type="tel" defaultValue={p.phone ?? ""} placeholder="+254 700 000 000" className={`${field} mt-1`} /></label>
+
+          <fieldset className="mt-3 space-y-2 rounded-2xl bg-sunken p-4 sm:col-span-2">
+            <legend className="sr-only">Alerts</legend>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Email me when</p>
+            {([["alert_new_request", "A company asks to meet us"], ["alert_intro_update", "Dhow Partners makes an introduction"], ["alert_new_companies", "New companies in our sectors join (once membership opens)"]] as const).map(([k, label]) => (
+              <label key={k} className="flex items-center gap-2.5 text-sm"><input type="checkbox" name={k} defaultChecked={p.alerts[k]} className="size-4 accent-[var(--color-green)]" />{label}</label>
+            ))}
+            <p className="text-xs text-muted">Everything also shows under Notifications on this page, as it happens.</p>
+          </fieldset>
           {state.error ? <p className="text-sm text-bad sm:col-span-2">{state.error}</p> : state.ok ? <p className="text-sm text-green sm:col-span-2">{state.ok}</p> : null}
           <div className="flex items-center justify-end gap-3 sm:col-span-2">
             <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted hover:text-ink">Close</button>

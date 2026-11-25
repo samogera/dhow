@@ -100,11 +100,13 @@ async function visit(page, path, shotName) {
 
   await check("plans page shows Free, Startup, Growth and Enterprise", async () => {
     await go(page, `${BASE}/app/plans`);
-    for (const name of ["Startup", "Growth", "Enterprise", "Custom quote", "Monthly", "Yearly"]) {
+    for (const name of ["Startup", "Growth", "Enterprise", "Custom", "Monthly", "Yearly", "Compare every feature", "Cancel anytime"]) {
       if (!(await page.getByText(name, { exact: false }).first().isVisible())) throw new Error(`missing "${name}"`);
     }
     await page.getByRole("radio", { name: /Yearly/ }).click();
-    if (!(await page.getByText("KSh 50,000").first().isVisible())) throw new Error("yearly Growth price not shown");
+    if (!(await page.getByText("Billed KSh 50,000 once a year").first().isVisible())) throw new Error("yearly Growth price not shown");
+    await page.getByText("Compare every feature").click();
+    await page.screenshot({ path: `${OUT}/e2e-19b-plans-yearly.png`, fullPage: true });
   });
 
   await check("track an opportunity as Started", async () => {

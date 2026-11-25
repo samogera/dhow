@@ -783,6 +783,16 @@ async function teamName(email: string) {
   return data?.full_name ?? null;
 }
 
+/** Take back an invite sent by mistake. The link in their email then gives no staff access. */
+export async function cancelStaffInvite(fd: FormData) {
+  const s = await staffOrNull(["admin"]);
+  if (!s) return;
+  const email = z.string().trim().toLowerCase().email().safeParse(fd.get("email"));
+  if (!email.success) return;
+  await createAdminClient().from("staff_invites").delete().eq("email", email.data);
+  revalidatePath("/admin/team");
+}
+
 /** Send a pending invite again (for people invited before invite emails existed, or who lost it). */
 export async function resendStaffInvite(fd: FormData) {
   const s = await staffOrNull(["admin"]);

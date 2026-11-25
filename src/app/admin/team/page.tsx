@@ -3,7 +3,7 @@ import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/types";
 import { requireStaff } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ActionForm } from "@/components/forms";
-import { resendStaffInvite, setStaffRole } from "@/actions/admin";
+import { cancelStaffInvite, resendStaffInvite, setStaffRole } from "@/actions/admin";
 import { STAFF_ROLES } from "@/lib/staff-roles";
 import { deletePerson, savePerson } from "@/actions/profiles";
 import { Badge, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Table, Textarea } from "@/components/ui";
@@ -114,6 +114,12 @@ export default async function Team() {
                       <form action={resendStaffInvite}>
                         <input type="hidden" name="email" value={i.email} />
                         <SubmitButton className="text-xs font-medium text-navy-700 underline-offset-2 hover:underline">Resend invite</SubmitButton>
+                      </form>
+                    ) : null}
+                    {isAdmin ? (
+                      <form action={cancelStaffInvite}>
+                        <input type="hidden" name="email" value={i.email} />
+                        <SubmitButton className="text-xs font-medium text-red-600 underline-offset-2 hover:underline">Remove</SubmitButton>
                       </form>
                     ) : null}
                   </div>

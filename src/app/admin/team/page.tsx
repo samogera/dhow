@@ -3,7 +3,8 @@ import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/types";
 import { requireStaff } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ActionForm } from "@/components/forms";
-import { setStaffRole } from "@/actions/admin";
+import { resendStaffInvite, setStaffRole } from "@/actions/admin";
+import { STAFF_ROLES } from "@/lib/staff-roles";
 import { deletePerson, savePerson } from "@/actions/profiles";
 import { Badge, Card, CardHeader, Empty, Field, Input, PageHeader, Select, Table, Textarea } from "@/components/ui";
 import { Drawer } from "@/components/drawer";
@@ -33,12 +34,7 @@ function PersonFields({ p }: { p?: Person }) {
 
 export const metadata: Metadata = { title: "Team" };
 
-const ROLES = [
-  { value: "employee", label: "Employee", note: "Adds and updates clients, leads, projects and tasks. Can't delete, change the Dhow profile or see money. Finished tasks go to someone else to check." },
-  { value: "reviewer", label: "Reviewer", note: "Reviews documents and verifications, runs clients, leads, partners and projects." },
-  { value: "finance", label: "Finance", note: "Everything a reviewer can do, plus invoices, payments and bills." },
-  { value: "admin", label: "Director / owner", note: "Everything: deleting, the Dhow profile, money, plans and staff roles." },
-] as const;
+const ROLES = STAFF_ROLES;
 
 export default async function Team() {
   const s = await requireStaff();
@@ -111,7 +107,17 @@ export default async function Team() {
               <tr key={i.email}>
                 <td className="text-muted">Invited</td>
                 <td className="text-muted">{i.email}</td>
-                <td><Badge tone="warn">{i.role} · waiting for sign-up</Badge></td>
+                <td>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="warn">{STAFF_ROLE_LABEL[i.role as StaffRole] ?? i.role} · invited</Badge>
+                    {isAdmin ? (
+                      <form action={resendStaffInvite}>
+                        <input type="hidden" name="email" value={i.email} />
+                        <SubmitButton className="text-xs font-medium text-navy-700 underline-offset-2 hover:underline">Resend invite</SubmitButton>
+                      </form>
+                    ) : null}
+                  </div>
+                </td>
               </tr>
             ))}
           </Table>
@@ -121,8 +127,8 @@ export default async function Team() {
         </Card>
         {isAdmin ? (
           <Card className="self-start">
-            <CardHeader title="Give or change access" sub="Works before they sign up too: the role applies when they create their account." />
-            <ActionForm action={setStaffRole} submit="Save role">
+            <CardHeader title="Give or change access" sub="We email them an invite with what their role can do. If they have no account yet, the role applies when they create one with this email." />
+            <ActionForm action={setStaffRole} submit="Save and email them">
               <Field label="Email"><Input name="email" type="email" required /></Field>
               <Field label="Role">
                 <Select name="role" defaultValue="employee">

@@ -17,6 +17,8 @@ import { emailLayout, notifyOrg, sendEmail, notifyUser } from "@/lib/notify";
 import { kes } from "@/lib/format";
 import type { ActionState } from "@/components/forms";
 import { appUrl } from "@/lib/app-url";
+import { staffInvite, staffRoleChanged } from "@/lib/staff-emails";
+import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/types";
 
 // Every action checks the caller's staff role first. Most writes then go through
 // the caller's own client, so row-level security checks them a second time.
@@ -757,13 +759,41 @@ export async function setStaffRole(_: ActionState, fd: FormData): Promise<Action
     }
     const { error } = await db.from("staff_invites").upsert({ email: p.data.email, role: p.data.role, invited_by: s.user.id });
     if (error) return { error: "Couldn't save the invite. Please try again." };
+    const name = await teamName(p.data.email);
+    const role = p.data.role;
+    after(() => staffInvite({ to: p.data.email, role, name, inviter: s.profile?.full_name }).then(() => undefined));
     revalidatePath("/admin/team");
-    return { ok: `${p.data.email} will be ${p.data.role} as soon as they create an account with that email.` };
+    return { ok: `Invite emailed to ${p.data.email}. They'll be ${STAFF_ROLE_LABEL[role as StaffRole]} as soon as they create their account.` };
   }
   if (user.id === s.user.id && p.data.role !== "admin") return { error: "You can't remove your own admin role." };
+  const { data: before } = await db.from("profiles").select("full_name, staff_role").eq("id", user.id).single();
   await db.from("profiles").update({ staff_role: p.data.role === "none" ? null : p.data.role }).eq("id", user.id);
+  if (p.data.role !== "none" && before?.staff_role !== p.data.role) {
+    const role = p.data.role, to = p.data.email, name = before?.full_name;
+    // New to staff: the full welcome. Already staff: a short note about the new role.
+    after(() => (before?.staff_role ? staffRoleChanged({ to, role, name }) : staffInvite({ to, role, name, inviter: s.profile?.full_name, hasAccount: true })).then(() => undefined));
+  }
   revalidatePath("/admin/team");
-  return { ok: p.data.role === "none" ? `${p.data.email} is no longer staff.` : `${p.data.email} is now ${p.data.role}.` };
+  return { ok: p.data.role === "none" ? `${p.data.email} is no longer staff.` : `${p.data.email} is now ${STAFF_ROLE_LABEL[p.data.role as StaffRole]}. We've emailed them.` };
+}
+
+/** Name from the Team page's people, so the invite can greet them properly. */
+async function teamName(email: string) {
+  const { data } = await createAdminClient().from("team_people").select("full_name").ilike("email", email).limit(1).maybeSingle();
+  return data?.full_name ?? null;
+}
+
+/** Send a pending invite again (for people invited before invite emails existed, or who lost it). */
+export async function resendStaffInvite(fd: FormData) {
+  const s = await staffOrNull(["admin"]);
+  if (!s) return;
+  const email = z.string().trim().toLowerCase().email().safeParse(fd.get("email"));
+  if (!email.success) return;
+  const { data: inv } = await createAdminClient().from("staff_invites").select("role").eq("email", email.data).maybeSingle();
+  if (!inv) return;
+  await staffInvite({ to: email.data, role: inv.role, name: await teamName(email.data), inviter: s.profile?.full_name });
+  await createAdminClient().from("staff_invites").update({ created_at: new Date().toISOString() }).eq("email", email.data);
+  revalidatePath("/admin/team");
 }
 
 // ----------------------------------------------------------------- calendar

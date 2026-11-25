@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { guardMemberSide, requireUser } from "@/lib/auth";
 import { CenteredShell } from "@/components/centered-shell";
 import { OnboardingForm } from "./form";
@@ -8,6 +9,8 @@ export const metadata: Metadata = { title: "Set up your company" };
 export default async function Onboarding() {
   await guardMemberSide();
   const s = await requireUser();
+  // Invited staff skip company setup and go straight to the staff workspace.
+  if (s.profile?.staff_role) redirect("/admin");
   const first = s.profile?.full_name?.split(" ")[0];
   return (
     <CenteredShell logoHref="/app">

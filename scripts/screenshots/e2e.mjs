@@ -104,7 +104,7 @@ async function visit(page, path, shotName) {
       if (!(await page.getByText(name, { exact: false }).first().isVisible())) throw new Error(`missing "${name}"`);
     }
     await page.getByRole("radio", { name: /Yearly/ }).click();
-    if (!(await page.getByText("Billed KSh 50,000 once a year").first().isVisible())) throw new Error("yearly Growth price not shown");
+    if (!(await page.getByText("Billed KSh 50,000 a year").first().isVisible())) throw new Error("yearly Growth price not shown");
     await page.getByText("Compare every feature").click();
     await page.screenshot({ path: `${OUT}/e2e-19b-plans-yearly.png`, fullPage: true });
   });
@@ -251,8 +251,8 @@ async function visit(page, path, shotName) {
   await check("create an investor's private page and answer as the investor", async () => {
     await go(page, `${BASE}/admin/investors`);
     const card = page.locator("div.card, article").filter({ hasText: "Savannah Growth Fund" }).first();
-    await card.getByRole("button", { name: "Create their page" }).click();
-    await page.waitForTimeout(1500);
+    const make = card.getByRole("button", { name: "Create their page" });
+    if (await make.count()) { await make.click(); await page.waitForTimeout(1500); }
     await go(page, `${BASE}/admin/investors`);
     const href = await page.getByRole("link", { name: "Open it ↗" }).first().getAttribute("href");
     if (!href) throw new Error("no investor link");

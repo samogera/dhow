@@ -52,7 +52,7 @@ export function PlanPicker({ open = true, current, canPay, until, off }: { open?
       {msg.error ? <p className="mx-auto mb-4 max-w-xl rounded-2xl bg-bad/10 px-4 py-3 text-center text-sm text-bad">{msg.error}</p> : null}
       {msg.ok ? <p className="mx-auto mb-4 max-w-xl rounded-2xl bg-good/10 px-4 py-3 text-center text-sm text-good">{msg.ok}</p> : null}
 
-      <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {TIER_ORDER.map((t, i) => {
           const tier = TIERS[t];
           const h = HIGHLIGHTS[t];
@@ -75,44 +75,44 @@ export function PlanPicker({ open = true, current, canPay, until, off }: { open?
               ? <button type="button" onClick={applyEnterprise} disabled={!!busy} className={cn(btn, "border border-navy-900 text-navy-900 hover:bg-navy-900 hover:text-white")}>{busy === t ? "Sending…" : "Talk to us →"}</button>
               : <p className={cn(btn, "font-medium text-ink/50")}>Ask your company admin</p>;
           } else if (!open) {
-            action = <a href="https://dhowpartners.com/apply" target="_blank" rel="noopener noreferrer" className={cn(btn, featured ? "bg-navy-900 text-white hover:bg-navy-800" : "border border-line bg-white text-ink/80 hover:bg-sunken")}>Starting soon · Apply →</a>;
+            action = <a href="https://dhowpartners.com/apply" target="_blank" rel="noopener noreferrer" className={cn(btn, featured ? "bg-navy-900 text-white hover:bg-navy-800" : "border border-line bg-white text-ink/80 hover:bg-sunken")}>Apply · starting soon</a>;
           } else if (!canPay) {
             action = <p className={cn(btn, "font-medium text-ink/50")}>Ask your company admin</p>;
           } else {
             action = (
               <button type="button" onClick={() => pay(t)} disabled={!!busy} className={cn(btn, featured ? "bg-navy-900 text-white shadow-lg shadow-navy-900/20 hover:bg-navy-800" : "border border-navy-900 text-navy-900 hover:bg-navy-900 hover:text-white")}>
-                {busy === t ? "Opening checkout…" : `${i > rank ? h.cta : `Switch to ${tier.name}`} · ${kes(period === "yearly" ? tier.yearly! : monthly)}${period === "yearly" ? "/yr" : "/mo"} →`}
+                {busy === t ? "Opening checkout…" : `${i > rank ? h.cta : `Switch to ${tier.name}`} →`}
               </button>
             );
           }
 
           return (
             <div key={t} className={cn("relative flex flex-col rounded-[1.75rem] bg-white transition",
-              featured ? "ring-2 ring-navy-900 shadow-[0_30px_60px_-30px_rgba(13,28,41,0.45)] xl:-my-3" : isCurrent ? "ring-2 ring-green/60" : "ring-1 ring-line")}>
+              featured ? "ring-2 ring-navy-900 shadow-[0_30px_60px_-30px_rgba(13,28,41,0.45)] 2xl:-my-3" : isCurrent ? "ring-2 ring-green/60" : "ring-1 ring-line")}>
               {/* 3. The plan most companies should pick stands out */}
               {featured ? <div className="rounded-t-[1.6rem] bg-navy-900 py-1.5 text-center text-[11px] font-semibold tracking-[0.14em] text-white uppercase">Most popular</div> : null}
               <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-lg font-semibold">{tier.name}</p>
-                  {isCurrent ? <span className="rounded-full bg-mint-100 px-2.5 py-0.5 text-[11px] font-semibold text-green">Current</span>
-                    : saving ? <span className="rounded-full bg-mint-100 px-2.5 py-0.5 text-[11px] font-semibold text-green">Save {kes(saving)} a year</span> : null}
+                  {isCurrent ? <span className="rounded-full bg-mint-100 px-2.5 py-0.5 text-[11px] font-semibold text-green">Current</span> : null}
                 </div>
                 <p className="mt-1 min-h-10 text-sm text-muted">{tier.tagline}</p>
 
                 {/* 2. Big, easy-to-read price */}
-                <div className="mt-5 min-h-[5.5rem]">
+                <div className="mt-5 min-h-[7.5rem]">
                   {tier.monthly === null ? (
-                    <><p className="text-4xl font-semibold tracking-tight">Custom</p><p className="mt-1 text-sm text-muted">Quoted for your setup</p></>
+                    <><p className="h-5" /><p className="text-[2rem] leading-none font-semibold tracking-tight 2xl:text-4xl">Custom</p><p className="mt-2 text-sm text-muted">Quoted for your setup</p></>
                   ) : monthly === 0 ? (
-                    <><p className="text-4xl font-semibold tracking-tight">Free</p><p className="mt-1 text-sm text-muted">Forever</p></>
+                    <><p className="h-5" /><p className="text-[2rem] leading-none font-semibold tracking-tight 2xl:text-4xl">Free</p><p className="mt-2 text-sm text-muted">Forever</p></>
                   ) : (
                     <>
-                      <p className="flex items-baseline gap-2">
-                        {period === "yearly" ? <span className="num text-lg text-faint line-through">{kes(monthly)}</span> : null}
-                        <span className="num text-4xl font-semibold tracking-tight">{kes(perMonth)}</span>
-                        <span className="text-sm text-muted">/month</span>
+                      <p className={cn("num h-5 text-sm text-faint line-through", period !== "yearly" && "invisible")}>{kes(monthly)}</p>
+                      <p className="flex items-baseline gap-1 whitespace-nowrap">
+                        <span className="num text-[2rem] leading-none font-semibold tracking-tight 2xl:text-4xl">{kes(perMonth)}</span>
+                        <span className="text-sm text-muted">/mo</span>
                       </p>
-                      <p className="mt-1 text-sm text-muted">{period === "yearly" ? `Billed ${kes(tier.yearly!)} once a year` : "Billed monthly"}</p>
+                      <p className="mt-2 text-sm text-muted">{period === "yearly" ? `Billed ${kes(tier.yearly!)} a year` : "Billed monthly"}</p>
+                      {saving ? <p className="mt-1.5 inline-block rounded-full bg-mint-100 px-2.5 py-0.5 text-xs font-semibold text-green">You save {kes(saving)}</p> : null}
                     </>
                   )}
                 </div>

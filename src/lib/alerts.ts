@@ -22,7 +22,7 @@ export async function loadAlerts(db: SupabaseClient, userId: string, canSeeMoney
   const [asks, apps, help, liked, leaving] = await Promise.all([
     db.from("member_requests").select("id, kind, target_name, created_at, organizations(name)").eq("status", "new").order("created_at").limit(50),
     db.from("membership_applications").select("id, name, company, plan, created_at").eq("status", "new").order("created_at").limit(50),
-    db.from("leads").select("id, name, company, next_step, created_at").eq("status", "new").in("source", ["Member workspace", "Client portal"]).order("created_at").limit(50),
+    db.from("leads").select("id, name, company, next_step, created_at, source").eq("status", "new").in("source", ["Member workspace", "Client portal", "Website contact form"]).order("created_at").limit(50),
     db.from("investor_interest").select("id, updated_at, investors(name), organizations(name)").eq("response", "interested").eq("seen_by_staff", false).limit(50),
     db.from("investors").select("id, name, deletion_requested_at").not("deletion_requested_at", "is", null).limit(50),
   ]);
@@ -72,7 +72,7 @@ export async function loadAlerts(db: SupabaseClient, userId: string, canSeeMoney
     out.push({ id: `a${a.id}`, level: "soon", kind: "application", title: `New application: ${a.company ?? a.name}`, detail: `${a.name}${a.plan ? ` · ${a.plan}` : ""} · decide before applications close`, href: "/admin/applications", date: a.created_at.slice(0, 10) });
   }
   for (const h of help.data ?? []) {
-    out.push({ id: `h${h.id}`, level: "urgent", kind: "request", title: `${h.company ?? h.name} needs a hand`, detail: h.next_step ?? "Help request", href: "/admin/leads", date: h.created_at.slice(0, 10) });
+    out.push({ id: `h${h.id}`, level: "urgent", kind: "request", title: h.source === "Website contact form" ? `New question: ${h.company ?? h.name}` : `${h.company ?? h.name} needs a hand`, detail: h.next_step ?? "Help request", href: "/admin/leads", date: h.created_at.slice(0, 10) });
   }
   for (const l of (liked.data ?? []) as unknown as { id: string; updated_at: string; investors: { name: string } | null; organizations: { name: string } | null }[]) {
     out.push({ id: `v${l.id}`, level: "urgent", kind: "request", title: `${l.investors?.name ?? "An investor"} wants to meet ${l.organizations?.name ?? "a company"}`, detail: "Make the introduction", href: "/admin/investors", date: l.updated_at.slice(0, 10) });

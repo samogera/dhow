@@ -1,0 +1,201 @@
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+   ▲ Next.js 15.5.7
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (116kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (272kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled successfully in 16.5s
+   Linting and checking validity of types ...
+
+./src/app/admin/finance/page.tsx
+5:73  Warning: 'Select' is defined but never used.  @typescript-eslint/no-unused-vars
+29:17  Warning: 'people' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/investors/page.tsx
+60:31  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/admin/reviews/[id]/page.tsx
+18:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/app/directory/page.tsx
+68:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/app/settings/forms.tsx
+44:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/app/work/page.tsx
+45:44  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/client/[token]/page.tsx
+31:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/investor/[token]/contact/page.tsx
+23:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/investor/[token]/page.tsx
+41:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+71:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+116:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/investor/[token]/profile.tsx
+45:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/admin-nav.tsx
+57:142  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/investor-card.tsx
+15:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/invoice-sheet.tsx
+27:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/logo-img.tsx
+38:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/mobile-nav.tsx
+6:3  Warning: 'BadgeCheck' is defined but never used.  @typescript-eslint/no-unused-vars
+6:60  Warning: 'Crown' is defined but never used.  @typescript-eslint/no-unused-vars
+6:96  Warning: 'FileText' is defined but never used.  @typescript-eslint/no-unused-vars
+6:134  Warning: 'Receipt' is defined but never used.  @typescript-eslint/no-unused-vars
+6:153  Warning: 'UsersRound' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/poster.tsx
+21:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/profile-bits.tsx
+43:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+44:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/user-menu.tsx
+12:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/lib/analytics-report.tsx
+71:11  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./src/lib/invoice-pdf.tsx
+71:11  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./src/lib/invoices.ts
+13:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/80) ...
+   Generating static pages (20/80) 
+   Generating static pages (40/80) 
+   Generating static pages (60/80) 
+ ✓ Generating static pages (80/80)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                      217 B         102 kB
+├ ○ /_not-found                            217 B         102 kB
+├ ƒ /admin                               1.61 kB         107 kB
+├ ƒ /admin/alerts                          174 B         105 kB
+├ ƒ /admin/analytics                       174 B         105 kB
+├ ƒ /admin/applications                  1.61 kB         107 kB
+├ ƒ /admin/calendar                      1.49 kB         109 kB
+├ ƒ /admin/clients                         406 B         108 kB
+├ ƒ /admin/clients/[id]                  1.91 kB         110 kB
+├ ƒ /admin/company                       2.76 kB         180 kB
+├ ƒ /admin/discounts                       397 B         108 kB
+├ ƒ /admin/finance                       2.55 kB         111 kB
+├ ƒ /admin/finance/invoices/[id]           398 B         108 kB
+├ ƒ /admin/finance/invoices/[id]/edit      182 B         113 kB
+├ ƒ /admin/finance/invoices/new            183 B         113 kB
+├ ƒ /admin/help                            174 B         105 kB
+├ ƒ /admin/help/[slug]                     172 B         105 kB
+├ ƒ /admin/ideas                          1.4 kB         109 kB
+├ ƒ /admin/investors                      1.5 kB         110 kB
+├ ƒ /admin/leads                           963 B         109 kB
+├ ƒ /admin/members                       2.02 kB         107 kB
+├ ƒ /admin/members/[id]                   1.4 kB         109 kB
+├ ƒ /admin/opportunities                    2 kB         110 kB
+├ ƒ /admin/opportunities/[id]               2 kB         110 kB
+├ ƒ /admin/partners                      1.59 kB         110 kB
+├ ƒ /admin/partners/[id]                 3.75 kB         181 kB
+├ ƒ /admin/profile                         183 B         114 kB
+├ ƒ /admin/projects                        967 B         109 kB
+├ ƒ /admin/projects/[id]                   967 B         109 kB
+├ ƒ /admin/requests                      1.61 kB         107 kB
+├ ƒ /admin/reviews                         174 B         105 kB
+├ ƒ /admin/reviews/[id]                  1.09 kB         109 kB
+├ ƒ /admin/search                        1.15 kB         106 kB
+├ ƒ /admin/team                           1.4 kB         109 kB
+├ ƒ /api/analytics/export                  217 B         102 kB
+├ ƒ /api/calendar/callback                 217 B         102 kB
+├ ƒ /api/calendar/callback/microsoft       217 B         102 kB
+├ ƒ /api/calendar/connect                  217 B         102 kB
+├ ƒ /api/calendar/feed/[token]             217 B         102 kB
+├ ƒ /api/client-error                      217 B         102 kB
+├ ƒ /api/client/[token]/invoices/[id]      217 B         102 kB
+├ ƒ /api/cron/daily                        217 B         102 kB
+├ ƒ /api/documents/[id]/download           217 B         102 kB
+├ ƒ /api/finance/export                    217 B         102 kB
+├ ƒ /api/inngest                           217 B         102 kB
+├ ƒ /api/intake/application                217 B         102 kB
+├ ƒ /api/intake/contact                    217 B         102 kB
+├ ƒ /api/internal-files/[id]               217 B         102 kB
+├ ƒ /api/invoices/[id]/pdf                 217 B         102 kB
+├ ƒ /api/payments/[id]                     217 B         102 kB
+├ ƒ /api/payments/callback                 217 B         102 kB
+├ ƒ /api/payments/membership               217 B         102 kB
+├ ƒ /api/payments/paystack                 217 B         102 kB
+├ ƒ /api/payments/verification             217 B         102 kB
+├ ƒ /api/uploads/complete                  217 B         102 kB
+├ ƒ /api/uploads/presign                   217 B         102 kB
+├ ƒ /app                                 2.05 kB         111 kB
+├ ƒ /app/applications                    2.15 kB         107 kB
+├ ƒ /app/directory                       2.85 kB         108 kB
+├ ƒ /app/documents                       3.15 kB         111 kB
+├ ƒ /app/events                          1.36 kB         112 kB
+├ ƒ /app/investors                       1.45 kB         112 kB
+├ ƒ /app/opportunities                   1.36 kB         112 kB
+├ ƒ /app/opportunities/[id]              3.93 kB         112 kB
+├ ƒ /app/plans                           6.64 kB         115 kB
+├ ƒ /app/settings                        1.38 kB         115 kB
+├ ƒ /app/settings/account                1.38 kB         115 kB
+├ ƒ /app/verification                    4.03 kB         109 kB
+├ ƒ /app/work                             1.5 kB         110 kB
+├ ○ /apple-icon.png                          0 B            0 B
+├ ƒ /auth/callback                         217 B         102 kB
+├ ƒ /client/[token]                      1.19 kB         112 kB
+├ ○ /closed                                187 B         111 kB
+├ ○ /forgot-password                     2.73 kB         111 kB
+├ ƒ /help                                  172 B         105 kB
+├ ● /help/[slug]                           172 B         105 kB
+├   ├ /help/create-your-account
+├   ├ /help/your-dashboard
+├   ├ /help/invite-your-team
+├   └ [+7 more paths]
+├ ○ /icon.png                                0 B            0 B
+├ ƒ /investor/[token]                    7.51 kB         113 kB
+├ ƒ /investor/[token]/contact            4.63 kB         110 kB
+├ ƒ /invite/[token]                        408 B         114 kB
+├ ƒ /login                                3.2 kB         111 kB
+├ ƒ /onboarding                          1.67 kB         115 kB
+├ ○ /opengraph-image.jpg                     0 B            0 B
+├ ƒ /partner/[token]                     2.56 kB         182 kB
+├ ƒ /pay/[id]                            1.02 kB         114 kB
+├ ○ /privacy                               217 B         102 kB
+├ ○ /reset-password                      1.87 kB         110 kB
+├ ƒ /review/[token]                      1.52 kB         115 kB
+├ ○ /robots.txt                            217 B         102 kB
+├ ○ /signup                               3.7 kB         112 kB
+├ ○ /sitemap.xml                           217 B         102 kB
+└ ○ /terms                                 217 B         102 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1255-404bb8de49c90395.js      45.8 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js  54.2 kB
+  └ other shared chunks (total)          1.92 kB
+
+
+ƒ Middleware                              153 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

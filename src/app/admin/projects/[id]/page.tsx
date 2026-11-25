@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, CheckCircle2, Circle, Eye, MessageSquareText, Trash2, UserRound } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { requireStaff, seesMoney } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { Drawer } from "@/components/drawer";
 import { Badge, Card, Field, Input, Select, Textarea } from "@/components/ui";
@@ -23,6 +23,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const s = await requireStaff();
+  const money = seesMoney(s.staffRole);
   const [{ data: p }, { data: taskRows }, { data: staff }, { data: clients }] = await Promise.all([
     s.supabase.from("projects").select("*, clients(id, name)").eq("id", id).maybeSingle(),
     s.supabase.from("tasks").select("*").eq("project_id", id).order("status").order("due_date", { ascending: true, nullsFirst: false }),
@@ -51,7 +52,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
               {p.start_date ? <span>Started {day(p.start_date)}</span> : null}
               {p.due_date ? <span className={cn(p.due_date < today && p.status !== "done" && "font-medium text-bad")}>Due {day(p.due_date)}</span> : null}
-              {p.fee_kes ? <span className="num">Fee {kes(p.fee_kes)}</span> : null}
+              {money && p.fee_kes ? <span className="num">Fee {kes(p.fee_kes)}</span> : null}
               <span className="capitalize">{p.priority} priority</span>
             </div>
           </div>
@@ -60,7 +61,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               <input type="hidden" name="id" value={p.id} />
               <div className="sm:col-span-2"><Field label="Name"><Input name="name" required defaultValue={p.name} /></Field></div>
               <Field label="Client"><Select name="client_id" defaultValue={client?.id ?? ""}><option value="">Internal</option>{clients?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
-              <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" defaultValue={p.fee_kes ?? ""} /></Field>
+              {money ? <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" defaultValue={p.fee_kes ?? ""} /></Field> : <input type="hidden" name="fee_kes" value={p.fee_kes ?? ""} />}
               <Field label="Start"><Input name="start_date" type="date" defaultValue={p.start_date ?? ""} /></Field>
               <Field label="Due"><Input name="due_date" type="date" defaultValue={p.due_date ?? ""} /></Field>
               <Field label="Status"><Select name="status" defaultValue={p.status}>{STATUSES.map((c) => <option key={c} value={c}>{STATUS_LABEL[c]}</option>)}</Select></Field>

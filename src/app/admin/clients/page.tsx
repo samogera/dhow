@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireStaff } from "@/lib/auth";
+import { requireStaff, seesMoney } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { Card, Empty, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { Drawer } from "@/components/drawer";
@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "Clients" };
 
 export default async function Clients() {
   const s = await requireStaff();
+  const money = seesMoney(s.staffRole);
   const [{ data: clients }, { data: invoices }, { data: projects }] = await Promise.all([
     s.supabase.from("clients").select("id, name, sector, client_type, stage, email, country").order("name"),
     s.supabase.from("invoices").select("client_id, total_kes, paid_kes, status").neq("status", "cancelled").neq("status", "draft"),
@@ -31,14 +32,14 @@ export default async function Clients() {
       </PageHeader>
       <Card>
         {clients?.length ? (
-          <Table head={["Client", "Stage", "Open projects", "Paid to us", "Owed to us"]}>
+          <Table head={money ? ["Client", "Stage", "Open projects", "Paid to us", "Owed to us"] : ["Client", "Stage", "Open projects"]}>
             {clients.map((c) => (
               <tr key={c.id} className="hover:bg-white/70">
                 <td><Link href={`/admin/clients/${c.id}`} className="font-medium hover:text-navy-700">{c.name}</Link><p className="text-xs text-muted">{[c.sector, c.client_type, c.country].filter(Boolean).join(" · ")}</p></td>
                 <td><StatusBadge status={c.stage} /></td>
                 <td className="num">{open(c.id) || "—"}</td>
-                <td className="num text-muted">{paid(c.id) ? kes(paid(c.id)) : "—"}</td>
-                <td className={owed(c.id) > 0 ? "num font-semibold text-amber-700" : "num text-muted"}>{owed(c.id) > 0 ? kes(owed(c.id)) : "—"}</td>
+                {money ? <td className="num text-muted">{paid(c.id) ? kes(paid(c.id)) : "—"}</td> : null}
+                {money ? <td className={owed(c.id) > 0 ? "num font-semibold text-amber-700" : "num text-muted"}>{owed(c.id) > 0 ? kes(owed(c.id)) : "—"}</td> : null}
               </tr>
             ))}
           </Table>

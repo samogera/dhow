@@ -30,7 +30,7 @@ function Block({ title, sub, children }: { title: string; sub?: string; children
 const W = ({ children }: { children: ReactNode }) => <div className="sm:col-span-2">{children}</div>;
 
 export default async function Company() {
-  const s = await requireStaff();
+  const s = await requireStaff(["admin"]);
   const [{ data }, { data: files }] = await Promise.all([
     s.supabase.from("dhow_profile").select("*").eq("id", 1).maybeSingle(),
     s.supabase.from("internal_files").select("id, label, category, file_name, size_bytes, expires_on, created_at").eq("owner_type", "dhow").order("created_at", { ascending: false }),

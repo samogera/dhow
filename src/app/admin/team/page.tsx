@@ -37,7 +37,7 @@ export const metadata: Metadata = { title: "Team" };
 const ROLES = STAFF_ROLES;
 
 export default async function Team() {
-  const s = await requireStaff();
+  const s = await requireStaff(["admin"]);
   const isAdmin = s.staffRole === "admin";
   // Staff emails live in auth.users, which only the service role can read. This page is staff-only.
   const db = createAdminClient();

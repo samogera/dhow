@@ -9,7 +9,7 @@ import { TIERS, TIER_ORDER } from "@/lib/plans";
 export const metadata: Metadata = { title: "Discounts" };
 
 export default async function Discounts() {
-  await requireStaff();
+  await requireStaff(["admin"]);
   const d = await loadDiscounts();
   return (
     <>

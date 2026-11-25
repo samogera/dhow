@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireStaff } from "@/lib/auth";
+import { requireStaff, seesMoney } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { Drawer } from "@/components/drawer";
 import { Card, CardHeader, Field, Input, PageHeader, Select } from "@/components/ui";
@@ -13,6 +13,7 @@ const STAGES = ["new", "contacted", "call_booked", "plan_sent", "won", "lost"] a
 
 export default async function Leads() {
   const s = await requireStaff();
+  const money = seesMoney(s.staffRole);
   const { data: leads } = await s.supabase.from("leads").select("*").order("next_step_date", { ascending: true, nullsFirst: false });
   const today = new Date().toISOString().slice(0, 10);
   const open = STAGES.slice(0, 4);
@@ -35,7 +36,7 @@ export default async function Leads() {
             <Field label="Source"><Select name="source" defaultValue="Website">{["Website", "Referral", "LinkedIn", "Event", "WhatsApp", "Partner firm", "Directory", "Other"].map((x) => <option key={x}>{x}</option>)}</Select></Field>
             <Field label="Email"><Input name="email" type="email" /></Field>
             <Field label="Phone"><Input name="phone" /></Field>
-            <Field label="Estimated value (KES)"><Input name="est_value_kes" type="number" min="0" step="1000" /></Field>
+            {money ? <Field label="Estimated value (KES)"><Input name="est_value_kes" type="number" min="0" step="1000" /></Field> : null}
             <Field label="Stage"><Select name="status" defaultValue="new">{STAGES.map((st) => <option key={st} value={st}>{label(st)}</option>)}</Select></Field>
             <Field label="Next step"><Input name="next_step" /></Field>
             <Field label="Next step date"><Input name="next_step_date" type="date" /></Field>
@@ -52,14 +53,14 @@ export default async function Leads() {
             <section key={stage} className="w-[85vw] max-w-80 shrink-0 snap-start rounded-[1.75rem] sm:w-72 bg-white/60 p-3">
               <div className="mb-3 flex items-center justify-between px-2">
                 <p className="text-sm font-semibold">{label(stage)} <span className="text-muted">{items.length}</span></p>
-                <p className="num text-xs text-muted">{kes(total)}</p>
+                {money ? <p className="num text-xs text-muted">{kes(total)}</p> : null}
               </div>
               <div className="space-y-2">
                 {items.map((l) => (
                   <article key={l.id} className="rounded-3xl bg-white p-4">
                     <p className="text-sm font-medium">{l.name}</p>
                     {l.company ? <p className="text-xs text-muted">{l.company}</p> : null}
-                    {l.est_value_kes ? <p className="num mt-2 text-sm font-semibold">{kes(l.est_value_kes)}</p> : null}
+                    {money && l.est_value_kes ? <p className="num mt-2 text-sm font-semibold">{kes(l.est_value_kes)}</p> : null}
                     {l.next_step ? <p className="mt-2 text-xs text-ink/70">{l.next_step}</p> : null}
                     {l.next_step_date ? <p className={l.next_step_date < today ? "mt-1 text-xs font-medium text-bad" : "mt-1 text-xs text-muted"}>Next: {day(l.next_step_date)}</p> : null}
                     {l.notes ? <p className="mt-2 line-clamp-3 rounded-xl bg-sunken/70 px-2.5 py-1.5 text-xs whitespace-pre-line text-ink/75">{l.notes}</p> : null}
@@ -73,7 +74,7 @@ export default async function Leads() {
                           <Field label="Source"><Input name="source" defaultValue={l.source ?? ""} /></Field>
                           <Field label="Email"><Input name="email" type="email" defaultValue={l.email ?? ""} /></Field>
                           <Field label="Phone"><Input name="phone" defaultValue={l.phone ?? ""} /></Field>
-                          <Field label="Estimated value (KES)"><Input name="est_value_kes" type="number" min="0" step="1000" defaultValue={l.est_value_kes ?? ""} /></Field>
+                          {money ? <Field label="Estimated value (KES)"><Input name="est_value_kes" type="number" min="0" step="1000" defaultValue={l.est_value_kes ?? ""} /></Field> : <input type="hidden" name="est_value_kes" value={l.est_value_kes ?? ""} />}
                           <Field label="Stage"><Select name="status" defaultValue={l.status}>{STAGES.map((st) => <option key={st} value={st}>{label(st)}</option>)}</Select></Field>
                           <Field label="Last spoke"><Input name="last_contact" type="date" defaultValue={l.last_contact ?? new Date().toISOString().slice(0, 10)} /></Field>
                           <Field label="Next step date"><Input name="next_step_date" type="date" defaultValue={l.next_step_date ?? ""} /></Field>

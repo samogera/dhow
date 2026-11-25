@@ -64,6 +64,9 @@ export async function memberOrNull() {
   return { ...s, org: current.organizations, role: current.role };
 }
 
+/** Admins and finance see money (invoices, bills, fees, lead values). Everyone else sees the work only. */
+export const seesMoney = (r: string | null | undefined) => r === "admin" || r === "finance";
+
 export function isOrgAdmin(role: OrgRole) {
   return role === "owner" || role === "admin";
 }

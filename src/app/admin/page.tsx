@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BadgeCheck, CalendarDays, CheckCircle2, Circle, HandCoins, Plus, Scale, Target, Wallet } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { AlarmClock, BadgeCheck, CalendarDays, CheckCircle2, Circle, FolderKanban, HandCoins, ListTodo, Plus, Scale, Target, Wallet } from "lucide-react";
+import { requireStaff, seesMoney } from "@/lib/auth";
 import { upcomingEvents } from "@/lib/calendar";
 import { ColumnChart, Donut, RangeTabs } from "@/components/charts";
 import { ButtonLink, Card, CardHeader, Empty, PageHeader, Stat, StatusBadge } from "@/components/ui";
@@ -17,15 +17,17 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const s = await requireStaff();
   const range = [3, 6, 12].includes(Number((await searchParams).range)) ? Number((await searchParams).range) : 6;
   const db = s.supabase;
+  const money = seesMoney(s.staffRole);
+  const reviewer = s.staffRole !== "employee";
   const today = new Date().toISOString().slice(0, 10);
   const sixMonthsAgo = new Date(new Date().getFullYear(), new Date().getMonth() - (range - 1), 1).toISOString().slice(0, 10);
 
   const [pos, reviews, tasks, leads, paid, events, orgs] = await Promise.all([
-    db.from("finance_position").select("*").single(),
+    money ? db.from("finance_position").select("*").single() : Promise.resolve({ data: null }),
     db.from("verifications").select("id, tier, created_at, organizations(name)").eq("status", "in_review").order("created_at").limit(5),
     db.from("tasks").select("id, title, due_date, status, projects(name)").neq("status", "done").order("due_date", { ascending: true, nullsFirst: false }).limit(8),
     db.from("leads").select("est_value_kes, status").not("status", "in", "(won,lost)"),
-    db.from("invoice_payments").select("amount_kes, paid_on").gte("paid_on", sixMonthsAgo),
+    money ? db.from("invoice_payments").select("amount_kes, paid_on").gte("paid_on", sixMonthsAgo) : Promise.resolve({ data: [] as { amount_kes: number; paid_on: string }[] }),
     upcomingEvents(s.user.id, 7).catch(() => null),
     db.from("organizations").select("verification_status").limit(5000),
   ]);
@@ -33,9 +35,11 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
 
   const p = pos.data ?? { received_kes: 0, owed_by_clients_kes: 0, paid_out_kes: 0, owed_to_partners_kes: 0 };
   // Say which bill is next, so a repeating salary created for next month isn't a surprise.
-  const { data: nextBill } = await db.from("bills").select("description, payee, due_date, amount_kes, paid_kes").neq("status", "paid").order("due_date", { ascending: true, nullsFirst: false }).limit(1).maybeSingle();
+  const { data: nextBill } = !money ? { data: null } : await db.from("bills").select("description, payee, due_date, amount_kes, paid_kes").neq("status", "paid").order("due_date", { ascending: true, nullsFirst: false }).limit(1).maybeSingle();
   const billNote = nextBill ? `Next: ${nextBill.description}${nextBill.due_date ? `, due ${day(nextBill.due_date)}` : ""}` : "Nothing to pay";
   const net = Number(p.received_kes) + Number(p.owed_by_clients_kes) - Number(p.paid_out_kes) - Number(p.owed_to_partners_kes);
+  const { data: projs } = money ? { data: null } : await db.from("projects").select("status").neq("status", "done");
+  const overdueTasks = tasks.data?.filter((t) => t.due_date && t.due_date < today).length ?? 0;
   const pipeline = (leads.data ?? []).reduce((sum, l) => sum + Number(l.est_value_kes ?? 0), 0);
 
   // Money received per month, last 6 months.
@@ -48,25 +52,32 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     if (m) m.value += Number(r.amount_kes);
   }
   const first = s.profile?.full_name?.split(" ")[0];
-  const needs = (reviews.data?.length ?? 0) + (tasks.data?.filter((t) => t.due_date && t.due_date < today).length ?? 0);
+  const needs = (reviewer ? reviews.data?.length ?? 0 : 0) + overdueTasks;
 
   return (
     <>
       <PageHeader title={`${greeting()}${first ? `, ${first}` : ""}`}
         sub={`${new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Nairobi" }).format(new Date())} · ${needs === 0 ? "nothing urgent today" : `${needs} ${needs === 1 ? "thing needs" : "things need"} you today`}`}>
-        <ButtonLink href="/admin/finance/invoices/new" variant="outline"><Plus className="size-4" /> New invoice</ButtonLink>
-        <ButtonLink href="/admin/reviews" variant="accent"><BadgeCheck className="size-4" /> Reviews ({reviews.data?.length ?? 0})</ButtonLink>
+        {money ? <ButtonLink href="/admin/finance/invoices/new" variant="outline"><Plus className="size-4" /> New invoice</ButtonLink> : <ButtonLink href="/admin/leads" variant="outline"><Plus className="size-4" /> New lead</ButtonLink>}
+        {reviewer ? <ButtonLink href="/admin/reviews" variant="accent"><BadgeCheck className="size-4" /> Reviews ({reviews.data?.length ?? 0})</ButtonLink> : <ButtonLink href="/admin/projects" variant="accent"><FolderKanban className="size-4" /> Projects</ButtonLink>}
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      {money ? <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Stat highlight icon={Scale} label="Net position" value={kes(net)} note="After what we owe and are owed" />
         <Stat icon={HandCoins} href="/admin/finance" label="Owed to us" value={kes(p.owed_by_clients_kes)} note="Unpaid client invoices" />
         <Stat icon={Wallet} href="/admin/finance?tab=bills" label="Bills to pay" value={kes(p.owed_to_partners_kes)} note={billNote} />
         <Stat icon={Target} href="/admin/leads" label="Open pipeline" value={kes(pipeline)} note={`${leads.data?.length ?? 0} active leads`} />
-      </div>
+      </div> : (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <Stat highlight icon={ListTodo} href="/admin/projects" label="Open tasks" value={tasks.data?.length ?? 0} note={(tasks.data?.length ?? 0) >= 8 ? "Showing the soonest 8" : "Not done yet"} />
+          <Stat icon={AlarmClock} href="/admin/projects" label="Overdue" value={overdueTasks} note={overdueTasks ? "Past their due date" : "Nothing overdue"} />
+          <Stat icon={Target} href="/admin/leads" label="Active leads" value={leads.data?.length ?? 0} note={`${(leads.data ?? []).filter((l) => l.status === "new").length} new`} />
+          <Stat icon={FolderKanban} href="/admin/projects" label="Open projects" value={projs?.length ?? 0} note="In progress or to do" />
+        </div>
+      )}
 
       {/* Charts are for the laptop; phones get the simple view. */}
-      <div className="mt-4 hidden gap-4 sm:grid lg:grid-cols-[1.6fr_1fr]">
+      <div className={money ? "mt-4 hidden gap-4 sm:grid lg:grid-cols-[1.6fr_1fr]" : "hidden"}>
         <Card>
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -132,8 +143,14 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           ) : <Empty title="All clear" sub="No open tasks."><CheckCircle2 className="mx-auto size-6 text-good" /></Empty>}
         </Card>
         <Card>
-          <CardHeader title="Waiting for review" sub="Verification requests, oldest first" href="/admin/reviews" />
-          {reviews.data?.length ? (
+          <CardHeader title={reviewer ? "Waiting for review" : "Companies"} sub={reviewer ? "Verification requests, oldest first" : "By verification status"} href={reviewer ? "/admin/reviews" : "/admin/members"} />
+          {!reviewer ? (
+            <Donut center={String(orgs.data?.length ?? 0)} sub="companies" empty="No companies yet." rows={[
+              { label: "Verified", value: vs(["verified"]), color: "var(--color-green)", href: "/admin/members?f=verified" },
+              { label: "In review", value: vs(["pending"]), color: "var(--color-amber)", href: "/admin/members?f=pending" },
+              { label: "Not verified", value: vs(["unverified", "rejected", "expired"]), color: "var(--color-navy-300)", href: "/admin/members?f=unverified" },
+            ]} />
+          ) : reviews.data?.length ? (
             <ul className="divide-y divide-line">
               {(reviews.data as unknown as { id: string; tier: string; created_at: string; organizations: { name: string } }[]).map((r) => (
                 <li key={r.id}>

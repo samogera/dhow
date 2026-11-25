@@ -22,7 +22,7 @@ function lastMonths(n: number) {
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
 export default async function Analytics() {
-  const s = await requireStaff();
+  const s = await requireStaff(["reviewer"]);
   const today = new Date().toISOString().slice(0, 10);
   const [{ data: orgs }, { data: apps }, { data: opps }, { data: invs }, { data: intros }, { data: likes }, { data: notes }] = await Promise.all([
     s.supabase.from("organizations").select("id, created_at, verification_status, plan, sector, country").limit(5000),

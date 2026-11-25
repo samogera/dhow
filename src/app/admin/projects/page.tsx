@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Eye } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { requireStaff, seesMoney } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { Drawer } from "@/components/drawer";
 import { Badge, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
@@ -15,6 +15,7 @@ const PRI = { high: "bad", medium: "warn", low: "neutral" } as const;
 
 export default async function Projects() {
   const s = await requireStaff();
+  const money = seesMoney(s.staffRole);
   const [{ data: projects }, { data: tasks }, { data: clients }] = await Promise.all([
     s.supabase.from("projects").select("id, name, status, priority, due_date, fee_kes, clients(name)").order("due_date", { ascending: true, nullsFirst: false }),
     s.supabase.from("tasks").select("id, title, status, priority, due_date, project_id, reviewer, assignee").order("due_date", { ascending: true, nullsFirst: false }).limit(500),
@@ -41,7 +42,7 @@ export default async function Projects() {
             <ActionForm action={saveProject} submit="Create project" className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2"><Field label="Name"><Input name="name" required /></Field></div>
             <Field label="Client"><Select name="client_id" defaultValue=""><option value="">Internal</option>{clients?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
-            <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" /></Field>
+            {money ? <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" /></Field> : null}
             <Field label="Start"><Input name="start_date" type="date" /></Field>
             <Field label="Due"><Input name="due_date" type="date" /></Field>
             <Field label="Status"><Select name="status" defaultValue="todo">{COLS.map((c) => <option key={c} value={c}>{label(c)}</option>)}</Select></Field>
@@ -77,7 +78,7 @@ export default async function Projects() {
                       <p className="text-xs text-muted">{(p.clients as unknown as { name: string } | null)?.name ?? "Internal"}</p>
                       <div className="mt-2 flex justify-between text-xs">
                         <span className={p.due_date && p.due_date < today && col !== "done" ? "font-medium text-bad" : "text-muted"}>{p.due_date ? `Due ${day(p.due_date)}` : "No due date"}</span>
-                        {p.fee_kes ? <span className="num">{kes(p.fee_kes)}</span> : null}
+                        {money && p.fee_kes ? <span className="num">{kes(p.fee_kes)}</span> : null}
                       </div>
                       {pt.length ? <div className="mt-3 h-1.5 rounded-full bg-sunken"><div className="h-full rounded-full bg-green" style={{ width: `${Math.round((done / pt.length) * 100)}%` }} /></div> : null}
                       {pt.length ? (

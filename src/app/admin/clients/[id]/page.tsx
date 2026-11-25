@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Circle, FileText, Mail, Phone, Plus, UserRound } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { requireStaff, seesMoney } from "@/lib/auth";
 import { ActionForm } from "@/components/forms";
 import { Drawer } from "@/components/drawer";
 import { ButtonLink, Card, CardHeader, Field, Input, Select, Stat, StatusBadge } from "@/components/ui";
@@ -22,6 +22,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const s = await requireStaff();
+  const money = seesMoney(s.staffRole);
   const db = s.supabase;
   const [{ data: c }, { data: invoices }, { data: projects }, { data: contacts }, { data: links }, { data: partners }] = await Promise.all([
     db.from("clients").select("*").eq("id", id).maybeSingle(),
@@ -77,16 +78,17 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         {client.notes ? <p className="mt-5 whitespace-pre-line border-t border-line pt-5 text-sm text-ink/80">{client.notes}</p> : null}
       </Card>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <Stat label="Billed" value={kes(billed)} note={`${live.length} invoice${live.length === 1 ? "" : "s"}`} />
+      <div className={cn("mt-4 grid grid-cols-2 gap-3 sm:gap-4", money ? "lg:grid-cols-4" : "lg:grid-cols-2")}>
+        {money ? <><Stat label="Billed" value={kes(billed)} note={`${live.length} invoice${live.length === 1 ? "" : "s"}`} />
         <Stat label="Paid to us" value={kes(paid)} />
-        <Stat label="Owed to us" value={kes(owed)} note={overdue.length ? `${overdue.length} overdue` : "Nothing overdue"} highlight={owed > 0} />
+        <Stat label="Owed to us" value={kes(owed)} note={overdue.length ? `${overdue.length} overdue` : "Nothing overdue"} highlight={owed > 0} /></> : null}
+        {money ? null : <Stat label="Open projects" value={(projects ?? []).filter((p) => p.status !== "done").length} note={`${projects?.length ?? 0} in total`} />}
         <Stat label="Open tasks" value={tasks?.length ?? 0} note={`${(projects ?? []).filter((p) => p.status !== "done").length} open projects`} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="space-y-4">
-          <Card>
+          {money ? <Card>
             <CardHeader title="Invoices and payments" />
             {invoices?.length ? (
               <ul className="divide-y divide-line">
@@ -105,7 +107,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 })}
               </ul>
             ) : <p className="text-sm text-muted">No invoices yet.</p>}
-          </Card>
+          </Card> : null}
 
           <Card>
             <CardHeader title="Projects" action={
@@ -113,7 +115,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 <ActionForm action={saveProject} submit="Create project" className="grid gap-3 sm:grid-cols-2">
                   <input type="hidden" name="client_id" value={client.id} /><input type="hidden" name="status" value="todo" /><input type="hidden" name="priority" value="medium" />
                   <div className="sm:col-span-2"><Field label="Name"><Input name="name" required /></Field></div>
-                  <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" /></Field>
+                  {money ? <Field label="Fee (KES)"><Input name="fee_kes" type="number" min="0" step="any" /></Field> : null}
                   <Field label="Due"><Input name="due_date" type="date" /></Field>
                 </ActionForm>
               </Drawer>} />
@@ -122,7 +124,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 {projects.map((p) => (
                   <li key={p.id}>
                     <Link href={`/admin/projects/${p.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-sunken/60 px-4 py-3 hover:bg-sunken">
-                      <div className="min-w-0"><p className="truncate font-medium">{p.name}</p><p className="text-xs text-muted">{p.due_date ? `Due ${day(p.due_date)}` : "No due date"}{p.fee_kes ? ` · ${kes(p.fee_kes)}` : ""}</p></div>
+                      <div className="min-w-0"><p className="truncate font-medium">{p.name}</p><p className="text-xs text-muted">{p.due_date ? `Due ${day(p.due_date)}` : "No due date"}{money && p.fee_kes ? ` · ${kes(p.fee_kes)}` : ""}</p></div>
                       <StatusBadge status={p.status} />
                     </Link>
                   </li>

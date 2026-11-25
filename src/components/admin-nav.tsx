@@ -11,6 +11,16 @@ const MONO = { tile: "bg-transparent text-ink/70", on: "bg-navy-900 text-white" 
 const TONES = { navy: MONO, green: MONO, amber: MONO, mint: MONO, slate: MONO } as const;
 
 type Item = { href: string; label: string; icon?: typeof Anchor; img?: string; logo?: string };
+type Role = "employee" | "reviewer" | "finance" | "admin";
+// Who sees each page. Unlisted pages are for every staff member.
+const ONLY: Record<string, Role[]> = {
+  "/admin/analytics": ["reviewer", "finance", "admin"],
+  "/admin/reviews": ["reviewer", "finance", "admin"],
+  "/admin/discounts": ["admin"],
+  "/admin/finance": ["finance", "admin"],
+  "/admin/company": ["admin"],
+  "/admin/team": ["admin"],
+};
 const groups: { title: string; tone: keyof typeof TONES; items: Item[] }[] = [
   { title: "Overview", tone: "navy", items: [
     { href: "/admin", label: "Dashboard", icon: LayoutGrid },
@@ -56,8 +66,9 @@ function NavIcon({ item, cls }: { item: Item; cls: string }) {
 
 export function AdminNav({ role, counts = {} }: { role: "employee" | "reviewer" | "finance" | "admin"; counts?: Record<string, number> }) {
   const path = usePathname();
-  // Reviewers don't see money. The pages check roles on the server too; this just keeps the menu honest.
-  const visible = groups.filter((g) => g.title !== "Money" || role === "admin" || role === "finance");
+  // Employees see the work only, reviewers add verification, money is for finance and admins.
+  // The pages check roles on the server too; this just keeps the menu honest.
+  const visible = groups.map((g) => ({ ...g, items: g.items.filter((i) => !ONLY[i.href] || ONLY[i.href].includes(role)) })).filter((g) => g.items.length);
   return (
     <nav aria-label="Admin" className="space-y-5">
       {visible.map((g) => (
